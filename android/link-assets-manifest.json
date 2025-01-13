@@ -1,0 +1,37 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/Helvetica Bold Oblique.ttf",
+      "sha1": "afe42ef13d2c3ce4b2a15ec73d7996f53e37e676"
+    },
+    {
+      "path": "src/assets/fonts/Helvetica Light.ttf",
+      "sha1": "a7d02da118efb487c83136ea82b1d40e19dc019b"
+    },
+    {
+      "path": "src/assets/fonts/Helvetica Oblique.ttf",
+      "sha1": "1b41bf58374f95e319e8ae4deebd79a694802e6b"
+    },
+    {
+      "path": "src/assets/fonts/Helvetica-Compressed.otf",
+      "sha1": "8ddd4a7955071a6aeb51e67002299aa2bde407e2"
+    },
+    {
+      "path": "src/assets/fonts/Helvetica.ttf",
+      "sha1": "53cb59bdb997dd39dc70b95d50133583e66ebdcb"
+    },
+    {
+      "path": "src/assets/fonts/HelveticaRounded-Bold.otf",
+      "sha1": "9979d852574beb09a99841fda8d3ef030e9a4b64"
+    },
+    {
+      "path": "src/assets/fonts/index.js",
+      "sha1": "fbcc2004ed4a2ca4455285ca7f70b3422b277b6b"
+    },
+    {
+      "path": "src/assets/fonts/Magnetik Regular.otf",
+      "sha1": "1d8c29a107cf3b2f4187e9a5a39d0aa0e8efc613"
+    }
+  ]
+}
