@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,14 @@ import Colors from '../../theme/color';
 import IMAGES from '../../assets/images';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
-import {hp} from '../../utility/ResponseUI';
+import {hp, wp} from '../../utility/ResponseUI';
+import SVG from '../../assets/svg';
 
 const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [selectedToggle, setSelectedToggle] = useState('');
 
   const chartConfig = {
     backgroundColor: Colors.white,
@@ -86,7 +88,6 @@ const HomeScreen = () => {
     datasets: [
       {
         data: [40, 88, 80, 61, 49, 35, 73, 25],
-
         backgroundColor: [
           'rgba(116, 8, 31, 0.94)',
           'rgba(54, 162, 235, 0.6)',
@@ -102,14 +103,14 @@ const HomeScreen = () => {
   };
 
   const sessionStats = [
-    {image: IMAGES.Count1, value: 20, label: 'Sessions Count'},
-    {image: IMAGES.Count2, value: 10, label: 'Gi Count'},
-    {image: IMAGES.Count3, value: 8, label: 'No Gi Count'},
-    {image: IMAGES.Count4, value: 19, label: 'Tech Learned'},
-    {image: IMAGES.Count5, value: 3, label: 'Sub Achieved'},
-    {image: IMAGES.Count6, value: 6, label: 'Sub Conceded'},
-    {image: IMAGES.Count6, value: 7, label: 'Pos Achieved'},
-    {image: IMAGES.Count5, value: 12, label: 'Pos Conceded'},
+    {svg: SVG.Count1, value: 20, label: 'Sessions Count'},
+    {svg: SVG.Count2, value: 10, label: 'Gi Count'},
+    {svg: SVG.Count3, value: 8, label: 'No Gi Count'},
+    {svg: SVG.Count4, value: 19, label: 'Tech Learned'},
+    {svg: SVG.Count5, value: 3, label: 'Sub Achieved'},
+    {svg: SVG.Count6, value: 6, label: 'Sub Conceded'},
+    {svg: SVG.Count6, value: 7, label: 'Pos Achieved'},
+    {svg: SVG.Count5, value: 12, label: 'Pos Conceded'},
   ];
 
   return (
@@ -125,32 +126,35 @@ const HomeScreen = () => {
           </Text>
           <View style={styles.iconStyle}>
             <TouchableOpacity>
-              <Image source={IMAGES.BellVictor} />
+              <SVG.Bell />
             </TouchableOpacity>
             <TouchableOpacity>
-              <Image source={IMAGES.Lines} />
+              <SVG.Line />
             </TouchableOpacity>
           </View>
         </View>
+
         <View style={styles.toggle}>
-          <View style={{flex: 1}}>
-            <TouchableOpacity style={styles.toggleButton}>
-              <Text style={styles.toggleText}>Weekly</Text>
+          {['Weekly', 'Monthly', 'Quarterly'].map(toggle => (
+            <TouchableOpacity
+              key={toggle}
+              style={[
+                styles.toggleButton,
+                selectedToggle === toggle && {backgroundColor: Colors.red},
+              ]}
+              onPress={() => setSelectedToggle(toggle)}>
+              <Text
+                style={[
+                  styles.toggleText,
+                  selectedToggle === toggle && {color: Colors.white},
+                ]}>
+                {toggle}
+              </Text>
             </TouchableOpacity>
-          </View>
-          <View style={{flex: 1, marginLeft: 15}}>
-            <TouchableOpacity style={styles.toggleButton}>
-              <Text style={styles.toggleText}>Monthly</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{flex: 1, marginLeft: 7.5}}>
-            <TouchableOpacity style={styles.toggleButton}>
-              <Text style={styles.toggleText}>Quarterly</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
         <View style={styles.toggle1}>
-          <TouchableOpacity>
+          <TouchableOpacity style={{flexDirection: 'row'}}>
             <Text style={styles.toggleText1}>from</Text>
           </TouchableOpacity>
           <TouchableOpacity>
@@ -158,17 +162,17 @@ const HomeScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity>
             <Text style={styles.toggleText1}>
-              Type <Image source={IMAGES.VectorAro} />
+              Type <SVG.VectorArr />
             </Text>
           </TouchableOpacity>
           <TouchableOpacity>
             <Text style={styles.toggleText1}>
-              Position <Image source={IMAGES.VectorAro} />
+              Position <SVG.VectorArr />
             </Text>
           </TouchableOpacity>
           <TouchableOpacity>
             <Text style={styles.toggleText1}>
-              technique <Image source={IMAGES.VectorAro} />
+              technique <SVG.VectorArr />
             </Text>
           </TouchableOpacity>
         </View>
@@ -240,14 +244,13 @@ const HomeScreen = () => {
         <View style={styles.statsContainer}>
           {sessionStats.map((stat, index) => (
             <TouchableOpacity key={index} style={styles.statCard}>
-              <Image source={stat.image} />
+              <stat.svg />
               <Text style={styles.statValue}>
                 {stat.value}
                 {'\n'}
                 <Text style={styles.statLabel}>{stat.label}</Text>
               </Text>
-              <Image
-                source={IMAGES.RoundVector}
+              <SVG.RoundVector
                 style={{position: 'absolute', right: 6, top: 10}}
               />
             </TouchableOpacity>
@@ -258,7 +261,7 @@ const HomeScreen = () => {
       <TouchableOpacity
         style={styles.plusButton}
         onPress={() => navigation.navigate('LogScreen')}>
-        <Image source={IMAGES.Plus} />
+        <SVG.RedPlus />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -298,16 +301,16 @@ const styles = StyleSheet.create({
   toggle: {
     flex: 1,
     flexDirection: 'row',
-    margin: 8,
+    margin: 5,
+    gap: 2,
   },
   toggleButton: {
     borderRadius: 8,
     alignSelf: 'center',
-    alignSelf: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.pink,
-    height: 40,
-    width: 131,
+    width: wp((131 / 430) * 100),
+    height: hp((40 / 919) * 100),
   },
   toggleText: {
     fontSize: 16,

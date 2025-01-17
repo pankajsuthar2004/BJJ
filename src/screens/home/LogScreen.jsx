@@ -16,6 +16,7 @@ import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
 import Slider from '@react-native-community/slider';
 import {useNavigation} from '@react-navigation/native';
+import SVG from '../../assets/svg';
 
 const LogScreen = () => {
   const navigation = useNavigation();
@@ -39,7 +40,7 @@ const LogScreen = () => {
   const [isAddingTrainingType, setIsAddingTrainingType] = useState(false);
 
   const onDayPress = day => {
-    setDate(day.dateString);
+    setDate(new Date(day.dateString));
     setShowCalendar(false);
   };
 
@@ -80,10 +81,10 @@ const LogScreen = () => {
           </Text>
           <View style={styles.iconStyle}>
             <TouchableOpacity>
-              <Image source={IMAGES.BellVictor} />
+              <SVG.Bell />
             </TouchableOpacity>
             <TouchableOpacity>
-              <Image source={IMAGES.Lines} />
+              <SVG.Line />
             </TouchableOpacity>
           </View>
         </View>
@@ -93,13 +94,14 @@ const LogScreen = () => {
           <TouchableOpacity
             onPress={() => setShowCalendar(!showCalendar)}
             style={styles.datePicker}>
-            <Image source={IMAGES.VectorCal} style={{marginTop: 3}} />
+            <SVG.VectorCal />
             <Text
               style={{
                 fontSize: 16,
                 fontFamily: Fonts.normal,
+                alignSelf: 'center',
               }}>
-              {date.toISOString().split('T')[0]}
+              {date.toISOString().split('T')[0]}{' '}
             </Text>
           </TouchableOpacity>
 
@@ -107,10 +109,11 @@ const LogScreen = () => {
             <View style={styles.calendarContainer}>
               <Calendar
                 markedDates={{
-                  [date]: {selected: true, selectedColor: Colors.red},
+                  [date.toISOString().split('T')[0]]: {
+                    selected: true,
+                    selectedColor: Colors.red,
+                  },
                 }}
-                onDayPress={onDayPress}
-                markingType={'simple'}
                 theme={{
                   backgroundColor: Colors.white,
                   calendarBackground: Colors.white,
@@ -124,20 +127,22 @@ const LogScreen = () => {
                 renderArrow={direction => (
                   <Text
                     style={{
-                      fontSize: 25,
-                      fontWeight: 'bold',
-                      color: Colors.black,
-                      left: 4,
+                      backgroundColor: Colors.red,
+                      padding: 4,
+                      width: 24,
+                      borderRadius: 4,
+                      left: 20,
+                      textAlign: 'center',
                     }}>
-                    {direction === 'left' ? '<' : '>'}
+                    {direction === 'left' ? <SVG.LeftCal /> : <SVG.RightCal />}
                   </Text>
                 )}
+                onDayPress={onDayPress}
               />
-              <Image
-                source={IMAGES.IconCalendar}
+              <SVG.IconCalendar
                 style={{
                   position: 'absolute',
-                  marginTop: 31,
+                  top: 27,
                   left: 8,
                 }}
               />
@@ -156,7 +161,7 @@ const LogScreen = () => {
             <TouchableOpacity
               style={styles.addChipButton}
               onPress={() => setIsAddingTrainingType(true)}>
-              <Image source={IMAGES.Plus1} />
+              <SVG.WhitePlus />
             </TouchableOpacity>
           </View>
 
@@ -164,7 +169,7 @@ const LogScreen = () => {
             <View style={styles.addAreaContainer}>
               <TextInput
                 style={styles.inputField}
-                placeholder="Enter new training type"
+                placeholder="training type"
                 value={newTrainingType}
                 onChangeText={setNewTrainingType}
               />
@@ -234,7 +239,7 @@ const LogScreen = () => {
             <TouchableOpacity
               style={styles.addChipButton}
               onPress={() => setIsAddingArea(true)}>
-              <Image source={IMAGES.Plus1} />
+              <SVG.WhitePlus />
             </TouchableOpacity>
           </View>
 
@@ -242,7 +247,7 @@ const LogScreen = () => {
             <View style={styles.addAreaContainer}>
               <TextInput
                 style={styles.inputField}
-                placeholder="Enter new area"
+                placeholder="training type"
                 value={newArea}
                 onChangeText={setNewArea}
               />
@@ -288,46 +293,38 @@ const LogScreen = () => {
             ROUND 1
           </Text>
         </View>
-        <View style={{flex: 1, flexDirection: 'row'}}>
-          <View style={{flex: 1, marginBottom: 25, marginRight: 10}}>
-            <Text style={{color: Colors.white, fontSize: 12}}>Durations</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Partner</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Submissions Achieved
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Submissions Conceded
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Positions Achieved
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Positions Conceded
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Notes</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Files Attrached
-            </Text>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+          }}>
+          <View style={{flex: 1, marginBottom: 20}}>
+            <Text style={styles.roundLabel}>Durations</Text>
+            <Text style={styles.roundLabel}>Partner</Text>
+            <Text style={styles.roundLabel}>Submissions Achieved</Text>
+            <Text style={styles.roundLabel}>Submissions Conceded</Text>
+            <Text style={styles.roundLabel}>Positions Achieved</Text>
+            <Text style={styles.roundLabel}>Positions Conceded</Text>
+            <Text style={styles.roundLabel}>Notes</Text>
+            <Text style={styles.roundLabel1}>Files Attrached</Text>
           </View>
           <View style={{flex: 2}}>
-            <Text style={{color: Colors.white, fontSize: 12}}>15 Minutes</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Watson</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>15 Minutes</Text>
+            <Text style={styles.roundLabel}>Watson</Text>
+            <Text style={styles.roundLabel}>
               Guillotine, Americana, RNC, Kimura
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>
               Guillotine 2, Americana 1, RNC 1, Kimura 1
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Back, Mount, Side, Control
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>Back, Mount, Side, Control</Text>
+            <Text style={styles.roundLabel}>
               Back 2, Mount 1, Side 1, Control 1
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>
               It is a long established fact that a reader will be more...
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Yes</Text>
+            <Text style={styles.roundLabel1}>Yes</Text>
           </View>
         </View>
 
@@ -350,53 +347,45 @@ const LogScreen = () => {
           </Text>
         </View>
 
-        <View style={{flex: 1, flexDirection: 'row'}}>
-          <View style={{flex: 1, marginBottom: 25, marginRight: 5}}>
-            <Text style={{color: Colors.white, fontSize: 12}}>Durations</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Partner</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Submissions Achieved
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Submissions Conceded
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Positions Achieved
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Positions Conceded
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Notes</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Files Attrached
-            </Text>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+          }}>
+          <View style={{flex: 1, marginBottom: 20}}>
+            <Text style={styles.roundLabel}>Durations</Text>
+            <Text style={styles.roundLabel}>Partner</Text>
+            <Text style={styles.roundLabel}>Submissions Achieved</Text>
+            <Text style={styles.roundLabel}>Submissions Conceded</Text>
+            <Text style={styles.roundLabel}>Positions Achieved</Text>
+            <Text style={styles.roundLabel}>Positions Conceded</Text>
+            <Text style={styles.roundLabel}>Notes</Text>
+            <Text style={styles.roundLabel1}>Files Attrached</Text>
           </View>
-          <View style={{flex: 2, marginLeft: 10}}>
-            <Text style={{color: Colors.white, fontSize: 12}}>15 Minutes</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Watson</Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+          <View style={{flex: 2}}>
+            <Text style={styles.roundLabel}>15 Minutes</Text>
+            <Text style={styles.roundLabel}>Watson</Text>
+            <Text style={styles.roundLabel}>
               Guillotine, Americana, RNC, Kimura
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>
               Guillotine 2, Americana 1, RNC 1, Kimura 1
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
-              Back, Mount, Side, Control
-            </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>Back, Mount, Side, Control</Text>
+            <Text style={styles.roundLabel}>
               Back 2, Mount 1, Side 1, Control 1
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>
+            <Text style={styles.roundLabel}>
               It is a long established fact that a reader will be more...
             </Text>
-            <Text style={{color: Colors.white, fontSize: 12}}>Yes</Text>
+            <Text style={styles.roundLabel1}>Yes</Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={styles.addRoundButton}
           onPress={() => navigation.navigate('RoundScreen')}>
-          <Image source={IMAGES.Plus2} />
+          <SVG.PinkPlus />
         </TouchableOpacity>
 
         <View style={styles.section}>
@@ -417,7 +406,7 @@ const LogScreen = () => {
         <View style={styles.section}>
           <Text style={styles.label}>Attach Files</Text>
           <TouchableOpacity style={styles.fileButton}>
-            <Image source={IMAGES.PaperClip} />
+            <SVG.PaperClip />
             <Text
               style={{
                 color: Colors.white,
@@ -514,15 +503,17 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: Colors.white,
     borderRadius: 8,
-    marginRight: 25,
+    margin: 15,
   },
   inputField: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
+    height: 40,
+    borderColor: Colors.litegray,
     borderWidth: 1,
-    borderColor: Colors.gray,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 10,
   },
+
   addAreaButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -567,7 +558,7 @@ const styles = StyleSheet.create({
   },
   addRoundButton: {
     marginLeft: 5,
-    marginVertical: 20,
+    marginBottom: 15,
   },
   textArea: {
     backgroundColor: Colors.white,
@@ -601,6 +592,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.pink,
     paddingHorizontal: 6,
     borderRadius: 3,
+  },
+  roundLabel: {
+    color: Colors.white,
+    fontSize: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.litegray,
+    paddingVertical: 5,
+  },
+  roundLabel1: {
+    color: Colors.white,
+    fontSize: 10,
+    paddingVertical: 5,
   },
 });
 
