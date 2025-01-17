@@ -6,6 +6,7 @@ import {
   View,
   TouchableOpacity,
   Image,
+  useColorScheme,
 } from 'react-native';
 import {CommonActions, useNavigation} from '@react-navigation/native';
 import IMAGES from '../../../assets/images';
@@ -19,6 +20,7 @@ import makeRequest from '../../../api/http';
 import {EndPoints} from '../../../api/config';
 import AppLoader from '../../../components/AppLoader';
 import {setUser} from '../../../Slices/UserSlice';
+import SVG from '../../../assets/svg';
 
 const LoginForm = () => {
   const navigation = useNavigation();
@@ -27,6 +29,10 @@ const LoginForm = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [password, setPassword] = useState('');
   const dispatch = useAppDispatch();
+
+  const isDarkMode = useColorScheme() === 'dark';
+  const placeholderColor = isDarkMode ? Colors.lightGray : 'gray';
+  const inputTextColor = isDarkMode ? Colors.white : Colors.black;
 
   const onLoginHandler = async () => {
     const enteredEmail = email.trim();
@@ -60,8 +66,9 @@ const LoginForm = () => {
           routes: [{name: 'HomeStack'}],
         }),
       );
-      showToast({message: 'Login successful!'});
+      showToast({message: 'Login successful!', type: 'success'});
     } catch (error) {
+      showToast({message: 'Login failed. Please try again.', type: 'error'});
     } finally {
       setLoading(false);
     }
@@ -73,28 +80,22 @@ const LoginForm = () => {
         <Image source={IMAGES.Logo} style={styles.logoView} />
         <View style={styles.mainView}>
           <View style={styles.inputContainer}>
-            <Image
-              source={IMAGES.User}
-              style={{marginLeft: 24, height: 24, width: 24}}
-            />
+            <SVG.User style={{marginLeft: 24}} />
             <TextInput
-              style={styles.inputWithIcon}
+              style={[styles.inputWithIcon, {color: inputTextColor}]}
               placeholder="Username"
-              placeholderTextColor="gray"
+              placeholderTextColor={placeholderColor}
               value={email}
               onChangeText={setEmail}
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <Image
-              source={IMAGES.Lock}
-              style={{marginLeft: 24, height: 24, width: 24}}
-            />
+            <SVG.Lock style={{marginLeft: 24}} />
             <TextInput
-              style={styles.inputWithIcon}
+              style={[styles.inputWithIcon, {color: inputTextColor}]}
               placeholder="Password"
-              placeholderTextColor="gray"
+              placeholderTextColor={placeholderColor}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!passwordVisible}
@@ -123,21 +124,32 @@ const LoginForm = () => {
             marginTop: hp((30 / 932) * 100),
           }}>
           <View>
-            <Image
-              source={IMAGES.LinePic}
-              style={{alignSelf: 'center', height: 20, width: 250}}
-            />
+            <SVG.LinePic style={{alignSelf: 'center'}} />
           </View>
           <View>
             <TouchableOpacity style={styles.socialButton}>
-              <Image source={IMAGES.Google} />
+              <SVG.Google />
               <Text style={styles.socialButtonText}>Continue with Google</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialButton}>
-              <Image source={IMAGES.Apple} />
+              <SVG.Apple />
               <Text style={styles.socialButtonText}>Continue with Apple</Text>
             </TouchableOpacity>
           </View>
+        </View>
+        <View style={{flexDirection: 'row', gap: 4, marginVertical: 4}}>
+          <TouchableOpacity>
+            <SVG.Facebook />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <SVG.Linked />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <SVG.Insta />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <SVG.Xapp />
+          </TouchableOpacity>
         </View>
       </View>
       <View style={{height: hp((98 / 932) * 100)}}>
@@ -159,7 +171,6 @@ const styles = StyleSheet.create({
   containerView: {
     justifyContent: 'center',
     alignItems: 'center',
-    opacity: '50%',
   },
   mainView: {
     height: hp((156 / 932) * 100),
@@ -172,7 +183,6 @@ const styles = StyleSheet.create({
     height: hp((749 / 932) * 100),
     flexDirection: 'column',
     alignItems: 'center',
-    // justifyContent: 'space-between',
     marginTop: hp((70 / 932) * 100),
   },
   logoView: {
@@ -186,14 +196,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingRight: 15,
     justifyContent: 'space-between',
-  },
-  input: {
-    height: hp((56 / 932) * 100),
-    backgroundColor: Colors.white,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    width: '100%',
-    fontFamily: Fonts.normal,
   },
   forgetPasswordText: {
     color: Colors.white,
@@ -212,13 +214,7 @@ const styles = StyleSheet.create({
   signUpButtonText: {
     color: Colors.white,
     fontSize: 16,
-    // fontFamily: Fonts.bold,
     fontWeight: 'bold',
-  },
-  orText: {
-    textAlign: 'center',
-    color: Colors.white,
-    fontFamily: Fonts.normal,
   },
   socialButton: {
     backgroundColor: Colors.white,
