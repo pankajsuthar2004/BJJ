@@ -8,66 +8,71 @@ import {
   Image,
   SafeAreaView,
   TextInput,
+  Modal,
+  TouchableWithoutFeedback,
+  Animated,
+  FlatList,
 } from 'react-native';
 import {Calendar} from 'react-native-calendars';
 import IMAGES from '../../assets/images';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
+import {Appearance} from 'react-native';
 import {hp, wp} from '../../utility/ResponseUI';
 import Slider from '@react-native-community/slider';
 import {useNavigation} from '@react-navigation/native';
 import SVG from '../../assets/svg';
 
+const trainingTypes = [
+  'Gi',
+  'No Gi',
+  'Beginners 12am kids',
+  'Advanced gi Class 9am',
+];
+
 const LogScreen = () => {
   const navigation = useNavigation();
   const [date, setDate] = useState(new Date());
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState('Training Type');
+  const [selectedAreas, setSelectedAreas] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [trainingTypes, setTrainingTypes] = useState([
-    'No Gi x',
-    'Drill x',
-    'Sparring x',
-  ]);
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [value, setValue] = useState('');
-  const [areasCovered, setAreasCovered] = useState([
-    'Fitness x',
-    'Zero Figure x',
-    'Sleek x',
-  ]);
+
   const [learnings, setLearnings] = useState('');
-  const [newArea, setNewArea] = useState('');
-  const [newTrainingType, setNewTrainingType] = useState('');
-  const [isAddingArea, setIsAddingArea] = useState(false);
-  const [isAddingTrainingType, setIsAddingTrainingType] = useState(false);
+
+  const isDarkMode = Appearance.getColorScheme() === 'dark';
+  const placeholderColor = isDarkMode ? Colors.white : Colors.gray;
+
+  const areas = ['Fitness', 'Belly Training', 'Knee', 'Love Handles'];
+
+  const toggleSelection = area => {
+    setSelectedAreas(prev =>
+      prev.includes(area)
+        ? prev.filter(item => item !== area)
+        : [...prev, area],
+    );
+  };
 
   const onDayPress = day => {
     setDate(new Date(day.dateString));
     setShowCalendar(false);
   };
 
-  const addNewArea = () => {
-    if (newArea.trim()) {
-      setAreasCovered([...areasCovered, newArea]);
-      setNewArea('');
-      setIsAddingArea(false);
-    }
+  const handleSelect = type => {
+    setSelectedType(type);
+    setDropdownOpen(false);
   };
 
-  const cancelAddArea = () => {
-    setNewArea('');
-    setIsAddingArea(false);
+  const handleLogOut = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
+    });
   };
-
-  const addNewTrainingType = () => {
-    if (newTrainingType.trim()) {
-      setTrainingTypes([...trainingTypes, newTrainingType]);
-      setNewTrainingType('');
-      setIsAddingTrainingType(false);
-    }
-  };
-
-  const cancelAddTrainingType = () => {
-    setNewTrainingType('');
-    setIsAddingTrainingType(false);
+  const toggleDrawer = () => {
+    setIsDrawerVisible(!isDrawerVisible);
   };
 
   return (
@@ -83,11 +88,34 @@ const LogScreen = () => {
             <TouchableOpacity>
               <SVG.Bell />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={toggleDrawer}>
               <SVG.Line />
             </TouchableOpacity>
           </View>
         </View>
+
+        <Modal
+          visible={isDrawerVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={toggleDrawer}>
+          <TouchableWithoutFeedback onPress={toggleDrawer}>
+            <Animated.View style={styles.drawerOverlay}></Animated.View>
+          </TouchableWithoutFeedback>
+
+          <View style={styles.drawer}>
+            <TouchableOpacity onPress={toggleDrawer} style={styles.closeButton}>
+              <SVG.CrossIcon />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.drawerItem} onPress={handleLogOut}>
+              <SVG.LogOutIcon
+                style={{backgroundColor: Colors.black, borderRadius: 5}}
+              />
+              <Text style={styles.drawerText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
 
         <View style={styles.section}>
           <Text style={styles.label}>Select Date</Text>
@@ -105,105 +133,92 @@ const LogScreen = () => {
             </Text>
           </TouchableOpacity>
 
-          {showCalendar && (
-            <View style={styles.calendarContainer}>
-              <Calendar
-                markedDates={{
-                  [date.toISOString().split('T')[0]]: {
-                    selected: true,
-                    selectedColor: Colors.red,
-                  },
-                }}
-                theme={{
-                  backgroundColor: Colors.white,
-                  calendarBackground: Colors.white,
-                  textSectionTitleColor: Colors.black,
-                  selectedDayBackgroundColor: Colors.red,
-                  monthTextColor: Colors.black,
-                  selectedDayTextColor: Colors.black,
-                  todayTextColor: Colors.black,
-                  arrowColor: Colors.black,
-                }}
-                renderArrow={direction => (
-                  <Text
-                    style={{
-                      backgroundColor: Colors.red,
-                      padding: 4,
-                      width: 24,
-                      borderRadius: 4,
-                      left: 20,
-                      textAlign: 'center',
-                    }}>
-                    {direction === 'left' ? <SVG.LeftCal /> : <SVG.RightCal />}
-                  </Text>
-                )}
-                onDayPress={onDayPress}
-              />
-              <SVG.IconCalendar
-                style={{
-                  position: 'absolute',
-                  top: 27,
-                  left: 8,
-                }}
-              />
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showCalendar}
+            onRequestClose={() => setShowCalendar(false)}>
+            <View style={styles.modalBackground}>
+              <View style={styles.modalContainer}>
+                <Calendar
+                  markedDates={{
+                    [date.toISOString().split('T')[0]]: {
+                      selected: true,
+                      selectedColor: Colors.red,
+                    },
+                  }}
+                  theme={{
+                    backgroundColor: Colors.white,
+                    calendarBackground: Colors.white,
+                    textSectionTitleColor: Colors.black,
+                    selectedDayBackgroundColor: Colors.red,
+                    monthTextColor: Colors.black,
+                    selectedDayTextColor: Colors.black,
+                    todayTextColor: Colors.black,
+                  }}
+                  renderArrow={direction => (
+                    <Text
+                      style={{
+                        left: 20,
+                        textAlign: 'center',
+                      }}>
+                      {direction === 'left' ? (
+                        <SVG.RedLeft />
+                      ) : (
+                        <SVG.RedRight />
+                      )}
+                    </Text>
+                  )}
+                  onDayPress={onDayPress}
+                />
+                <SVG.IconCalendar
+                  style={{
+                    position: 'absolute',
+                    top: 38,
+                    left: 10,
+                  }}
+                />
+              </View>
             </View>
-          )}
+          </Modal>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.label}>Training Type</Text>
-          <View style={styles.chipContainer}>
-            {trainingTypes.map((type, index) => (
-              <TouchableOpacity key={index} style={styles.chip}>
-                <Text style={styles.chipText}>{type}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.addChipButton}
-              onPress={() => setIsAddingTrainingType(true)}>
-              <SVG.WhitePlus />
-            </TouchableOpacity>
-          </View>
-
-          {isAddingTrainingType && (
-            <View style={styles.addAreaContainer}>
-              <TextInput
-                style={styles.inputField}
-                placeholder="training type"
-                value={newTrainingType}
-                onChangeText={setNewTrainingType}
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => setDropdownOpen(!isDropdownOpen)}>
+            <Text style={styles.dropdownText}>{selectedType}</Text>
+            {isDropdownOpen ? <SVG.SmallArrow /> : <SVG.SmallRight />}
+          </TouchableOpacity>
+          {isDropdownOpen && (
+            <View style={styles.dropdownList}>
+              <FlatList
+                data={trainingTypes}
+                keyExtractor={item => item}
+                renderItem={({item}) => (
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => handleSelect(item)}>
+                    <Text style={styles.itemText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
               />
-              <View style={styles.addAreaButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={cancelAddTrainingType}>
-                  <Text
-                    style={{
-                      color: Colors.red,
-                      fontSize: 12,
-                      textAlign: 'center',
-                    }}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={addNewTrainingType}>
-                  <Text style={styles.buttonText}>Add</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           )}
         </View>
+
         <View style={styles.section}>
           <Text style={styles.label}>
-            Duration<Text style={{fontSize: 12}}> (Minutes) </Text>
+            Duration<Text style={{fontSize: 12}}> (Minutes)</Text>
           </Text>
           <View style={styles.sliderView}>
             <View
               style={[
                 styles.valueContainer,
-                {left: `${((value - 0) / (60 - 0)) * 320}`},
+                {
+                  left: wp(((value - 0) / (53.5 - 0)) * 70),
+                },
               ]}>
               <View
                 style={{
@@ -230,46 +245,25 @@ const LogScreen = () => {
 
         <View style={styles.section}>
           <Text style={styles.label}>Areas Covered</Text>
-          <View style={styles.chipContainer}>
-            {areasCovered.map((area, index) => (
-              <TouchableOpacity key={index} style={styles.chip}>
-                <Text style={styles.chipText}>{area}</Text>
+          <View style={{backgroundColor: Colors.white, borderRadius: 8}}>
+            <View style={styles.dropdown}>
+              <Text style={styles.dropdownLabel1}>Areas Covered</Text>
+              <SVG.SmallArrow />
+            </View>
+            {areas.map(area => (
+              <TouchableOpacity
+                key={area}
+                style={styles.item1}
+                onPress={() => toggleSelection(area)}>
+                <Text style={styles.itemText1}>{area}</Text>
+                {selectedAreas.includes(area) ? (
+                  <SVG.FilterTicks />
+                ) : (
+                  <SVG.EmptyTick />
+                )}
               </TouchableOpacity>
             ))}
-            <TouchableOpacity
-              style={styles.addChipButton}
-              onPress={() => setIsAddingArea(true)}>
-              <SVG.WhitePlus />
-            </TouchableOpacity>
           </View>
-
-          {isAddingArea && (
-            <View style={styles.addAreaContainer}>
-              <TextInput
-                style={styles.inputField}
-                placeholder="training type"
-                value={newArea}
-                onChangeText={setNewArea}
-              />
-              <View style={styles.addAreaButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={cancelAddArea}>
-                  <Text
-                    style={{
-                      color: Colors.red,
-                      fontSize: 12,
-                      textAlign: 'center',
-                    }}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.addButton} onPress={addNewArea}>
-                  <Text style={styles.buttonText}>Add</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
         </View>
 
         <View style={styles.section}>
@@ -295,18 +289,17 @@ const LogScreen = () => {
         </View>
         <View
           style={{
-            flex: 1,
             flexDirection: 'row',
           }}>
-          <View style={{flex: 1, marginBottom: 20}}>
+          <View style={{flex: 0.9, marginBottom: 20}}>
             <Text style={styles.roundLabel}>Durations</Text>
             <Text style={styles.roundLabel}>Partner</Text>
             <Text style={styles.roundLabel}>Submissions Achieved</Text>
             <Text style={styles.roundLabel}>Submissions Conceded</Text>
             <Text style={styles.roundLabel}>Positions Achieved</Text>
             <Text style={styles.roundLabel}>Positions Conceded</Text>
-            <Text style={styles.roundLabel}>Notes</Text>
-            <Text style={styles.roundLabel1}>Files Attrached</Text>
+            <Text style={styles.roundLabel2}>Notes</Text>
+            <Text style={styles.roundLabel1}>Files Attached</Text>
           </View>
           <View style={{flex: 2}}>
             <Text style={styles.roundLabel}>15 Minutes</Text>
@@ -321,8 +314,8 @@ const LogScreen = () => {
             <Text style={styles.roundLabel}>
               Back 2, Mount 1, Side 1, Control 1
             </Text>
-            <Text style={styles.roundLabel}>
-              It is a long established fact that a reader will be more...
+            <Text style={styles.roundLabel2}>
+              It is a long established fact that a reader will be more..
             </Text>
             <Text style={styles.roundLabel1}>Yes</Text>
           </View>
@@ -349,18 +342,17 @@ const LogScreen = () => {
 
         <View
           style={{
-            flex: 1,
             flexDirection: 'row',
           }}>
-          <View style={{flex: 1, marginBottom: 20}}>
+          <View style={{flex: 0.9, marginBottom: 20}}>
             <Text style={styles.roundLabel}>Durations</Text>
             <Text style={styles.roundLabel}>Partner</Text>
             <Text style={styles.roundLabel}>Submissions Achieved</Text>
             <Text style={styles.roundLabel}>Submissions Conceded</Text>
             <Text style={styles.roundLabel}>Positions Achieved</Text>
             <Text style={styles.roundLabel}>Positions Conceded</Text>
-            <Text style={styles.roundLabel}>Notes</Text>
-            <Text style={styles.roundLabel1}>Files Attrached</Text>
+            <Text style={styles.roundLabel2}>Notes</Text>
+            <Text style={styles.roundLabel1}>Files Attached</Text>
           </View>
           <View style={{flex: 2}}>
             <Text style={styles.roundLabel}>15 Minutes</Text>
@@ -375,8 +367,8 @@ const LogScreen = () => {
             <Text style={styles.roundLabel}>
               Back 2, Mount 1, Side 1, Control 1
             </Text>
-            <Text style={styles.roundLabel}>
-              It is a long established fact that a reader will be more...
+            <Text style={styles.roundLabel2}>
+              It is a long established fact that a reader will be more..
             </Text>
             <Text style={styles.roundLabel1}>Yes</Text>
           </View>
@@ -393,12 +385,15 @@ const LogScreen = () => {
           <TextInput
             style={[
               styles.textArea,
-              {textAlignVertical: 'top', paddingTop: 15},
+              {
+                textAlignVertical: 'top',
+                paddingTop: 15,
+              },
             ]}
             multiline
             placeholder="Share Learnings....."
             value={learnings}
-            placeholderTextColor={Colors.gray}
+            placeholderTextColor={placeholderColor}
             onChangeText={text => setLearnings(text)}
           />
         </View>
@@ -456,6 +451,24 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 8,
   },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(10, 8, 8, 0.9)',
+  },
+  modalContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    width: wp((400 / 430) * 100),
+    height: hp((410 / 919) * 100),
+  },
+  buttonText: {
+    color: Colors.white,
+    textAlign: 'center',
+    fontSize: 16,
+  },
   label: {
     color: Colors.white,
     fontSize: 20,
@@ -488,6 +501,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginBottom: 10,
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   chipText: {
     color: Colors.white,
@@ -503,37 +518,35 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: Colors.white,
     borderRadius: 8,
-    margin: 15,
+    marginRight: 15,
   },
   inputField: {
-    height: 40,
-    borderColor: Colors.litegray,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderColor: Colors.gray,
+    padding: 10,
+    borderRadius: 5,
     marginBottom: 10,
   },
-
   addAreaButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     marginTop: 8,
+    gap: 8,
   },
   cancelButton: {
-    padding: 6,
+    justifyContent: 'center',
     borderRadius: 5,
     borderWidth: 1,
     borderColor: Colors.red,
-    left: 215,
-    height: 31,
-    width: 69,
+    width: wp((69 / 430) * 100),
+    height: hp((31 / 919) * 100),
   },
   addButton: {
     backgroundColor: Colors.black,
-    padding: 8,
     borderRadius: 8,
-    height: 31,
-    width: 54,
+    width: wp((54 / 430) * 100),
+    height: hp((31 / 919) * 100),
+    justifyContent: 'center',
   },
   buttonText: {
     color: Colors.white,
@@ -557,8 +570,9 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   addRoundButton: {
-    marginLeft: 5,
     marginBottom: 15,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
   },
   textArea: {
     backgroundColor: Colors.white,
@@ -595,16 +609,103 @@ const styles = StyleSheet.create({
   },
   roundLabel: {
     color: Colors.white,
-    fontSize: 10,
+    fontSize: 9.6,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.litegray,
     paddingVertical: 5,
   },
   roundLabel1: {
     color: Colors.white,
-    fontSize: 10,
+    fontSize: 9.6,
     paddingVertical: 5,
   },
+  roundLabel2: {
+    color: Colors.white,
+    fontSize: 9.6,
+    paddingVertical: 5,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.litegray,
+  },
+  drawerOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  drawerItem: {
+    flexDirection: 'row',
+    marginTop: 40,
+  },
+  drawerText: {
+    fontSize: 18,
+    fontFamily: Fonts.normal,
+    marginLeft: 10,
+    top: -2,
+  },
+  drawer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    width: wp((250 / 430) * 100),
+    height: hp((200 / 919) * 100),
+    padding: 20,
+  },
+  dropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: 'white',
+  },
+  dropdownText: {
+    fontSize: 16,
+  },
+  dropdownList: {
+    marginTop: 4,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  itemText: {
+    fontSize: 16,
+  },
+  dropdown: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownLabel1: {fontSize: 16, fontWeight: 'bold'},
+  item1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderColor: Colors.litegray,
+  },
+  itemText1: {fontSize: 16, color: Colors.black},
 });
 
 export default LogScreen;

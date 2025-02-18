@@ -6,6 +6,7 @@ const Colors = {
   green: '#28C13C',
   pink: '#FFE6E6',
   darkGray: '#333333',
+  yellow: '#FF9600',
   litegray: '#E6E6E6',
 };
 

@@ -116,7 +116,7 @@ const WelcomeScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'black',
-    justifyContent: 'center',
+    // justifyContent: 'center',
     alignItems: 'center',
   },
   slideContainer: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: hp((543 / 923) * 100),
+    // height: hp((543 / 923) * 100),
     resizeMode: 'contain',
   },
   textContainer: {
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 24,
-    // fontFamily: Fonts.thin,
+    fontFamily: Fonts.thin,
     color: Colors.white,
     fontWeight: '700',
   },
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   stepContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: hp(100 * (40 / 923)),
+    marginTop: hp(80 * (40 / 923)),
     height: hp(100 * (36 / 923)),
   },
   stepper: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     backgroundColor: Colors.gray,
     marginHorizontal: wp(0.5),
-    marginBottom: '48%',
+    marginBottom: '45%',
   },
   activeStepper: {
     width: wp(10),
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     backgroundColor: Colors.red,
     marginHorizontal: wp(2.5),
-    marginBottom: '48%',
+    marginBottom: '45%',
   },
 });
 

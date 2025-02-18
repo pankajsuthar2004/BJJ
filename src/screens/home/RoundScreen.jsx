@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
   FlatList,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
@@ -14,12 +13,11 @@ import Slider from '@react-native-community/slider';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
-import IMAGES from '../../assets/images';
 import SVG from '../../assets/svg';
 
 const RoundScreen = () => {
-  const [roundDuration, setRoundDuration] = useState(0);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(0);
+  const [value, setValue] = useState(0);
   const navigation = useNavigation();
   const [listVisible, setListVisible] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -28,6 +26,7 @@ const RoundScreen = () => {
   const [newItem, setNewItem] = useState('');
   const [showSparringInput, setShowSparringInput] = useState(false);
   const [sparringPartner, setSparringPartner] = useState('');
+  const [sparringPartnersList, setSparringPartnersList] = useState([]);
 
   const options = {
     'Submissions Achieved': [
@@ -93,9 +92,14 @@ const RoundScreen = () => {
 
   const handleAddSparringPartner = () => {
     if (sparringPartner.trim()) {
+      setSparringPartnersList(prevList => [...prevList, sparringPartner]);
       setSparringPartner('');
       setShowSparringInput(false);
     }
+  };
+
+  const removeSparringPartner = index => {
+    setSparringPartnersList(prevList => prevList.filter((_, i) => i !== index));
   };
 
   return (
@@ -109,23 +113,41 @@ const RoundScreen = () => {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.label}>
-          Round Duration
-          <Text style={{fontSize: 12}}> (Minutes)</Text>
-        </Text>
-        <Text style={styles.duration}>{roundDuration}</Text>
-        <View style={styles.sliderContainer}>
-          <Slider
-            style={styles.slider}
-            minimumValue={1}
-            maximumValue={60}
-            step={1}
-            value={roundDuration}
-            onValueChange={setRoundDuration}
-            minimumTrackTintColor="#FF4D4D"
-            maximumTrackTintColor="#FFCCCC"
-            thumbTintColor="#FF4D4D"
-          />
+        <View style={styles.section}>
+          <Text style={styles.label}>
+            Round Duration<Text style={{fontSize: 12}}> (Minutes)</Text>
+          </Text>
+          <View style={styles.sliderView}>
+            <View
+              style={[
+                styles.valueContainer,
+                {
+                  left: wp(((value - 0) / (58 - 0)) * 70),
+                },
+              ]}>
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  alignSelf: 'center',
+                  backgroundColor: Colors.black,
+                  borderRadius: 4,
+                }}>
+                <Text style={styles.valueText}>{value}</Text>
+              </View>
+            </View>
+            <View style={{marginTop: 20}}>
+              <Slider
+                minimumValue={0}
+                maximumValue={60}
+                step={1}
+                minimumTrackTintColor={Colors.red}
+                maximumTrackTintColor={Colors.pink}
+                thumbTintColor={Colors.red}
+                onValueChange={setValue}
+              />
+            </View>
+          </View>
         </View>
 
         <Text style={{fontSize: 20, fontFamily: Fonts.normal}}>
@@ -133,7 +155,7 @@ const RoundScreen = () => {
         </Text>
         {!showSparringInput ? (
           <TouchableOpacity
-            style={{marginVertical: 10}}
+            style={styles.sparringButton}
             onPress={() => setShowSparringInput(true)}>
             <SVG.BlackIcon />
           </TouchableOpacity>
@@ -141,7 +163,7 @@ const RoundScreen = () => {
           <View style={styles.addNewItemContainer}>
             <TextInput
               style={styles.newItemInput}
-              placeholder="enter sparring partner..."
+              placeholder="Enter sparring partner..."
               placeholderTextColor={Colors.gray}
               value={sparringPartner}
               onChangeText={setSparringPartner}
@@ -160,6 +182,29 @@ const RoundScreen = () => {
             </View>
           </View>
         )}
+
+        {sparringPartnersList.length > 0 && (
+          <View style={styles.sparringPartnersList}>
+            <FlatList
+              data={sparringPartnersList}
+              keyExtractor={index => index.toString()}
+              horizontal
+              renderItem={({item, index}) => (
+                <View style={styles.sparringPartnerItem}>
+                  <View style={styles.listView}>
+                    <Text style={styles.sparringPartnerText}>{item}</Text>
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeSparringPartner(index)}>
+                      <SVG.WhiteCross />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            />
+          </View>
+        )}
+
         {Object.keys(options).map(type => (
           <View key={type}>
             <Text style={styles.selectLabel}>{type}</Text>
@@ -169,11 +214,7 @@ const RoundScreen = () => {
               <SVG.HugeIcons />
               <Text style={styles.selectionText}>Select {type}</Text>
               <View style={{position: 'absolute', right: 15}}>
-                <Image
-                  source={
-                    listVisible === type ? IMAGES.DropDown : IMAGES.DropRight
-                  }
-                />
+                {listVisible === type ? <SVG.ArrowIcons /> : <SVG.ArrowIcon />}
               </View>
             </TouchableOpacity>
 
@@ -208,6 +249,7 @@ const RoundScreen = () => {
                       padding: 15,
                       margin: 5,
                       borderRadius: 8,
+                      marginBottom: 15,
                     }}
                     onPress={() => setIsAddingArea(true)}>
                     <Text
@@ -260,6 +302,7 @@ const RoundScreen = () => {
           value={notes}
           onChangeText={setNotes}
         />
+
         <View style={styles.section1}>
           <Text style={styles.label}>Attach Files</Text>
           <TouchableOpacity style={styles.fileButton1}>
@@ -267,7 +310,10 @@ const RoundScreen = () => {
             <Text style={styles.fileButtonText}>Choose File</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.submitButton}>
+
+        <TouchableOpacity
+          style={styles.submitButton}
+          onPress={() => navigation.navigate('DashBoardScreen')}>
           <Text style={styles.submitButtonText}>Submit Now</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -294,28 +340,46 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   label: {
+    color: Colors.black,
     fontSize: 20,
+    marginBottom: 5,
     fontFamily: Fonts.normal,
+  },
+  sparringPartnersList: {
     marginVertical: 10,
-  },
-  duration: {
-    fontSize: 12,
-    backgroundColor: Colors.black,
-    color: Colors.white,
-    width: 25,
-    height: 20,
-    borderRadius: 5,
-    textAlign: 'center',
-    alignSelf: 'center',
-    fontFamily: Fonts.normal,
-  },
-  sliderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  slider: {
-    flex: 1,
+  sparringPartnerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+    marginBottom: 10,
+  },
+  sparringPartnerText: {
+    fontSize: 12,
+    color: Colors.white,
+    fontFamily: Fonts.normal,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    textAlign: 'center',
+    alignItems: 'center',
+  },
+  removeButton: {
+    justifyContent: 'center',
+    paddingRight: 6,
+  },
+  valueText: {
+    fontSize: 12,
+    color: Colors.white,
+    paddingHorizontal: 6,
+    borderRadius: 3,
+  },
+  valueContainer: {
+    position: 'absolute',
+    paddingHorizontal: 15,
+    margin: 10,
   },
   selectionButton: {
     flexDirection: 'row',
@@ -326,8 +390,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
   },
+  sliderView: {
+    borderRadius: 15,
+    padding: 14,
+  },
   selectionText: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: Fonts.normal,
     paddingLeft: 10,
     color: Colors.black,
@@ -336,9 +404,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 5,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    marginVertical: 5,
     borderBottomWidth: 1,
     borderColor: Colors.litegray,
   },
@@ -369,6 +436,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.black,
     marginHorizontal: 10,
+  },
+  section: {
+    marginBottom: 8,
   },
   notesInput: {
     height: 120,
@@ -413,12 +483,17 @@ const styles = StyleSheet.create({
   },
   selectLabel: {
     fontFamily: Fonts.normal,
-    fontSize: 18,
+    fontSize: 20,
     marginBottom: 10,
     color: Colors.black,
   },
   addNewItemContainer: {
-    margin: 15,
+    margin: 3,
+    borderWidth: 0.6,
+    borderColor: Colors.gray,
+    padding: 20,
+    borderRadius: 8,
+    marginTop: 10,
   },
   newItemInput: {
     height: 40,
@@ -437,8 +512,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: 5,
     borderRadius: 8,
-    paddingVertical: 10,
-    width: 69,
+    width: wp((69 / 430) * 100),
+    height: hp((31 / 919) * 100),
+    justifyContent: 'center',
   },
   cancelButtonText: {
     textAlign: 'center',
@@ -446,14 +522,26 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: Colors.black,
-    paddingVertical: 10,
     marginLeft: 5,
     borderRadius: 8,
-    width: 54,
+    width: wp((54 / 430) * 100),
+    height: hp((31 / 919) * 100),
+    justifyContent: 'center',
   },
   addButtonText: {
     textAlign: 'center',
     color: Colors.white,
+  },
+  sparringButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  listView: {
+    backgroundColor: Colors.red,
+    flexDirection: 'row',
+    paddingHorizontal: 5,
+    borderRadius: 8,
   },
 });
 
