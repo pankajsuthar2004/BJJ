@@ -6,6 +6,7 @@ import {
   View,
   TouchableOpacity,
   Image,
+  useColorScheme,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import IMAGES from '../../../assets/images';
@@ -18,6 +19,7 @@ import makeRequest from '../../../api/http';
 import {EndPoints} from '../../../api/config';
 import {useAppDispatch} from '../../../store/Hooks';
 import {setUser} from '../../../Slices/UserSlice';
+import {CommonActions} from '@react-navigation/native';
 
 const SignUpForm = () => {
   const navigation = useNavigation();
@@ -29,6 +31,10 @@ const SignUpForm = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const dispatch = useAppDispatch();
+
+  const isDarkMode = useColorScheme() === 'dark';
+  const placeholderColor = isDarkMode ? Colors.litegray : 'gray';
+  const inputTextColor = isDarkMode ? Colors.white : Colors.black;
 
   const onSignUpHandler = async () => {
     const enteredName = name.trim();
@@ -74,9 +80,16 @@ const SignUpForm = () => {
       console.log(response);
       dispatch(setUser(response));
 
-      showToast({message: 'Signup successful!'});
-      navigation.navigate('LoginScreen');
+      showToast({message: 'Signup successful!', type: 'success'});
+
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{name: 'HomeStack'}],
+        }),
+      );
     } catch (error) {
+      showToast({message: 'Signup failed. Please try again.', type: 'error'});
     } finally {
       setLoading(false);
     }
@@ -89,25 +102,25 @@ const SignUpForm = () => {
         <View style={styles.formView}>
           <View style={styles.inputView}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {color: inputTextColor}]}
               placeholder="Name"
-              placeholderTextColor="gray"
+              placeholderTextColor={placeholderColor}
               value={name}
               onChangeText={setName}
             />
             <TextInput
-              style={styles.input}
+              style={[styles.input, {color: inputTextColor}]}
               placeholder="Email"
-              placeholderTextColor="gray"
+              placeholderTextColor={placeholderColor}
               keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
             />
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.inputWithIcon}
+                style={[styles.inputWithIcon, {color: inputTextColor}]}
                 placeholder="Password"
-                placeholderTextColor="gray"
+                placeholderTextColor={placeholderColor}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!passwordVisible}
@@ -123,9 +136,9 @@ const SignUpForm = () => {
             </View>
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.inputWithIcon}
+                style={[styles.inputWithIcon, {color: inputTextColor}]}
                 placeholder="Confirm Password"
-                placeholderTextColor="gray"
+                placeholderTextColor={placeholderColor}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!confirmPasswordVisible}
@@ -170,14 +183,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     opacity: '50%',
-    paddingVertical: wp(29),
+    marginTop: wp(13),
   },
   formlogoView: {
     width: wp((328 / 430) * 100),
     height: hp((711 / 919) * 100),
     flexDirection: 'column',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: hp(6),
   },
   logoView: {
     width: wp((195 / 430) * 100),

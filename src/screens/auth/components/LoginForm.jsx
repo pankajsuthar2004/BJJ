@@ -31,7 +31,7 @@ const LoginForm = () => {
   const dispatch = useAppDispatch();
 
   const isDarkMode = useColorScheme() === 'dark';
-  const placeholderColor = isDarkMode ? Colors.lightGray : 'gray';
+  const placeholderColor = isDarkMode ? Colors.litegray : 'gray';
   const inputTextColor = isDarkMode ? Colors.white : Colors.black;
 
   const onLoginHandler = async () => {
@@ -83,7 +83,7 @@ const LoginForm = () => {
             <SVG.User style={{marginLeft: 24}} />
             <TextInput
               style={[styles.inputWithIcon, {color: inputTextColor}]}
-              placeholder="Username"
+              placeholder="Email"
               placeholderTextColor={placeholderColor}
               value={email}
               onChangeText={setEmail}
@@ -137,18 +137,18 @@ const LoginForm = () => {
             </TouchableOpacity>
           </View>
         </View>
-        <View style={{flexDirection: 'row', gap: 4, marginVertical: 4}}>
-          <TouchableOpacity>
-            <SVG.Facebook />
+        <View style={{flexDirection: 'row', gap: 5, marginVertical: 8}}>
+          <TouchableOpacity style={styles.soicalLogo}>
+            <SVG.FacebookLogo width={wp(15)} />
           </TouchableOpacity>
-          <TouchableOpacity>
-            <SVG.Linked />
+          <TouchableOpacity style={styles.soicalLogo}>
+            <SVG.LinkedinLogo width={wp(15)} />
           </TouchableOpacity>
-          <TouchableOpacity>
-            <SVG.Insta />
+          <TouchableOpacity style={styles.soicalLogo}>
+            <SVG.InstagramLogo width={wp(15)} />
           </TouchableOpacity>
-          <TouchableOpacity>
-            <SVG.Xapp />
+          <TouchableOpacity style={styles.soicalLogo}>
+            <SVG.XappLogo width={wp(15)} />
           </TouchableOpacity>
         </View>
       </View>
@@ -248,6 +248,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 8,
     paddingHorizontal: 15,
+  },
+  soicalLogo: {
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    width: wp(18),
+    height: hp(6),
+    alignItems: 'center',
+    borderRadius: 8,
   },
 });
 

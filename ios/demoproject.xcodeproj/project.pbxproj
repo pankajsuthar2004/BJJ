@@ -11,18 +11,9 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		256CD6441C18E4B84B6BF596 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		2D2BA451F1D2549BF6EE9080 /* Pods_demoproject_demoprojectTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9748E295B4B4333AB7E726A7 /* Pods_demoproject_demoprojectTests.framework */; };
-		335C952C16EA4819993A937D /* Helvetica Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B339A600DF8B4C7384B4B098 /* Helvetica Light.ttf */; };
-		48C6018555434519ABCE242A /* Helvetica-Compressed.otf in Resources */ = {isa = PBXBuildFile; fileRef = BE55E28D6CAE46DFAB646292 /* Helvetica-Compressed.otf */; };
-		56B658D2296845209A59DB14 /* Magnetik Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 2B7A3F3312BC40A9A45308DF /* Magnetik Regular.otf */; };
-		689485201A6B4BD8A0E94CFE /* index.js in Resources */ = {isa = PBXBuildFile; fileRef = 756738A0002B45918C72C7FD /* index.js */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		85110E424E9B65DBC827DA87 /* Pods_demoproject.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8ADAD6185D21518ADAC0B65B /* Pods_demoproject.framework */; };
-		995A1DAB76CB49B4B37AF00B /* HelveticaRounded-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 3D30BE8E9DE444E5BD1855AD /* HelveticaRounded-Bold.otf */; };
-		99B3C7D2827B434186E6E468 /* Helvetica.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 00C07A25E8DD4F3AB75497A5 /* Helvetica.ttf */; };
-		A9B040F0AF184D3F894FACF6 /* Helvetica Bold Oblique.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 99176ECA4F1945C3BA3CF950 /* Helvetica Bold Oblique.ttf */; };
-		CBEAA44E67174606B8868D90 /* Helvetica Oblique.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3C3F0A89B4A6465094C5AC37 /* Helvetica Oblique.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +27,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		00C07A25E8DD4F3AB75497A5 /* Helvetica.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Helvetica.ttf; path = ../src/assets/fonts/Helvetica.ttf; sourceTree = "<group>"; };
 		00E356EE1AD99517003FC87E /* demoprojectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = demoprojectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* demoprojectTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = demoprojectTests.m; sourceTree = "<group>"; };
@@ -46,21 +36,14 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = demoproject/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = demoproject/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = demoproject/main.m; sourceTree = "<group>"; };
-		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = demoproject/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		2B7A3F3312BC40A9A45308DF /* Magnetik Regular.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Magnetik Regular.otf"; path = "../src/assets/fonts/Magnetik Regular.otf"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-demoproject.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-demoproject.debug.xcconfig"; path = "Target Support Files/Pods-demoproject/Pods-demoproject.debug.xcconfig"; sourceTree = "<group>"; };
-		3C3F0A89B4A6465094C5AC37 /* Helvetica Oblique.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Helvetica Oblique.ttf"; path = "../src/assets/fonts/Helvetica Oblique.ttf"; sourceTree = "<group>"; };
-		3D30BE8E9DE444E5BD1855AD /* HelveticaRounded-Bold.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "HelveticaRounded-Bold.otf"; path = "../src/assets/fonts/HelveticaRounded-Bold.otf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-demoproject.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-demoproject.release.xcconfig"; path = "Target Support Files/Pods-demoproject/Pods-demoproject.release.xcconfig"; sourceTree = "<group>"; };
 		5B7EB9410499542E8C5724F5 /* Pods-demoproject-demoprojectTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-demoproject-demoprojectTests.debug.xcconfig"; path = "Target Support Files/Pods-demoproject-demoprojectTests/Pods-demoproject-demoprojectTests.debug.xcconfig"; sourceTree = "<group>"; };
-		756738A0002B45918C72C7FD /* index.js */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = index.js; path = ../src/assets/fonts/index.js; sourceTree = "<group>"; };
+		73E5C94FD4399BEA972AE7EE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = demoproject/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = demoproject/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-demoproject-demoprojectTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-demoproject-demoprojectTests.release.xcconfig"; path = "Target Support Files/Pods-demoproject-demoprojectTests/Pods-demoproject-demoprojectTests.release.xcconfig"; sourceTree = "<group>"; };
 		8ADAD6185D21518ADAC0B65B /* Pods_demoproject.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_demoproject.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9748E295B4B4333AB7E726A7 /* Pods_demoproject_demoprojectTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_demoproject_demoprojectTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		99176ECA4F1945C3BA3CF950 /* Helvetica Bold Oblique.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Helvetica Bold Oblique.ttf"; path = "../src/assets/fonts/Helvetica Bold Oblique.ttf"; sourceTree = "<group>"; };
-		B339A600DF8B4C7384B4B098 /* Helvetica Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Helvetica Light.ttf"; path = "../src/assets/fonts/Helvetica Light.ttf"; sourceTree = "<group>"; };
-		BE55E28D6CAE46DFAB646292 /* Helvetica-Compressed.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Helvetica-Compressed.otf"; path = "../src/assets/fonts/Helvetica-Compressed.otf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -110,7 +93,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
-				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				73E5C94FD4399BEA972AE7EE /* PrivacyInfo.xcprivacy */,
 			);
 			name = demoproject;
 			sourceTree = "<group>";
@@ -128,14 +111,6 @@
 		345D59357C3F44F591F09C0B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				00C07A25E8DD4F3AB75497A5 /* Helvetica.ttf */,
-				BE55E28D6CAE46DFAB646292 /* Helvetica-Compressed.otf */,
-				3D30BE8E9DE444E5BD1855AD /* HelveticaRounded-Bold.otf */,
-				99176ECA4F1945C3BA3CF950 /* Helvetica Bold Oblique.ttf */,
-				B339A600DF8B4C7384B4B098 /* Helvetica Light.ttf */,
-				3C3F0A89B4A6465094C5AC37 /* Helvetica Oblique.ttf */,
-				2B7A3F3312BC40A9A45308DF /* Magnetik Regular.otf */,
-				756738A0002B45918C72C7FD /* index.js */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -278,15 +253,6 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				99B3C7D2827B434186E6E468 /* Helvetica.ttf in Resources */,
-				48C6018555434519ABCE242A /* Helvetica-Compressed.otf in Resources */,
-				995A1DAB76CB49B4B37AF00B /* HelveticaRounded-Bold.otf in Resources */,
-				A9B040F0AF184D3F894FACF6 /* Helvetica Bold Oblique.ttf in Resources */,
-				335C952C16EA4819993A937D /* Helvetica Light.ttf in Resources */,
-				CBEAA44E67174606B8868D90 /* Helvetica Oblique.ttf in Resources */,
-				56B658D2296845209A59DB14 /* Magnetik Regular.otf in Resources */,
-				689485201A6B4BD8A0E94CFE /* index.js in Resources */,
-				256CD6441C18E4B84B6BF596 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -512,7 +478,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = demoproject/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -539,7 +505,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = demoproject/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -637,10 +603,7 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -720,10 +683,7 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

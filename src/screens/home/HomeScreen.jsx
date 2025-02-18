@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
+  Modal,
+  TouchableWithoutFeedback,
+  Animated,
 } from 'react-native';
 import {LineChart, BarChart} from 'react-native-chart-kit';
 import {Dimensions} from 'react-native';
@@ -22,6 +25,7 @@ const screenWidth = Dimensions.get('window').width;
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [selectedToggle, setSelectedToggle] = useState('');
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
   const chartConfig = {
     backgroundColor: Colors.white,
@@ -88,16 +92,6 @@ const HomeScreen = () => {
     datasets: [
       {
         data: [40, 88, 80, 61, 49, 35, 73, 25],
-        backgroundColor: [
-          'rgba(116, 8, 31, 0.94)',
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(153, 102, 255, 0.6)',
-          'rgba(255, 159, 64, 0.6)',
-          'rgba(201, 203, 207, 0.6)',
-          'rgba(54, 162, 235, 0.6)',
-        ],
       },
     ],
   };
@@ -113,6 +107,19 @@ const HomeScreen = () => {
     {svg: SVG.Count5, value: 12, label: 'Pos Conceded'},
   ];
 
+  const handleLogOut = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
+    });
+  };
+  const toggleDrawer = () => {
+    setIsDrawerVisible(!isDrawerVisible);
+  };
+  const navigateToScreen = screen => {
+    navigation.navigate(screen);
+    toggleDrawer();
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -128,7 +135,7 @@ const HomeScreen = () => {
             <TouchableOpacity>
               <SVG.Bell />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={toggleDrawer}>
               <SVG.Line />
             </TouchableOpacity>
           </View>
@@ -153,24 +160,93 @@ const HomeScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
+
+        <Modal
+          visible={isDrawerVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={toggleDrawer}>
+          <TouchableWithoutFeedback onPress={toggleDrawer}>
+            <Animated.View style={styles.drawerOverlay}></Animated.View>
+          </TouchableWithoutFeedback>
+
+          <View style={styles.drawer}>
+            <TouchableOpacity onPress={toggleDrawer} style={styles.closeButton}>
+              <SVG.CrossIcon />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('DashBoardScreen')}>
+              <SVG.HomeIcon />
+              <Text style={styles.drawerText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Training History')}>
+              <SVG.History />
+              <Text style={styles.drawerText}>Log History</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.drawerItem}>
+              <SVG.Entry />
+              <Text style={styles.drawerText}>Add Entry</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Feed')}>
+              <SVG.Feed />
+              <Text style={styles.drawerText}>Feed</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Profile')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Settings')}>
+              <SVG.Setting />
+              <Text style={styles.drawerText}>Settings</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.drawerItem} onPress={handleLogOut}>
+              <SVG.LogOuts />
+              <Text style={styles.drawerText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
         <View style={styles.toggle1}>
-          <TouchableOpacity style={{flexDirection: 'row'}}>
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              backgroundColor: Colors.white,
+              borderRadius: 4,
+            }}>
             <Text style={styles.toggleText1}>from</Text>
+            <SVG.SmallCal style={{alignSelf: 'center'}} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flexDirection: 'row',
+              backgroundColor: Colors.white,
+              borderRadius: 4,
+            }}>
             <Text style={styles.toggleText1}>to</Text>
+            <SVG.SmallCal style={{alignSelf: 'center'}} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            style={{backgroundColor: Colors.white, borderRadius: 4}}>
             <Text style={styles.toggleText1}>
               Type <SVG.VectorArr />
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            style={{backgroundColor: Colors.white, borderRadius: 4}}>
             <Text style={styles.toggleText1}>
               Position <SVG.VectorArr />
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity
+            style={{backgroundColor: Colors.white, borderRadius: 4}}>
             <Text style={styles.toggleText1}>
               technique <SVG.VectorArr />
             </Text>
@@ -181,8 +257,8 @@ const HomeScreen = () => {
           <Text style={styles.sectionTitle}>Training Frequency</Text>
           <LineChart
             data={lineData}
-            width={screenWidth - 20}
-            height={hp((273.79 / 919) * 100)}
+            width={screenWidth - 18}
+            height={hp((298.79 / 919) * 100)}
             chartConfig={chartConfig}
             bezier
             style={styles.chart}
@@ -196,7 +272,7 @@ const HomeScreen = () => {
           </Text>
           <LineChart
             data={TimeData}
-            width={screenWidth - 20}
+            width={screenWidth - 18}
             height={hp((298.79 / 919) * 100)}
             chartConfig={chartConfig}
             style={styles.chart}
@@ -231,7 +307,7 @@ const HomeScreen = () => {
 
           <BarChart
             data={barData}
-            width={screenWidth - 19}
+            width={screenWidth - 18}
             height={hp((255.09 / 919) * 100)}
             chartConfig={chartConfig}
             style={styles.chart1}
@@ -244,7 +320,17 @@ const HomeScreen = () => {
         <View style={styles.statsContainer}>
           {sessionStats.map((stat, index) => (
             <TouchableOpacity key={index} style={styles.statCard}>
-              <stat.svg />
+              <View
+                style={{
+                  backgroundColor: Colors.red,
+                  height: 36,
+                  width: 36,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 4,
+                }}>
+                <stat.svg />
+              </View>
               <Text style={styles.statValue}>
                 {stat.value}
                 {'\n'}
@@ -326,9 +412,8 @@ const styles = StyleSheet.create({
   toggleText1: {
     fontSize: 12,
     fontFamily: Fonts.normal,
-    backgroundColor: Colors.white,
-    paddingHorizontal: 14,
-    padding: 6,
+    paddingHorizontal: 11,
+    padding: 5,
     borderRadius: 4,
   },
   sectionTitle: {
@@ -346,30 +431,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 15,
   },
   statCard: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    width: '49%',
-    padding: 15,
-    marginBottom: 10,
+    padding: wp(4),
+    marginBottom: hp(0.8),
     borderRadius: 8,
     alignItems: 'center',
-    height: 77,
+    width: wp(46.5),
+    height: hp(9.5),
   },
   statValue: {
     fontSize: 20,
     color: Colors.black,
     fontWeight: 'bold',
-    marginLeft: 15,
+    marginLeft: wp(4),
   },
   statLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.gray,
     textAlign: 'center',
-    fontWeight: '400',
-    justifyContent: 'flex-end',
+    fontWeight: Fonts.normal,
   },
   plusButton: {
     position: 'absolute',
@@ -394,6 +478,40 @@ const styles = StyleSheet.create({
   chart1: {
     marginTop: 20,
     borderRadius: 8,
+  },
+  drawerOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+  },
+  drawer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    width: wp((250 / 430) * 100),
+    height: hp((400 / 919) * 100),
+    padding: 20,
+    margin: 15,
+  },
+  drawerItem: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  drawerText: {
+    fontSize: 18,
+    fontFamily: Fonts.normal,
+    marginLeft: 10,
+    top: -2,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
 });
 
