@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Modal,
   TextInput,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import SVG from '../../assets/svg';
 import Colors from '../../theme/color';
@@ -62,23 +63,26 @@ const PricingManagementScreen = () => {
       {discountCodes.map(discount => (
         <View key={discount.id} style={styles.card}>
           <View style={styles.cardContent}>
-            <Text style={{fontWeight: '700', fontSize: 24}}>
-              {discount.discount}
+            <View style={{flexDirection: 'row'}}>
+              <Text style={{fontWeight: '700', fontSize: 24}}>
+                {discount.discount}
+              </Text>
               <Text
                 style={{
                   fontSize: 12,
                   fontFamily: Fonts.normal,
                   color: Colors.darkGray,
                 }}>
-                {' '}
                 off
               </Text>
-            </Text>
+            </View>
+
             <Text style={styles.subtitle}>
               Expires: {discount.expires} - Code:
-              <Text style={styles.bold}>{discount.code}</Text>
+              <Text style={{color: Colors.darkGray}}>{discount.code}</Text>
             </Text>
           </View>
+
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.deleteButton}>
               <Text style={styles.buttonText}>Delete</Text>
@@ -95,62 +99,69 @@ const PricingManagementScreen = () => {
       </TouchableOpacity>
 
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Membership</Text>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add Membership</Text>
 
-            <Text style={styles.label}>Amount</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter amount"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
-            />
+              <Text style={styles.label}>Amount</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter amount"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+              />
 
-            <Text style={styles.label}>Membership</Text>
-            <TouchableOpacity
-              style={styles.dropdown}
-              onPress={() => setDropdownOpen(!dropdownOpen)}>
-              <Text>{selectedTier || 'Select Tier'}</Text>
-              <SVG.SmallArrow />
-            </TouchableOpacity>
-            {dropdownOpen && (
-              <View style={styles.dropdownList}>
-                {['Monthly', 'Yearly', 'Drop-in'].map(tier => (
-                  <TouchableOpacity
-                    key={tier}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setSelectedTier(tier);
-                      setDropdownOpen(false);
-                    }}>
-                    <Text>{tier}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Optional..."
-              value={description}
-              onChangeText={setDescription}
-            />
-
-            <View style={styles.modalButtonContainer}>
+              <Text style={styles.label}>Membership</Text>
               <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                style={styles.dropdown}
+                onPress={() => setDropdownOpen(!dropdownOpen)}>
+                <Text>{selectedTier || 'Select Tier'}</Text>
+                <SVG.SmallArrow />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.addMembershipButton}>
-                <Text style={styles.addMembershipText}>Add Membership</Text>
-              </TouchableOpacity>
+              {dropdownOpen && (
+                <View style={styles.dropdownList}>
+                  {['Monthly', 'Yearly', 'Drop-in'].map(
+                    (tier, index, array) => (
+                      <TouchableOpacity
+                        key={tier}
+                        style={[
+                          styles.dropdownItem,
+                          index === array.length - 1 && {borderBottomWidth: 0},
+                        ]}
+                        onPress={() => {
+                          setSelectedTier(tier);
+                          setDropdownOpen(false);
+                        }}>
+                        <Text>{tier}</Text>
+                      </TouchableOpacity>
+                    ),
+                  )}
+                </View>
+              )}
+
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optional..."
+                value={description}
+                onChangeText={setDescription}
+              />
+
+              <View style={styles.modalButtonContainer}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setModalVisible(false)}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.addMembershipButton}>
+                  <Text style={styles.addMembershipText}>Add Membership</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </ScrollView>
   );
@@ -195,8 +206,8 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: Colors.red,
-    width: wp((57 / 430) * 100),
-    height: hp((23 / 919) * 100),
+    width: wp((65 / 430) * 100),
+    height: hp((30 / 919) * 100),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
@@ -204,8 +215,8 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: Colors.black,
-    width: wp((44 / 430) * 100),
-    height: hp((23 / 919) * 100),
+    width: wp((54 / 430) * 100),
+    height: hp((30 / 919) * 100),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 4,
@@ -256,11 +267,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dropdown: {
-    borderWidth: 1,
-    borderColor: Colors.gray,
+    backgroundColor: Colors.gray,
     padding: 10,
     borderRadius: 5,
-    backgroundColor: Colors.litegray,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -268,7 +277,7 @@ const styles = StyleSheet.create({
   dropdownList: {
     backgroundColor: Colors.litegray,
     borderRadius: 5,
-    marginVertical: 5,
+    marginBottom: 5,
   },
   dropdownItem: {
     padding: 10,

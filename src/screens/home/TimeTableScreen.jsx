@@ -16,10 +16,10 @@ import {Fonts} from '../../assets/fonts';
 import moment from 'moment';
 
 const classes = [
-  {id: '1', name: 'Gi class', color: Colors.green},
-  {id: '2', name: 'No Gi class', color: Colors.yellow},
-  {id: '3', name: 'Open Mat class', color: Colors.red},
-  {id: '4', name: 'Competition class', color: Colors.white},
+  {id: '1', name: 'Gi class', time: '9AM - 10AM', color: Colors.green},
+  {id: '2', name: 'No Gi class', time: '12PM - 3PM', color: Colors.yellow},
+  {id: '3', name: 'Open Mat class', time: '5PM - 8PM', color: Colors.red},
+  {id: '4', name: 'Competition class', time: '9PM - 11PM', color: Colors.white},
 ];
 
 const TimeTableScreen = () => {
@@ -39,6 +39,8 @@ const TimeTableScreen = () => {
   const [description, setDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState(moment());
   const [currentMonth, setCurrentMonth] = useState(moment());
+  const [selectedStartTime, setSelectedStartTime] = useState(null);
+  const [selectedEndTime, setSelectedEndTime] = useState(null);
 
   const goToPreviousMonth = () => {
     const newMonth = moment(currentMonth).subtract(1, 'months');
@@ -93,6 +95,15 @@ const TimeTableScreen = () => {
                   },
                 ]}>
                 {item.name}
+              </Text>
+              <Text
+                style={[
+                  styles.classText1,
+                  {
+                    color: item.id === '4' ? Colors.black : Colors.white,
+                  },
+                ]}>
+                {item.time}
               </Text>
             </TouchableOpacity>
           )}
@@ -212,10 +223,17 @@ const TimeTableScreen = () => {
                         ].map((time, index) => (
                           <TouchableOpacity
                             key={index}
-                            style={styles.timeList}
+                            style={[
+                              styles.timeList,
+                              selectedStartTime === time && {
+                                backgroundColor: Colors.gray,
+                                borderRadius: 4,
+                                paddingHorizontal: 5,
+                              },
+                            ]}
                             onPress={() => {
                               setStartTime(time);
-                              setShowStartTimePicker(false);
+                              setSelectedStartTime(time);
                             }}>
                             <Text>{time}</Text>
                           </TouchableOpacity>
@@ -236,10 +254,17 @@ const TimeTableScreen = () => {
                         ].map((time, index) => (
                           <TouchableOpacity
                             key={index}
-                            style={styles.timeList}
+                            style={[
+                              styles.timeList,
+                              selectedEndTime === time && {
+                                backgroundColor: Colors.gray,
+                                borderRadius: 4,
+                                paddingHorizontal: 5,
+                              },
+                            ]}
                             onPress={() => {
                               setEndTime(time);
-                              setShowEndTimePicker(false);
+                              setSelectedEndTime(time);
                             }}>
                             <Text>{time}</Text>
                           </TouchableOpacity>
@@ -284,7 +309,7 @@ const TimeTableScreen = () => {
           <View style={styles.modalOverlay1}>
             <View style={styles.modalContainer}>
               <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={styles.label}>New Class</Text>
+                <Text style={styles.label}>Class Name</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter new class details"
@@ -345,9 +370,14 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   classText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontFamily: Fonts.normal,
     color: Colors.black,
+  },
+  classText1: {
+    fontSize: 12,
+    color: Colors.black,
+    fontFamily: Fonts.normal,
   },
   addClass: {
     borderWidth: 1,
@@ -380,8 +410,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginVertical: 8,
+    fontFamily: Fonts.normal,
+    marginVertical: 5,
   },
   input: {
     borderWidth: 1,
@@ -400,10 +430,14 @@ const styles = StyleSheet.create({
   },
   selectedDropdown: {
     backgroundColor: Colors.litegray,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   dropdownList: {
-    backgroundColor: Colors.litegray,
+    backgroundColor: Colors.dimgray,
     borderRadius: 8,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   dropdownItem: {
     padding: 10,
@@ -438,16 +472,18 @@ const styles = StyleSheet.create({
   cancelButton: {
     borderWidth: 1,
     borderColor: Colors.red,
-    padding: 10,
-    borderRadius: 6,
+    padding: 6,
+    borderRadius: 8,
+    justifyContent: 'center',
   },
   cancelText: {
     color: Colors.red,
   },
   addClassButton: {
     backgroundColor: Colors.black,
-    padding: 10,
-    borderRadius: 6,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
   },
   addClassButtonText: {
     color: Colors.white,
@@ -464,6 +500,11 @@ const styles = StyleSheet.create({
   timePicker: {
     flexDirection: 'row',
     flex: 1,
+    borderWidth: 1,
+    padding: 5,
+    borderRadius: 8,
+    borderColor: Colors.litegray,
+    marginBottom: 5,
   },
   timeText: {
     fontSize: 16,

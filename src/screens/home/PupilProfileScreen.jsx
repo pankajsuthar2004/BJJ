@@ -14,6 +14,7 @@ import {Dimensions} from 'react-native';
 import Colors from '../../theme/color';
 import IMAGES from '../../assets/images';
 import SVG from '../../assets/svg';
+import {Fonts} from '../../assets/fonts';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -49,14 +50,21 @@ const PupilProfileScreen = () => {
         <Image source={IMAGES.ProfilePic} style={styles.profileImage} />
         <View style={styles.profileInfo}>
           <Text style={styles.name}>Paul Watson</Text>
-          <Text style={styles.email}>paul.watson@example.com</Text>
-          <Text style={styles.phone}>+123 456 7890</Text>
-        </View>
-        <View style={styles.contactIcons}>
-          <SVG.Email />
-          <SVG.Phone />
+          <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+            <Text style={styles.email}>paul.watson@example.com</Text>
+            <SVG.IcEmail />
+          </View>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+            <Text style={styles.phone}>+123 456 7890</Text>
+            <SVG.LightPhone />
+          </View>
         </View>
       </View>
+      <View
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
+        }}></View>
 
       <Text style={styles.sectionTitle}>Attendance History</Text>
       <BarChart
@@ -79,6 +87,11 @@ const PupilProfileScreen = () => {
       </Text>
 
       <Text style={styles.sectionTitle}>Training Activity</Text>
+      <View
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
+        }}></View>
       <View style={styles.infoSection}>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Session Type</Text>
@@ -93,6 +106,11 @@ const PupilProfileScreen = () => {
           <Text style={styles.valueHighlight}>Improve Guard Passing</Text>
         </View>
       </View>
+      <View
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
+        }}></View>
       <View style={styles.infoSection}>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Session Type</Text>
@@ -107,8 +125,18 @@ const PupilProfileScreen = () => {
           <Text style={styles.valueHighlight}>Work on Submissions</Text>
         </View>
       </View>
+      <View
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
+        }}></View>
 
       <Text style={styles.sectionTitle}>Payment Records</Text>
+      <View
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
+        }}></View>
       <View style={styles.infoSection}>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Payment Date</Text>
@@ -123,6 +151,11 @@ const PupilProfileScreen = () => {
           <Text style={styles.value}>11/1/2025</Text>
         </View>
       </View>
+      <View
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
+        }}></View>
 
       <Text style={styles.sectionTitle}>Notes</Text>
       <TextInput
@@ -198,9 +231,6 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     fontSize: 14,
   },
-  contactIcons: {
-    gap: 10,
-  },
   sectionTitle: {
     color: Colors.white,
     fontSize: 16,
@@ -246,25 +276,28 @@ const styles = StyleSheet.create({
   },
   inviteButton: {
     backgroundColor: 'green',
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
+    paddingHorizontal: 15,
   },
   inviteButtonText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontFamily: Fonts.normal,
   },
   sendInviteButton: {
     backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
     marginBottom: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 15,
   },
   sendInviteButtonText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontFamily: Fonts.normal,
   },
 });
 

@@ -82,9 +82,14 @@ const MessageScreen = () => {
           <FlatList
             data={recipientOptions}
             keyExtractor={item => item}
-            renderItem={({item}) => (
+            renderItem={({item, index}) => (
               <TouchableOpacity
-                style={styles.dropdownItem}
+                style={[
+                  styles.dropdownItem,
+                  index === recipientOptions.length - 1 && {
+                    borderBottomWidth: 0,
+                  },
+                ]}
                 onPress={() => {
                   setSelectedRecipient(item);
                   setDropdownVisible(false);

@@ -4,7 +4,7 @@ import {store} from '../store/Store';
 
 const defaultHeaders = {
   'Content-Type': 'application/json',
-  // 'Content-Type': 'multipart/form-data',r
+  // 'Content-Type': 'multipart/form-data',
 };
 
 type APIResponse<T> = {
@@ -31,6 +31,7 @@ const makeRequest = async <T>(params: Params) => {
 
     // const user = await getValue('user');
     const user = store.getState().user?.user;
+    console.log('Redux Store User:', store.getState().user);
 
     if (!user || !user.token) {
       console.warn(

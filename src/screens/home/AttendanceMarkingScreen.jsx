@@ -60,6 +60,7 @@ const AttendanceMarkingScreen = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(moment());
   const [selectedDate, setSelectedDate] = useState(moment());
+  const [selectedClass, setSelectedClass] = useState('Select Class');
 
   const classes = [
     'Gi',
@@ -76,19 +77,16 @@ const AttendanceMarkingScreen = () => {
     noGiData: [50, 70, 65, 80, 60, 75, 100, 85, 45, 32, 65, 87, 25],
   };
 
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
   const goToPreviousMonth = () => {
     const newMonth = moment(currentMonth).subtract(1, 'months');
     setCurrentMonth(newMonth);
-    setSelectedDate(moment(newMonth).startOf('month')); // Set the first day of the new month
+    setSelectedDate(moment(newMonth).startOf('month'));
   };
 
   const goToNextMonth = () => {
     const newMonth = moment(currentMonth).add(1, 'months');
     setCurrentMonth(newMonth);
-    setSelectedDate(moment(newMonth).startOf('month')); // Set the first day of the new month
+    setSelectedDate(moment(newMonth).startOf('month'));
   };
 
   const firstDayOfMonth = moment(currentMonth).startOf('month').day();
@@ -139,10 +137,8 @@ const AttendanceMarkingScreen = () => {
         return Colors.green;
       case 'Absent':
         return Colors.red;
-      case 'Holiday':
-        return Colors.yellow;
       default:
-        return Colors.gray;
+        return Colors.white;
     }
   };
 
@@ -167,11 +163,6 @@ const AttendanceMarkingScreen = () => {
           backgroundColor:
             selectedStatus === 'Absent' ? Colors.red : 'transparent',
         };
-      case 'Holiday':
-        return {
-          backgroundColor:
-            selectedStatus === 'Holiday' ? Colors.yellow : 'transparent',
-        };
       default:
         return {};
     }
@@ -179,32 +170,36 @@ const AttendanceMarkingScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={{flex: 1, flexDirection: 'row'}}>
-        <TouchableOpacity onPress={goToPreviousMonth}>
-          <SVG.IconRight />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{flex: 1, fontSize: 20}}
-          onPress={() => setModalVisible(true)}>
-          <CalendarStrip
-            scrollable
-            style={{height: 120}}
-            calendarColor={'black'}
-            calendarHeaderStyle={{color: 'white', fontSize: 20}}
-            dateNumberStyle={{color: 'white'}}
-            dateNameStyle={{color: 'white'}}
-            highlightDateNumberStyle={{color: 'white'}}
-            highlightDateContainerStyle={{
-              backgroundColor: 'red',
-              borderRadius: 8,
-            }}
-            selectedDate={selectedDate}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={goToNextMonth}>
-          <SVG.IconLeft />
-        </TouchableOpacity>
-      </View>
+      {/* <View style={{flex: 1, flexDirection: 'row'}}> */}
+      <TouchableOpacity
+        style={{flex: 1, fontSize: 20}}
+        onPress={() => setModalVisible(true)}>
+        <CalendarStrip
+          scrollable
+          style={{height: 120, width: 410, right: 22}}
+          calendarColor={'black'}
+          calendarHeaderStyle={{color: 'white', fontSize: 20}}
+          dateNumberStyle={{color: 'white'}}
+          dateNameStyle={{color: 'white'}}
+          highlightDateNumberStyle={{color: 'white'}}
+          highlightDateContainerStyle={{
+            backgroundColor: 'red',
+            borderRadius: 8,
+          }}
+          selectedDate={selectedDate}
+        />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{position: 'absolute'}}
+        onPress={goToPreviousMonth}>
+        <SVG.IconRight />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{position: 'absolute', right: 6}}
+        onPress={goToNextMonth}>
+        <SVG.IconLeft />
+      </TouchableOpacity>
+      {/* </View> */}
 
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -269,22 +264,26 @@ const AttendanceMarkingScreen = () => {
               fontSize: 16,
               fontFamily: Fonts.normal,
             }}>
-            Select Class
+            {selectedClass}
           </Text>
           <SVG.DropDown />
         </TouchableOpacity>
+
         {dropdownOpen && (
           <FlatList
             data={classes}
             keyExtractor={index => index.toString()}
-            renderItem={({item}) => (
+            renderItem={({item, index}) => (
               <TouchableOpacity
-                style={styles.dropdownItem}
+                style={[
+                  styles.dropdownItem,
+                  index === classes.length - 1 && {borderBottomWidth: 0},
+                ]}
                 onPress={() => {
-                  setSelectedStatus(item);
+                  setSelectedClass(item);
                   setDropdownOpen(false);
                 }}>
-                <Text style={{fontSize: 16, fontFamily: Fonts.normal}} t>
+                <Text style={{fontSize: 16, fontFamily: Fonts.normal}}>
                   {item}
                 </Text>
               </TouchableOpacity>
@@ -322,12 +321,6 @@ const AttendanceMarkingScreen = () => {
             onPress={() => setSelectedStatus('Absent')}>
             <Text style={styles.statusText}>Absent</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.statusButton, getStatusButtonStyle('Holiday')]}
-            onPress={() => setSelectedStatus('Holiday')}>
-            <Text style={styles.statusText}>Holiday</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -343,14 +336,19 @@ const AttendanceMarkingScreen = () => {
           color="red"
           label="Absent"
         />
-        <CircularProgress
-          percentage={attendanceData.holidays}
-          color="orange"
-          label="Holidays"
-        />
       </View>
       <Text style={styles.labels}>Attendance</Text>
       <View style={styles.chartContainer}>
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <SVG.Maskgroup />
+            <Text style={{color: Colors.red}}>Gi</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <SVG.Nogi />
+            <Text style={{color: Colors.darkGray}}>No Gi</Text>
+          </View>
+        </View>
         <CustomLineChart
           chartData={{
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -364,7 +362,6 @@ const AttendanceMarkingScreen = () => {
                 color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
               },
             ],
-            legend: ['Gi', 'No Gi'],
           }}
         />
       </View>
@@ -450,8 +447,11 @@ const styles = StyleSheet.create({
   },
   dropdownItem: {
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.litegray,
+    borderBottomWidth: 0.3,
+    borderBottomColor: Colors.gray,
+    backgroundColor: Colors.litegray,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
   },
   profileCard: {
     backgroundColor: Colors.darkGray,
@@ -474,8 +474,8 @@ const styles = StyleSheet.create({
   },
   attendanceSummary: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     marginTop: 20,
+    gap: 15,
   },
   progressContainer: {
     alignItems: 'center',
@@ -497,9 +497,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   chartContainer: {
-    paddingTop: 15,
-    borderRadius: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 10,
     marginBottom: 10,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+    gap: 5,
   },
   alertBox: {
     backgroundColor: Colors.red,

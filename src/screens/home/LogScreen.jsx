@@ -22,6 +22,7 @@ import {hp, wp} from '../../utility/ResponseUI';
 import Slider from '@react-native-community/slider';
 import {useNavigation} from '@react-navigation/native';
 import SVG from '../../assets/svg';
+import CustomButton from '../../components/CustomButton';
 
 const trainingTypes = [
   'Gi',
@@ -36,10 +37,10 @@ const LogScreen = () => {
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [selectedType, setSelectedType] = useState('Training Type');
   const [selectedAreas, setSelectedAreas] = useState([]);
+  const [isAreasDropdownOpen, setAreasDropdownOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [value, setValue] = useState('');
-
   const [learnings, setLearnings] = useState('');
 
   const isDarkMode = Appearance.getColorScheme() === 'dark';
@@ -54,7 +55,6 @@ const LogScreen = () => {
         : [...prev, area],
     );
   };
-
   const onDayPress = day => {
     setDate(new Date(day.dateString));
     setShowCalendar(false);
@@ -65,14 +65,22 @@ const LogScreen = () => {
     setDropdownOpen(false);
   };
 
-  const handleLogOut = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
-    });
-  };
+  const sessionStats = [
+    {svg: SVG.Count1, value: 20, label: 'Sessions Count'},
+    {svg: SVG.Count2, value: 10, label: 'Gi Count'},
+    {svg: SVG.Count3, value: 8, label: 'No Gi Count'},
+    {svg: SVG.Count4, value: 19, label: 'Tech Learned'},
+    {svg: SVG.Count5, value: 3, label: 'Sub Achieved'},
+    {svg: SVG.Count6, value: 6, label: 'Sub Conceded'},
+    {svg: SVG.Count6, value: 7, label: 'Pos Achieved'},
+    {svg: SVG.Count5, value: 12, label: 'Pos Conceded'},
+  ];
   const toggleDrawer = () => {
     setIsDrawerVisible(!isDrawerVisible);
+  };
+  const navigateToScreen = screen => {
+    navigation.navigate(screen);
+    toggleDrawer();
   };
 
   return (
@@ -93,7 +101,6 @@ const LogScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-
         <Modal
           visible={isDrawerVisible}
           transparent={true}
@@ -107,30 +114,73 @@ const LogScreen = () => {
             <TouchableOpacity onPress={toggleDrawer} style={styles.closeButton}>
               <SVG.CrossIcon />
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.drawerItem} onPress={handleLogOut}>
-              <SVG.LogOutIcon
-                style={{backgroundColor: Colors.black, borderRadius: 5}}
-              />
-              <Text style={styles.drawerText}>Log Out</Text>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('DashBoardScreen')}>
+              <SVG.HomeIcon />
+              <Text style={styles.drawerText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Training History')}>
+              <SVG.History />
+              <Text style={styles.drawerText}>Log History</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('RoundScreen')}>
+              <SVG.Entry />
+              <Text style={styles.drawerText}>Add Entry</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Feed')}>
+              <SVG.Feed />
+              <Text style={styles.drawerText}>Feed</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Profile')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Attendance View')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Pupil Attendance</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.drawerItem}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Billing/subscription</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Gym Profile')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Become Gym Owner</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Settings')}>
+              <SVG.Setting />
+              <Text style={styles.drawerText}>Settings</Text>
             </TouchableOpacity>
           </View>
         </Modal>
-
         <View style={styles.section}>
           <Text style={styles.label}>Select Date</Text>
           <TouchableOpacity
             onPress={() => setShowCalendar(!showCalendar)}
             style={styles.datePicker}>
             <SVG.VectorCal />
-            <Text
-              style={{
-                fontSize: 16,
-                fontFamily: Fonts.normal,
-                alignSelf: 'center',
-              }}>
+            <Text style={styles.dateText}>
               {date.toISOString().split('T')[0]}{' '}
             </Text>
+
+            <View style={{justifyContent: 'center'}}>
+              <SVG.VectorArr />
+            </View>
           </TouchableOpacity>
 
           <Modal
@@ -138,55 +188,68 @@ const LogScreen = () => {
             transparent={true}
             visible={showCalendar}
             onRequestClose={() => setShowCalendar(false)}>
-            <View style={styles.modalBackground}>
-              <View style={styles.modalContainer}>
-                <Calendar
-                  markedDates={{
-                    [date.toISOString().split('T')[0]]: {
-                      selected: true,
-                      selectedColor: Colors.red,
-                    },
-                  }}
-                  theme={{
-                    backgroundColor: Colors.white,
-                    calendarBackground: Colors.white,
-                    textSectionTitleColor: Colors.black,
-                    selectedDayBackgroundColor: Colors.red,
-                    monthTextColor: Colors.black,
-                    selectedDayTextColor: Colors.black,
-                    todayTextColor: Colors.black,
-                  }}
-                  renderArrow={direction => (
-                    <Text
-                      style={{
-                        left: 20,
-                        textAlign: 'center',
-                      }}>
-                      {direction === 'left' ? (
-                        <SVG.RedLeft />
-                      ) : (
-                        <SVG.RedRight />
+            <TouchableWithoutFeedback onPress={() => setShowCalendar(false)}>
+              <View style={styles.modalBackground}>
+                <TouchableWithoutFeedback>
+                  <View style={styles.modalContainer}>
+                    <Calendar
+                      markedDates={{
+                        [date.toISOString().split('T')[0]]: {
+                          selected: true,
+                          selectedColor: Colors.red,
+                          selectedTextColor: Colors.white,
+                        },
+                      }}
+                      theme={{
+                        backgroundColor: Colors.white,
+                        calendarBackground: Colors.white,
+                        textSectionTitleColor: Colors.black,
+                        selectedDayBackgroundColor: Colors.red,
+                        monthTextColor: Colors.black,
+                        selectedDayTextColor: Colors.white,
+                        todayTextColor: Colors.black,
+                      }}
+                      renderArrow={direction => (
+                        <Text
+                          style={{
+                            position: 'absolute',
+                            right: direction === 'left' ? -250 : 1,
+                          }}>
+                          {direction === 'left' ? (
+                            <SVG.LeftFill />
+                          ) : (
+                            <SVG.RightFill />
+                          )}
+                        </Text>
                       )}
-                    </Text>
-                  )}
-                  onDayPress={onDayPress}
-                />
-                <SVG.IconCalendar
-                  style={{
-                    position: 'absolute',
-                    top: 38,
-                    left: 10,
-                  }}
-                />
+                      onDayPress={onDayPress}
+                    />
+                    <SVG.IconCalendar
+                      style={{
+                        position: 'absolute',
+                        top: 15,
+                        left: 10,
+                      }}
+                    />
+                  </View>
+                </TouchableWithoutFeedback>
               </View>
-            </View>
+            </TouchableWithoutFeedback>
           </Modal>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.label}>Training Type</Text>
           <TouchableOpacity
-            style={styles.dropdown}
+            style={[
+              styles.dropdown11,
+              isDropdownOpen && {
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+              },
+            ]}
             onPress={() => setDropdownOpen(!isDropdownOpen)}>
             <Text style={styles.dropdownText}>{selectedType}</Text>
             {isDropdownOpen ? <SVG.SmallArrow /> : <SVG.SmallRight />}
@@ -196,9 +259,12 @@ const LogScreen = () => {
               <FlatList
                 data={trainingTypes}
                 keyExtractor={item => item}
-                renderItem={({item}) => (
+                renderItem={({item, index}) => (
                   <TouchableOpacity
-                    style={styles.dropdownItem}
+                    style={[
+                      styles.dropdownItem,
+                      index !== trainingTypes.length - 1 && styles.border,
+                    ]}
                     onPress={() => handleSelect(item)}>
                     <Text style={styles.itemText}>{item}</Text>
                   </TouchableOpacity>
@@ -207,7 +273,6 @@ const LogScreen = () => {
             </View>
           )}
         </View>
-
         <View style={styles.section}>
           <Text style={styles.label}>
             Duration<Text style={{fontSize: 12}}> (Minutes)</Text>
@@ -242,28 +307,50 @@ const LogScreen = () => {
             </View>
           </View>
         </View>
-
         <View style={styles.section}>
           <Text style={styles.label}>Areas Covered</Text>
-          <View style={{backgroundColor: Colors.white, borderRadius: 8}}>
-            <View style={styles.dropdown}>
-              <Text style={styles.dropdownLabel1}>Areas Covered</Text>
-              <SVG.SmallArrow />
-            </View>
-            {areas.map(area => (
-              <TouchableOpacity
-                key={area}
-                style={styles.item1}
-                onPress={() => toggleSelection(area)}>
-                <Text style={styles.itemText1}>{area}</Text>
-                {selectedAreas.includes(area) ? (
-                  <SVG.FilterTicks />
-                ) : (
-                  <SVG.EmptyTick />
+          <TouchableOpacity
+            style={[
+              styles.dropdown11,
+              isAreasDropdownOpen && {
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+              },
+            ]}
+            onPress={() => setAreasDropdownOpen(!isAreasDropdownOpen)}>
+            <Text style={styles.dropdownText}>Areas Covered</Text>
+            {isAreasDropdownOpen ? <SVG.SmallArrow /> : <SVG.SmallRight />}
+          </TouchableOpacity>
+          {isAreasDropdownOpen && (
+            <View
+              style={{
+                backgroundColor: Colors.white,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
+              }}>
+              <FlatList
+                data={areas}
+                keyExtractor={item => item}
+                renderItem={({item, index}) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.item1,
+                      index !== areas.length - 1 && styles.border,
+                    ]}
+                    onPress={() => toggleSelection(item)}>
+                    <Text style={styles.itemText1}>{item}</Text>
+                    {selectedAreas.includes(item) ? (
+                      <SVG.FilterTicks />
+                    ) : (
+                      <SVG.EmptyTick />
+                    )}
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
-            ))}
-          </View>
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -320,7 +407,6 @@ const LogScreen = () => {
             <Text style={styles.roundLabel1}>Yes</Text>
           </View>
         </View>
-
         <View
           style={{
             backgroundColor: Colors.darkGray,
@@ -339,12 +425,11 @@ const LogScreen = () => {
             ROUND 2
           </Text>
         </View>
-
         <View
           style={{
             flexDirection: 'row',
           }}>
-          <View style={{flex: 0.9, marginBottom: 20}}>
+          <View style={{flex: 0.9, marginBottom: 5}}>
             <Text style={styles.roundLabel}>Durations</Text>
             <Text style={styles.roundLabel}>Partner</Text>
             <Text style={styles.roundLabel}>Submissions Achieved</Text>
@@ -373,13 +458,11 @@ const LogScreen = () => {
             <Text style={styles.roundLabel1}>Yes</Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          style={styles.addRoundButton}
-          onPress={() => navigation.navigate('RoundScreen')}>
-          <SVG.PinkPlus />
-        </TouchableOpacity>
-
+        <CustomButton
+          title="Add New Round"
+          onPress={() => navigation.navigate('RoundScreen')}
+          style={{marginBottom: 10, paddingVertical: 10}}
+        />
         <View style={styles.section}>
           <Text style={styles.label}>Learnings</Text>
           <TextInput
@@ -397,21 +480,13 @@ const LogScreen = () => {
             onChangeText={text => setLearnings(text)}
           />
         </View>
-
         <View style={styles.section}>
           <Text style={styles.label}>Attach Files</Text>
-          <TouchableOpacity style={styles.fileButton}>
-            <SVG.PaperClip />
-            <Text
-              style={{
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: Fonts.normal,
-              }}>
-              Choose File
-            </Text>
+          <TouchableOpacity style={{alignSelf: 'flex-start'}}>
+            <SVG.AttachFiles />
           </TouchableOpacity>
         </View>
+        <CustomButton title="Submit Now" />
       </ScrollView>
     </SafeAreaView>
   );
@@ -458,11 +533,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 8, 8, 0.9)',
   },
   modalContainer: {
-    backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 20,
-    width: wp((400 / 430) * 100),
-    height: hp((410 / 919) * 100),
+    overflow: 'hidden',
+    borderColor: Colors.white,
+    width: wp((390 / 430) * 100),
   },
   buttonText: {
     color: Colors.white,
@@ -476,11 +550,17 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.normal,
   },
   datePicker: {
-    backgroundColor: Colors.white,
-    padding: 10,
-    borderRadius: 5,
     flexDirection: 'row',
-    gap: 5,
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: Colors.white,
+    gap: 10,
+  },
+  dateText: {
+    fontSize: 16,
+    fontFamily: Fonts.normal,
+    flex: 1,
   },
   calendarContainer: {
     marginTop: 10,
@@ -582,16 +662,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: 20,
   },
-  fileButton: {
-    backgroundColor: Colors.gray,
-    borderRadius: 5,
-    width: wp((145 / 430) * 100),
-    height: hp((40 / 919) * 100),
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
   sliderView: {
     borderRadius: 15,
     padding: 14,
@@ -641,13 +711,12 @@ const styles = StyleSheet.create({
   },
   drawerItem: {
     flexDirection: 'row',
-    marginTop: 40,
+    marginTop: 15,
   },
   drawerText: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: Fonts.normal,
     marginLeft: 10,
-    top: -2,
   },
   drawer: {
     position: 'absolute',
@@ -656,15 +725,19 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 20,
     width: wp((250 / 430) * 100),
-    height: hp((200 / 919) * 100),
+    height: hp((430 / 919) * 100),
     padding: 20,
+    margin: 15,
   },
-  dropdown: {
+  dropdown11: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
-    borderWidth: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.litegray,
+    // borderTopLeftRadius: 8,
+    // borderTopRightRadius: 8,
     borderRadius: 8,
     backgroundColor: 'white',
   },
@@ -672,9 +745,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   dropdownList: {
-    marginTop: 4,
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -683,29 +756,37 @@ const styles = StyleSheet.create({
   },
   dropdownItem: {
     padding: 12,
+  },
+  border: {
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: Colors.litegray,
   },
   itemText: {
     fontSize: 16,
   },
-  dropdown: {
+  dropdownLabel1: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  item1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  itemText1: {
+    fontSize: 16,
+    color: Colors.black,
+  },
+  dropdown1: {
     backgroundColor: 'white',
     padding: 12,
     borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  dropdownLabel1: {fontSize: 16, fontWeight: 'bold'},
-  item1: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 12,
     borderBottomWidth: 1,
-    borderColor: Colors.litegray,
+    borderBottomColor: Colors.litegray,
   },
-  itemText1: {fontSize: 16, color: Colors.black},
 });
 
 export default LogScreen;

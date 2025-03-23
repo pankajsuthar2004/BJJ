@@ -8,6 +8,9 @@ const Colors = {
   darkGray: '#333333',
   yellow: '#FF9600',
   litegray: '#E6E6E6',
+  mediumGray: '#545454',
+  darkBrown: '#333333',
+  dimgray: '#F3F3F3',
 };
 
 export default Colors;

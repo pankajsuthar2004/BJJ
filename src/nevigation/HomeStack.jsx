@@ -30,6 +30,18 @@ import TimeTableScreen from '../screens/home/TimeTableScreen';
 import InvitationAndApprovalScreen from '../screens/home/InvitationAndApprovalScreen';
 import ReportsAndInsightsScreen from '../screens/home/ReportsAndInsightsScreen';
 import MessageScreen from '../screens/home/MessageScreen';
+import GymHistoryScreen from '../screens/home/GymHistoryScreen';
+import SubscriptionPlanScreen from '../screens/home/SubscriptionPlanScreen';
+import ReceiptScreen from '../screens/home/ReceiptScreen';
+import GymProfileScreen from '../screens/home/GymProfileScreen';
+import AttendanceViewScreen from '../screens/home/AttendanceViewScreen';
+import GymDetailScreen from '../screens/home/GymDetailScreen';
+import GymNotificationScreen from '../screens/home/GymNotificationScreen';
+import EditGymProfileScreen from '../screens/home/EditGymProfileScreen';
+import BillingScreen from '../screens/home/BillingScreen';
+import GymJumperScreen from '../screens/home/GymJumperScreen';
+import InvoiceDetailScreen from '../screens/home/InvoiceDetailScreen';
+import BillingDetailScreen from '../screens/home/BillingDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -198,6 +210,98 @@ const HomeStack = () => {
           headerShown: true,
           headerStyle: {
             backgroundColor: Colors.darkGray,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="Gym History"
+        component={GymHistoryScreen}
+        options={{headerShown: true}}
+      />
+      <Stack.Screen
+        name="Membership"
+        component={SubscriptionPlanScreen}
+        options={{headerShown: true}}
+      />
+
+      <Stack.Screen
+        name="Receipt"
+        component={ReceiptScreen}
+        options={{
+          // headerLeft: () => false,
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: Colors.darkGray,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="Gym Profile"
+        component={GymProfileScreen}
+        options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: Colors.darkBrown,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="Attendance View"
+        component={AttendanceViewScreen}
+        options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: Colors.darkGray,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="gym profile"
+        component={GymDetailScreen}
+        options={{headerShown: true}}
+      />
+      <Stack.Screen
+        name="Notification"
+        component={GymNotificationScreen}
+        options={{headerShown: true}}
+      />
+      <Stack.Screen
+        name="edit profile"
+        component={EditGymProfileScreen}
+        options={{headerShown: true}}
+      />
+      <Stack.Screen
+        name="billing"
+        component={BillingScreen}
+        options={{headerShown: true}}
+      />
+      <Stack.Screen
+        name="Gym Jumper"
+        component={GymJumperScreen}
+        options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: Colors.darkBrown,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="Invoice Detail"
+        component={InvoiceDetailScreen}
+        options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: Colors.darkBrown,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="Billing"
+        component={BillingDetailScreen}
+        options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: Colors.darkBrown,
           },
         }}
       />

@@ -19,11 +19,11 @@ const ReportsAndInsightsScreen = () => {
 
   const sessionData = [
     {
-      session: 'session',
-      avg: 'avg',
-      min: 'min',
-      max: 'max',
-      current: 'current',
+      session: 'Session',
+      avg: 'Avg',
+      min: 'Min',
+      max: 'Max',
+      current: 'Current',
     },
     {session: 'Gi', avg: 275, min: 570, max: 570, current: 570},
     {session: 'No-Gi', avg: 125, min: 75, max: 300, current: 300},
@@ -145,13 +145,28 @@ const ReportsAndInsightsScreen = () => {
         <FlatList
           data={sessionData}
           keyExtractor={item => item.session}
-          renderItem={({item}) => (
-            <View style={styles.row}>
-              <Text style={styles.cell}>{item.session}</Text>
-              <Text style={styles.cell}>{item.avg}</Text>
-              <Text style={styles.cell}>{item.min}</Text>
-              <Text style={styles.cell}>{item.max}</Text>
-              <Text style={styles.cell}>{item.current}</Text>
+          renderItem={({item, index}) => (
+            <View
+              style={[
+                styles.row,
+                index === 0 && styles.headerRow,
+                index === 0 && {borderBottomWidth: 0},
+              ]}>
+              <Text style={[styles.cell, index === 0 && styles.headerCell]}>
+                {item.session}
+              </Text>
+              <Text style={[styles.cell, index === 0 && styles.headerCell]}>
+                {item.avg}
+              </Text>
+              <Text style={[styles.cell, index === 0 && styles.headerCell]}>
+                {item.min}
+              </Text>
+              <Text style={[styles.cell, index === 0 && styles.headerCell]}>
+                {item.max}
+              </Text>
+              <Text style={[styles.cell, index === 0 && styles.headerCell]}>
+                {item.current}
+              </Text>
             </View>
           )}
         />
@@ -238,6 +253,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.litegray,
   },
+  headerRow: {
+    backgroundColor: Colors.darkGray,
+    borderRadius: 8,
+    padding: 5,
+  },
+  headerCell: {
+    color: Colors.white,
+    textAlign: 'center',
+  },
   cell: {
     color: Colors.white,
     fontSize: 12,
@@ -257,10 +281,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 5,
   },
   exportText: {
     color: Colors.white,
-    fontSize: 16,
+    fontSize: 14,
   },
 });
 

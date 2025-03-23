@@ -15,7 +15,6 @@ import {hp, wp} from '../../utility/ResponseUI';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
 import {LineChart} from 'react-native-chart-kit';
-import {Screen} from 'react-native-screens';
 
 const screenWidth = Dimensions.get('window').width;
 const styles = StyleSheet.create({
@@ -56,8 +55,9 @@ const styles = StyleSheet.create({
   chartContainer: {
     borderRadius: 20,
     marginBottom: 10,
+    marginRight: -8,
+    backgroundColor: 'white',
   },
-
   header: {
     marginBottom: 20,
     flexDirection: 'row',
@@ -241,10 +241,49 @@ const PricingDashboardScreen = () => {
       </View>
 
       <View style={styles.chartContainer}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingHorizontal: 20,
+            marginTop: 10,
+          }}>
+          <Text
+            style={{
+              color: Colors.gray,
+              fontSize: 16,
+              fontFamily: Fonts.normal,
+              paddingLeft: 20,
+              // marginBottom: 10,
+            }}>
+            Monthly Revenue
+          </Text>
+          <View>
+            <Text
+              style={{
+                color: Colors.black,
+                fontSize: 24,
+                fontWeight: '700',
+              }}>
+              $2,654
+            </Text>
+            <Text
+              style={{
+                color: Colors.green,
+                fontSize: 16,
+                fontFamily: Fonts.normal,
+                textAlign: 'right',
+                marginTop: 10,
+              }}>
+              +36%
+            </Text>
+          </View>
+        </View>
+
         <LineChart
           data={lineData}
-          width={screenWidth - 18}
-          height={hp((298.79 / 919) * 100)}
+          width={screenWidth - 20}
+          height={hp((290.79 / 919) * 100)}
           chartConfig={chartConfig}
           bezier
           style={styles.chart}

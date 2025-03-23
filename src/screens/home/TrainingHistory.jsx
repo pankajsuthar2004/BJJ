@@ -12,6 +12,7 @@ import SVG from '../../assets/svg';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
+import {Calendar} from 'react-native-calendars';
 
 const sessions = [
   {
@@ -51,7 +52,20 @@ const sessions = [
 
 const TrainingScreen = () => {
   const [selectedSession, setSelectedSession] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('2024-12-17');
+  const [selectedEndDate, setSelectedEndDate] = useState('2024-12-17');
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [calendarEndVisible, setCalendarEndVisible] = useState(false);
 
+  const handleDateSelect = (day, isEndDate = false) => {
+    if (isEndDate) {
+      setSelectedEndDate(day.dateString);
+      setCalendarEndVisible(false);
+    } else {
+      setSelectedDate(day.dateString);
+      setCalendarVisible(false);
+    }
+  };
   const openModal = session => {
     setSelectedSession(session);
   };
@@ -108,20 +122,54 @@ const TrainingScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.filterBar}>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>12/17/2024</Text>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setCalendarVisible(true)}>
+          <Text style={styles.filterText}>{selectedDate}</Text>
+          <SVG.MiniCalendar />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>12/17/2024</Text>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setCalendarEndVisible(true)}>
+          <Text style={styles.filterText}>{selectedEndDate}</Text>
+          <SVG.MiniCalendar />
         </TouchableOpacity>
+        <Modal visible={calendarVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay1}>
+            <View style={styles.calendarContainer1}>
+              <Calendar
+                onDayPress={day => handleDateSelect(day)}
+                markedDates={{[selectedDate]: {selected: true}}}
+                theme={{selectedDayBackgroundColor: Colors.black}}
+              />
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={calendarEndVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay1}>
+            <View style={styles.calendarContainer1}>
+              <Calendar
+                onDayPress={day => handleDateSelect(day, true)}
+                markedDates={{[selectedEndDate]: {selected: true}}}
+                theme={{selectedDayBackgroundColor: Colors.black}}
+              />
+            </View>
+          </View>
+        </Modal>
         <TouchableOpacity style={styles.filterButton}>
           <Text style={styles.filterText}>Gym</Text>
+          <SVG.ArrowIcon />
         </TouchableOpacity>
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search"
-          placeholderTextColor="#ccc"
-        />
+        <View style={{flex: 1}}>
+          <TextInput
+            style={[styles.searchBar, {height: 35}]}
+            placeholder="Search"
+            placeholderTextColor="#ccc"
+            multiline={false}
+          />
+          <SVG.SearchIcon style={{position: 'absolute', right: 10, top: 9}} />
+        </View>
       </View>
 
       <FlatList
@@ -151,30 +199,40 @@ const TrainingScreen = () => {
               </View>
               <View style={styles.sessionList}>
                 <View style={styles.sessionList1}>
-                  <SVG.UilCalender />
+                  <View style={{top: 3}}>
+                    <SVG.UilCalender />
+                  </View>
                   <Text style={styles.modalText}>{selectedSession.date}</Text>
                 </View>
                 <View style={styles.sessionList1}>
-                  <SVG.Time />
+                  <View style={{top: 3}}>
+                    <SVG.Time />
+                  </View>
                   <Text style={styles.modalText}>
                     {selectedSession.duration}
                   </Text>
                 </View>
                 <View style={styles.sessionList1}>
-                  <SVG.Rounds />
+                  <View style={{top: 3}}>
+                    <SVG.Rounds />
+                  </View>
                   <Text style={styles.modalText}>
                     Rounds {selectedSession.rounds}
                   </Text>
                 </View>
               </View>
               <View style={styles.sessionList1}>
-                <SVG.Exchange />
+                <View style={{top: 3}}>
+                  <SVG.Exchange />
+                </View>
                 <Text style={styles.modalText}>
                   Partners: {selectedSession.partners}
                 </Text>
               </View>
               <View style={styles.sessionList1}>
-                <SVG.SolarNotes />
+                <View style={{top: 3}}>
+                  <SVG.SolarNotes />
+                </View>
                 <Text style={styles.modalText}>{selectedSession.title}</Text>
               </View>
 
@@ -209,14 +267,15 @@ const styles = StyleSheet.create({
   filterBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 5,
+    gap: 2.5,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    padding: 10,
+    padding: wp(1),
     borderRadius: 5,
+    gap: 4,
   },
   title: {
     fontSize: 12,
@@ -227,9 +286,8 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   searchBar: {
-    flex: 1,
     backgroundColor: Colors.white,
-    padding: 10,
+    paddingRight: 25,
     borderRadius: 5,
     color: Colors.darkGray,
   },
@@ -362,6 +420,18 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: Colors.white,
     fontSize: 16,
+  },
+  modalOverlay1: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarContainer1: {
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 16,
+    width: '90%',
   },
 });
 

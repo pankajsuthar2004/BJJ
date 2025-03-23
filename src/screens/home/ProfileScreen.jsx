@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  TextInput,
 } from 'react-native';
 import IMAGES from '../../assets/images';
 import Colors from '../../theme/color';
@@ -19,6 +18,7 @@ const ProfileScreen = () => {
   const [showGymList, setShowGymList] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGymPending, setIsGymPending] = useState(true);
+  const [selectedGym, setSelectedGym] = useState('Gym with Josh');
 
   const menuItems = [
     {
@@ -27,10 +27,15 @@ const ProfileScreen = () => {
       action: () => navigation.navigate('Notifications'),
     },
     {
-      title: 'Gym',
+      title: selectedGym,
       icon: SVG.GymIcon,
-      action: () => setShowGymList(!showGymList),
+      action: () => setShowGymList(prev => !prev),
       isPending: isGymPending,
+    },
+    {
+      title: 'Join New Gym & History',
+      icon: SVG.GymIcon,
+      action: () => navigation.navigate('Gym History'),
     },
     {
       title: 'Support',
@@ -50,12 +55,16 @@ const ProfileScreen = () => {
   ];
 
   const gymData = [
-    {id: '1', title: 'Gym Jumper'},
-    {id: '2', title: 'Gym for Fitness'},
-    {id: '3', title: 'Gym Wellness'},
-    {id: '4', title: 'Gym Jackpot'},
-    {id: '5', title: 'Gym with Josh'},
+    {id: '2', title: 'Gym with Mintoo'},
+    {id: '3', title: 'Fitness Fighter'},
+    {id: '4', title: 'Body Builder'},
+    {id: '5', title: 'Gym with Johny'},
   ];
+
+  const handleSelectGym = gym => {
+    setSelectedGym(gym);
+    setShowGymList(false);
+  };
 
   const filterData = gymData.filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -100,55 +109,50 @@ const ProfileScreen = () => {
                 <item.icon />
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuTitle}>{item.title}</Text>
-                  <Text style={styles.menuSubtitle}>
-                    Lorem Ipsum, giving information on its
-                  </Text>
+                  {item.title !== selectedGym && (
+                    <Text style={styles.menuSubtitle}>
+                      Lorem Ipsum, giving information on its
+                    </Text>
+                  )}
                 </View>
                 {item.isPending && (
-                  <View style={styles.pendingBadge}>
-                    <Text style={styles.pendingText}>Pending</Text>
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>Active</Text>
                   </View>
                 )}
                 <SVG.WhiteRight />
               </View>
             </TouchableOpacity>
 
-            {item.title === 'Gym' && showGymList && (
-              <View
-                style={{
-                  backgroundColor: Colors.white,
-                  borderRadius: 8,
-                  marginBottom: 8,
-                }}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <TextInput
-                    style={[styles.searchInput, {flex: 1}]}
-                    placeholder="gym"
-                    placeholderTextColor={Colors.gray}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
-                  <TouchableOpacity>
-                    <SVG.Voice />
+            {item.title === selectedGym && showGymList && (
+              <View style={{marginBottom: 6}}>
+                {filterData.map(item => (
+                  <TouchableOpacity
+                    style={styles.listItem}
+                    key={item.id}
+                    onPress={() => handleSelectGym(item.title)}>
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}>
+                        <SVG.GymIcon />
+                        <Text style={styles.listItemText}>{item.title}</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.activeBadge}>Active</Text>
+                      </View>
+                    </View>
                   </TouchableOpacity>
-                  <TouchableOpacity>
-                    <SVG.Search style={{marginHorizontal: 10}} />
-                  </TouchableOpacity>
-                </View>
-
-                <View
-                  style={{
-                    backgroundColor: Colors.litegray,
-                    borderBottomRightRadius: 8,
-                    borderBottomLeftRadius: 8,
-                  }}>
-                  {filterData.map(item => (
-                    <TouchableOpacity style={styles.listItem} key={item.id}>
-                      <Text style={styles.listItemText}>{item.title}</Text>
-                      <SVG.SearchIcon />
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                ))}
               </View>
             )}
           </View>
@@ -244,32 +248,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: Fonts.normal,
   },
-  searchInput: {
-    color: Colors.gray,
-    borderRadius: 8,
-    marginHorizontal: 8,
-    fontSize: 16,
-  },
   listItem: {
+    backgroundColor: Colors.mediumGray,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 8,
-    marginHorizontal: 15,
-    marginBottom: 10,
-    justifyContent: 'space-between',
+    marginBottom: 2,
+    gap: 5,
+
+    padding: 15,
   },
   listItemText: {
-    color: Colors.gray,
+    color: Colors.white,
     fontSize: 12,
   },
-  pendingBadge: {
-    backgroundColor: Colors.yellow,
+  statusBadge: {
+    backgroundColor: Colors.green,
     paddingVertical: 5,
     paddingHorizontal: 8,
     borderRadius: 8,
     marginRight: 10,
   },
-  pendingText: {
+  activeBadge: {
+    backgroundColor: Colors.green,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginRight: 10,
+    color: Colors.white,
+    fontSize: 12,
+  },
+  statusText: {
     color: Colors.white,
     fontSize: 14,
     fontWeight: 'bold',

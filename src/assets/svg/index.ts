@@ -154,6 +154,19 @@ import SmallRight from '../svg/smallright.svg';
 import IconRight from '../svg/iconright.svg';
 import IconLeft from '../svg/iconleft.svg';
 import FilterTicks from '../svg/filterticks.svg';
+import Dumbbell from '../svg/dumbbell.svg';
+import MasterCard from '../svg/mastercard.svg';
+import GreenTick from '../svg/greentick.svg';
+import DownloadIcon from '../svg/downloadicon.svg';
+import ShareIcon from '../svg/shareicon.svg';
+import LeftFill from '../svg/liftfill.svg';
+import RightFill from '../svg/rightfill.svg';
+import Plan from '../svg/plan.svg';
+import AttachFiles from '../svg/attachfiles.svg';
+import Nogi from '../svg/nogi.svg';
+import Maskgroup from '../svg/maskgroup.svg';
+import IcEmail from '../svg/icemail.svg';
+import LightPhone from '../svg/lightphone.svg';
 
 const SVG = {
   Google,
@@ -312,5 +325,18 @@ const SVG = {
   IconRight,
   IconLeft,
   FilterTicks,
+  Dumbbell,
+  MasterCard,
+  GreenTick,
+  DownloadIcon,
+  ShareIcon,
+  LeftFill,
+  RightFill,
+  Plan,
+  AttachFiles,
+  Nogi,
+  Maskgroup,
+  IcEmail,
+  LightPhone,
 };
 export default SVG;

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import IMAGES from '../../assets/images';
 import CustomLineChart from '../../components/CustomLineChart';
@@ -70,6 +71,16 @@ const PupilsAttendanceScreen = () => {
 
       <Text style={styles.sectionTitle}>Attendance</Text>
       <View style={styles.chartContainer}>
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <SVG.Maskgroup />
+            <Text style={{color: Colors.red}}>Gi</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <SVG.Nogi />
+            <Text style={{color: Colors.darkGray}}>No Gi</Text>
+          </View>
+        </View>
         <CustomLineChart
           chartData={{
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -83,7 +94,6 @@ const PupilsAttendanceScreen = () => {
                 color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
               },
             ],
-            legend: ['Gi', 'No Gi'],
           }}
         />
       </View>
@@ -95,9 +105,7 @@ const PupilsAttendanceScreen = () => {
           <TouchableOpacity
             style={styles.card}
             onPress={() => {
-              if (item.name === 'John Smith') {
-                navigation.navigate('Attendance Marking');
-              }
+              navigation.navigate('Attendance Marking');
             }}>
             <Image source={item.image} style={styles.image} />
             <Text style={styles.name}>{item.name}</Text>
@@ -111,36 +119,38 @@ const PupilsAttendanceScreen = () => {
       />
 
       <Modal visible={isModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity
-              style={styles.filterOption}
-              onPress={() => toggleFilter('gi')}>
-              <Text style={styles.filterText}>Gi</Text>
-              {selectedFilters.gi ? <SVG.Tick /> : <SVG.EmptyTick />}
-            </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <TouchableOpacity
+                style={styles.filterOption}
+                onPress={() => toggleFilter('gi')}>
+                <Text style={styles.filterText}>Gi</Text>
+                {selectedFilters.gi ? <SVG.Tick /> : <SVG.EmptyTick />}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.filterOption}
-              onPress={() => toggleFilter('noGi')}>
-              <Text style={styles.filterText}>No Gi</Text>
-              {selectedFilters.noGi ? <SVG.Tick /> : <SVG.EmptyTick />}
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.filterOption}
+                onPress={() => toggleFilter('noGi')}>
+                <Text style={styles.filterText}>No Gi</Text>
+                {selectedFilters.noGi ? <SVG.Tick /> : <SVG.EmptyTick />}
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={() => setIsModalVisible(false)}>
-              <Text style={styles.applyText}>Apply Filters</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={() => {
-                setSelectedFilters({gi: false, noGi: false});
-              }}>
-              <Text style={styles.resetText}>Reset All Filters</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={() => setIsModalVisible(false)}>
+                <Text style={styles.applyText}>Apply Filters</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.resetButton}
+                onPress={() => {
+                  setSelectedFilters({gi: false, noGi: false});
+                }}>
+                <Text style={styles.resetText}>Reset All Filters</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -187,6 +197,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+    gap: 5,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -215,6 +236,7 @@ const styles = StyleSheet.create({
   classes: {
     color: Colors.green,
     fontSize: 16,
+    textAlign: 'right',
   },
   modalOverlay: {
     flex: 1,

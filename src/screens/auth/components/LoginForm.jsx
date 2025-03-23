@@ -42,7 +42,10 @@ const LoginForm = () => {
       showToast({message: 'Invalid Email'});
       return;
     }
-
+    if (enteredPass.length < 8) {
+      showToast({message: 'Password must be at least 8 characters long'});
+      return;
+    }
     if (!Validation.password.test(enteredPass)) {
       showToast({message: 'Invalid password'});
       return;
@@ -68,7 +71,7 @@ const LoginForm = () => {
       );
       showToast({message: 'Login successful!', type: 'success'});
     } catch (error) {
-      showToast({message: 'Login failed. Please try again.', type: 'error'});
+      showToast({message: 'Invalid Password.', type: 'error'});
     } finally {
       setLoading(false);
     }
@@ -82,7 +85,13 @@ const LoginForm = () => {
           <View style={styles.inputContainer}>
             <SVG.User style={{marginLeft: 24}} />
             <TextInput
-              style={[styles.inputWithIcon, {color: inputTextColor}]}
+              style={[
+                styles.inputWithIcon,
+                {
+                  color: inputTextColor,
+                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                },
+              ]}
               placeholder="Email"
               placeholderTextColor={placeholderColor}
               value={email}
@@ -93,7 +102,13 @@ const LoginForm = () => {
           <View style={styles.inputContainer}>
             <SVG.Lock style={{marginLeft: 24}} />
             <TextInput
-              style={[styles.inputWithIcon, {color: inputTextColor}]}
+              style={[
+                styles.inputWithIcon,
+                {
+                  color: inputTextColor,
+                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
+                },
+              ]}
               placeholder="Password"
               placeholderTextColor={placeholderColor}
               value={password}

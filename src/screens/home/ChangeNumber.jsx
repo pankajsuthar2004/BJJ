@@ -6,13 +6,39 @@ import SVG from '../../assets/svg';
 import CustomTextInput from '../../components/CustomTextInput';
 import {useNavigation} from '@react-navigation/native';
 import CustomButton from '../../components/CustomButton';
+import {showToast} from '../../utility/Toast';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
 
 const ChangeNumber = () => {
   const [number, setNumber] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const handleUpdate = () => {
-    navigation.goBack();
+  const handleUpdate = async () => {
+    if (!number.trim()) {
+      showToast({message: 'Please enter a valid number', type: 'error'});
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await makeRequest({
+        endPoint: EndPoints.Mobile,
+        method: 'PATCH',
+        body: {mobile: number},
+      });
+
+      showToast({message: 'Number updated successfully!', type: 'success'});
+      navigation.goBack();
+    } catch (error) {
+      showToast({
+        message: error.message || 'Failed to update number',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -21,10 +47,15 @@ const ChangeNumber = () => {
         <CustomTextInput
           value={number}
           onChangeText={setNumber}
-          placeholder="Enter New number"
+          placeholder="Enter New Number"
           icon={SVG.PhoneList}
+          keyboardType="numeric"
         />
-        <CustomButton title="Update" onPress={handleUpdate} />
+        <CustomButton
+          title={loading ? 'Updating...' : 'Update'}
+          onPress={handleUpdate}
+          disabled={loading}
+        />
       </View>
     </ScrollView>
   );
@@ -38,35 +69,6 @@ const styles = StyleSheet.create({
   profileHeader: {
     padding: 20,
     gap: 10,
-  },
-  profileContainer: {
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  editText: {
-    fontSize: 16,
-    color: Colors.gray,
-    fontFamily: Fonts.normal,
-    marginTop: 5,
-  },
-  label: {
-    fontSize: 20,
-    color: Colors.white,
-    fontFamily: Fonts.normal,
-    marginTop: 20,
-  },
-  updateButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
-    paddingVertical: 16,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  updateText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

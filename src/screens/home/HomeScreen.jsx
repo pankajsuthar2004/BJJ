@@ -19,6 +19,7 @@ import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
 import {hp, wp} from '../../utility/ResponseUI';
 import SVG from '../../assets/svg';
+import {store} from '../../store/Store';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -107,19 +108,15 @@ const HomeScreen = () => {
     {svg: SVG.Count5, value: 12, label: 'Pos Conceded'},
   ];
 
-  const handleLogOut = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
-    });
-  };
   const toggleDrawer = () => {
-    setIsDrawerVisible(!isDrawerVisible);
+    setIsDrawerVisible(prev => !prev);
   };
+
   const navigateToScreen = screen => {
     navigation.navigate(screen);
     toggleDrawer();
   };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -142,23 +139,38 @@ const HomeScreen = () => {
         </View>
 
         <View style={styles.toggle}>
-          {['Weekly', 'Monthly', 'Quarterly'].map(toggle => (
-            <TouchableOpacity
-              key={toggle}
-              style={[
-                styles.toggleButton,
-                selectedToggle === toggle && {backgroundColor: Colors.red},
-              ]}
-              onPress={() => setSelectedToggle(toggle)}>
-              <Text
+          {['Weekly', 'Monthly', 'Quarterly', 'Yearly'].map(
+            (toggle, index, array) => (
+              <TouchableOpacity
+                key={toggle}
                 style={[
-                  styles.toggleText,
-                  selectedToggle === toggle && {color: Colors.white},
-                ]}>
-                {toggle}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                  styles.toggleButton,
+                  selectedToggle === toggle
+                    ? {backgroundColor: Colors.red}
+                    : index === 0 && {
+                        borderTopLeftRadius: 8,
+                        borderBottomLeftRadius: 8,
+                      },
+                  index === array.length - 1 && {
+                    borderTopRightRadius: 8,
+                    borderBottomRightRadius: 8,
+                  },
+                  index !== array.length - 1,
+                ]}
+                onPress={() => setSelectedToggle(toggle)}>
+                <Text
+                  style={[
+                    styles.toggleText,
+                    selectedToggle === toggle && {
+                      color: Colors.white,
+                      fontWeight: 'bold',
+                    },
+                  ]}>
+                  {toggle}
+                </Text>
+              </TouchableOpacity>
+            ),
+          )}
         </View>
 
         <Modal
@@ -172,10 +184,10 @@ const HomeScreen = () => {
 
           <View style={styles.drawer}>
             <TouchableOpacity onPress={toggleDrawer} style={styles.closeButton}>
-              <SVG.CrossIcon />
+              <SVG.Cancel />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.drawerItem}
+              style={styles.drawerItem1}
               onPress={() => navigateToScreen('DashBoardScreen')}>
               <SVG.HomeIcon />
               <Text style={styles.drawerText}>Home</Text>
@@ -186,7 +198,9 @@ const HomeScreen = () => {
               <SVG.History />
               <Text style={styles.drawerText}>Log History</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.drawerItem}>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('RoundScreen')}>
               <SVG.Entry />
               <Text style={styles.drawerText}>Add Entry</Text>
             </TouchableOpacity>
@@ -204,16 +218,31 @@ const HomeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.drawerItem}
+              onPress={() => navigateToScreen('Attendance View')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Pupil Attendance</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('billing')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Billing/subscription</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
+              onPress={() => navigateToScreen('Gym Profile')}>
+              <SVG.IconProfile />
+              <Text style={styles.drawerText}>Become Gym Owner</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.drawerItem}
               onPress={() => navigateToScreen('Settings')}>
               <SVG.Setting />
               <Text style={styles.drawerText}>Settings</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.drawerItem} onPress={handleLogOut}>
-              <SVG.LogOuts />
-              <Text style={styles.drawerText}>Log Out</Text>
-            </TouchableOpacity>
           </View>
         </Modal>
+
         <View style={styles.toggle1}>
           <TouchableOpacity
             style={{
@@ -222,7 +251,7 @@ const HomeScreen = () => {
               borderRadius: 4,
             }}>
             <Text style={styles.toggleText1}>from</Text>
-            <SVG.SmallCal style={{alignSelf: 'center'}} />
+            <SVG.SmallCal style={{alignSelf: 'center', right: 6}} />
           </TouchableOpacity>
           <TouchableOpacity
             style={{
@@ -231,25 +260,40 @@ const HomeScreen = () => {
               borderRadius: 4,
             }}>
             <Text style={styles.toggleText1}>to</Text>
-            <SVG.SmallCal style={{alignSelf: 'center'}} />
+            <SVG.SmallCal style={{alignSelf: 'center', right: 6}} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={{backgroundColor: Colors.white, borderRadius: 4}}>
-            <Text style={styles.toggleText1}>
-              Type <SVG.VectorArr />
-            </Text>
+            style={{
+              backgroundColor: Colors.white,
+              borderRadius: 4,
+              flexDirection: 'row',
+            }}>
+            <Text style={styles.toggleText1}>Type</Text>
+            <View style={{top: 8, right: 4}}>
+              <SVG.VectorArr />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{backgroundColor: Colors.white, borderRadius: 4}}>
-            <Text style={styles.toggleText1}>
-              Position <SVG.VectorArr />
-            </Text>
+            style={{
+              backgroundColor: Colors.white,
+              borderRadius: 4,
+              flexDirection: 'row',
+            }}>
+            <Text style={styles.toggleText1}>Position</Text>
+            <View style={{top: 8, right: 4}}>
+              <SVG.VectorArr />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{backgroundColor: Colors.white, borderRadius: 4}}>
-            <Text style={styles.toggleText1}>
-              technique <SVG.VectorArr />
-            </Text>
+            style={{
+              backgroundColor: Colors.white,
+              borderRadius: 4,
+              flexDirection: 'row',
+            }}>
+            <Text style={styles.toggleText1}>technique</Text>
+            <View style={{top: 8, right: 4}}>
+              <SVG.VectorArr />
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -257,7 +301,7 @@ const HomeScreen = () => {
           <Text style={styles.sectionTitle}>Training Frequency</Text>
           <LineChart
             data={lineData}
-            width={screenWidth - 18}
+            width={screenWidth - 24}
             height={hp((298.79 / 919) * 100)}
             chartConfig={chartConfig}
             bezier
@@ -272,7 +316,7 @@ const HomeScreen = () => {
           </Text>
           <LineChart
             data={TimeData}
-            width={screenWidth - 18}
+            width={screenWidth - 24}
             height={hp((298.79 / 919) * 100)}
             chartConfig={chartConfig}
             style={styles.chart}
@@ -307,7 +351,7 @@ const HomeScreen = () => {
 
           <BarChart
             data={barData}
-            width={screenWidth - 18}
+            width={screenWidth - 24}
             height={hp((255.09 / 919) * 100)}
             chartConfig={chartConfig}
             style={styles.chart1}
@@ -357,6 +401,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: Colors.black,
+    padding: 2,
   },
   scrollContent: {
     padding: 10,
@@ -385,18 +430,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   toggle: {
-    flex: 1,
     flexDirection: 'row',
     margin: 5,
+    overflow: 'hidden',
+    borderRadius: 8,
     gap: 2,
   },
   toggleButton: {
-    borderRadius: 8,
-    alignSelf: 'center',
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.pink,
-    width: wp((131 / 430) * 100),
-    height: hp((40 / 919) * 100),
+    paddingVertical: 10,
+    backgroundColor: Colors.white,
   },
   toggleText: {
     fontSize: 16,
@@ -494,24 +539,27 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 20,
     width: wp((250 / 430) * 100),
-    height: hp((400 / 919) * 100),
+    height: hp((465 / 919) * 100),
     padding: 20,
     margin: 15,
   },
+  drawerItem1: {
+    flexDirection: 'row',
+    marginTop: 35,
+  },
   drawerItem: {
     flexDirection: 'row',
-    marginTop: 20,
+    marginTop: 15,
   },
   drawerText: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: Fonts.normal,
     marginLeft: 10,
-    top: -2,
   },
   closeButton: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 30,
+    right: 15,
   },
 });
 
