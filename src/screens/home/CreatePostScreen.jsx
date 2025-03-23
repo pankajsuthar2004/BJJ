@@ -219,7 +219,7 @@ const CreatePostScreen = () => {
             </View>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, {height: 40}]}
                 placeholder="Search locations"
                 value={search}
                 onChangeText={setSearch}
@@ -265,7 +265,7 @@ const CreatePostScreen = () => {
             </View>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, {height: 40}]}
                 placeholder="Search person"
                 value={search}
                 onChangeText={setSearch}
@@ -371,7 +371,7 @@ const CreatePostScreen = () => {
               </View>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, {height: 40}]}
                   placeholder="Search person"
                   value={search}
                   onChangeText={setSearch}
@@ -407,8 +407,9 @@ const CreatePostScreen = () => {
           </View>
         </Modal>
       </View>
-
-      <CustomButton title="Post Now" onPress={handleUpdate} />
+      <View style={{marginBottom: 30}}>
+        <CustomButton title="Post Now" onPress={handleUpdate} />
+      </View>
     </ScrollView>
   );
 };
@@ -423,9 +424,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    gap: 10,
   },
   username: {
-    marginLeft: 10,
     fontSize: 16,
     fontFamily: Fonts.normal,
     color: Colors.gray,
@@ -501,10 +502,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingRight: 35,
     fontSize: 14,
     marginBottom: 10,
     backgroundColor: Colors.litegray,
+    paddingHorizontal: 15,
   },
   searchIcon: {
     position: 'absolute',

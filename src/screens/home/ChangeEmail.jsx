@@ -1,30 +1,50 @@
 import React, {useState} from 'react';
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import IMAGES from '../../assets/images';
+import {View, ScrollView, StyleSheet, ActivityIndicator} from 'react-native';
 import Colors from '../../theme/color';
-import {Fonts} from '../../assets/fonts';
 import SVG from '../../assets/svg';
 import CustomTextInput from '../../components/CustomTextInput';
 import {useNavigation} from '@react-navigation/native';
 import CustomButton from '../../components/CustomButton';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
+import makeRequest from '../../api/http';
 
 const ChangeEmail = () => {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const handleUpdate = () => {
-    navigation.goBack();
+  const handleUpdate = async () => {
+    if (!email.trim()) {
+      showToast({message: 'Please enter a valid email', type: 'error'});
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await makeRequest({
+        endPoint: EndPoints.Email,
+        method: 'PATCH',
+        body: {email},
+      });
+
+      showToast({
+        message: response?.message || 'Email updated successfully',
+        type: 'success',
+      });
+      navigation.goBack();
+    } catch (error) {
+      showToast({
+        message: error?.message || 'Failed to update email',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.profileHeader}>
         <CustomTextInput
           value={email}
@@ -32,7 +52,12 @@ const ChangeEmail = () => {
           placeholder="Enter New Email"
           icon={SVG.EmailLite}
         />
-        <CustomButton title="Update" onPress={handleUpdate} />
+        <CustomButton
+          title="Update"
+          onPress={handleUpdate}
+          disabled={loading}
+        />
+        {loading && <ActivityIndicator size="large" color={Colors.white} />}
       </View>
     </ScrollView>
   );
@@ -46,35 +71,6 @@ const styles = StyleSheet.create({
   profileHeader: {
     padding: 20,
     gap: 10,
-  },
-  profileContainer: {
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  editText: {
-    fontSize: 16,
-    color: Colors.gray,
-    fontFamily: Fonts.normal,
-    marginTop: 5,
-  },
-  label: {
-    fontSize: 20,
-    color: Colors.white,
-    fontFamily: Fonts.normal,
-    marginTop: 20,
-  },
-  updateButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.red,
-    paddingVertical: 16,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  updateText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

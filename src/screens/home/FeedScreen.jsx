@@ -91,11 +91,11 @@ const FeedScreen = () => {
             style={{
               position: 'absolute',
               right: 40,
-              top: 17,
+              top: 19,
             }}>
             <SVG.Voice />
           </TouchableOpacity>
-          <TouchableOpacity style={{position: 'absolute', right: 20, top: 17}}>
+          <TouchableOpacity style={{position: 'absolute', right: 20, top: 19}}>
             <SVG.Search />
           </TouchableOpacity>
         </View>
@@ -204,9 +204,10 @@ const styles = StyleSheet.create({
     width: wp((340 / 430) * 100),
     height: hp((42 / 919) * 100),
     marginVertical: 4,
-    paddingHorizontal: 15,
     justifyContent: 'center',
     alignSelf: 'center',
+    paddingRight: 65,
+    paddingLeft: 15,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -220,16 +221,7 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     fontSize: 16,
   },
-  search1: {
-    backgroundColor: Colors.white,
-    borderRadius: 8,
-    width: wp((340 / 430) * 100),
-    height: hp((42 / 919) * 100),
-    marginVertical: 4,
-    paddingHorizontal: 15,
-    justifyContent: 'center',
-    alignSelf: 'center',
-  },
+
   card: {
     backgroundColor: Colors.darkGray,
     borderRadius: 16,
@@ -292,16 +284,17 @@ const styles = StyleSheet.create({
   tagsContainer: {
     flexDirection: 'row',
     marginTop: 10,
-    gap: 10,
+    gap: 5,
   },
   tag: {
     color: Colors.gray,
-    padding: 5,
+    paddingHorizontal: 15,
     borderRadius: 50,
     marginRight: 5,
     fontSize: 12,
     borderWidth: 1,
     borderColor: Colors.gray,
+    paddingVertical: 6,
   },
 });
 

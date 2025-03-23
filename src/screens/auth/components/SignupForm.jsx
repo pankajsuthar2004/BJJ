@@ -41,29 +41,28 @@ const SignUpForm = () => {
     const enteredEmail = email.trim();
     const enteredPass = password.trim();
     const enteredConfirmPass = confirmPassword.trim();
-
     if (enteredName.length === 0) {
       showToast({message: 'Enter Name'});
       return;
     }
-
     if (!Validation.email.test(enteredEmail)) {
       showToast({message: 'Invalid Email Address'});
       return;
     }
-
+    if (enteredPass.length < 8) {
+      showToast({message: 'Password must be at least 8 characters long'});
+      return;
+    }
     if (!Validation.password.test(enteredPass)) {
       showToast({
         message: 'Invalid Password',
       });
       return;
     }
-
     if (enteredPass !== enteredConfirmPass) {
       showToast({message: 'Passwords do not match'});
       return;
     }
-
     try {
       setLoading(true);
       const response = await makeRequest({
@@ -79,9 +78,7 @@ const SignUpForm = () => {
       });
       console.log(response);
       dispatch(setUser(response));
-
       showToast({message: 'Signup successful!', type: 'success'});
-
       navigation.dispatch(
         CommonActions.reset({
           index: 0,

@@ -16,7 +16,7 @@ import Colors from '../../theme/color';
 import SVG from '../../assets/svg';
 import IMAGES from '../../assets/images';
 import {useNavigation} from '@react-navigation/native';
-import {hp, wp} from '../../utility/ResponseUI';
+import {Fonts} from '../../assets/fonts';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -63,26 +63,30 @@ const PupilScreen = () => {
           flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: 'center',
+          paddingVertical: 12,
+          borderBottomWidth: 0.5,
+          borderBottomColor: Colors.mediumGray,
         }}>
         <View style={styles.profileContainer}>
           <TouchableOpacity
             onPress={() => navigation.navigate('Pupil Profile')}>
             <Image source={IMAGES.ProfilePic} />
           </TouchableOpacity>
-          <View>
+
+          <View style={{flex: 1}}>
             <Text style={styles.name}>Paul Watson</Text>
-            <View style={{flexDirection: 'row', gap: 8}}>
+            <View style={styles.rankContainer}>
               <SVG.Belt />
               <Text style={styles.rank}>Blue Belt</Text>
             </View>
           </View>
         </View>
-        <View>
-          <TouchableOpacity style={styles.statusBadge}>
-            <Text style={styles.statusText}>Paid</Text>
-          </TouchableOpacity>
-        </View>
+
+        <TouchableOpacity style={styles.statusBadge}>
+          <Text style={styles.statusText}>Paid</Text>
+        </TouchableOpacity>
       </View>
+
       <View style={styles.infoSection}>
         <View style={styles.infoRow}>
           <Text style={styles.infoText}>Started</Text>
@@ -133,6 +137,12 @@ const PupilScreen = () => {
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment History</Text>
+        <View style={styles.tableHeader}>
+          <Text style={styles.tableHeaderText}>Date</Text>
+          <Text style={styles.tableHeaderText}>Amount</Text>
+          <Text style={styles.tableHeaderText}>Status</Text>
+        </View>
+
         <FlatList
           data={paymentHistory}
           keyExtractor={(item, index) => index.toString()}
@@ -145,7 +155,7 @@ const PupilScreen = () => {
                   styles.paymentStatus,
                   {
                     backgroundColor:
-                      item.status === 'Paid' ? 'green' : 'orange',
+                      item.status === 'Paid' ? Colors.green : Colors.yellow,
                   },
                 ]}>
                 <Text style={styles.paymentStatusText}>{item.status}</Text>
@@ -166,7 +176,7 @@ const PupilScreen = () => {
           <View style={styles.modalContainer}>
             <Text style={styles.label}>Amount</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {height: 40}]}
               placeholder="Enter amount"
               placeholderTextColor="gray"
               keyboardType="numeric"
@@ -176,7 +186,7 @@ const PupilScreen = () => {
             <Text style={styles.label}>Description</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Description..."
+              placeholder="Description....."
               placeholderTextColor="gray"
               multiline
               numberOfLines={3}
@@ -209,8 +219,8 @@ const styles = StyleSheet.create({
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    gap: 20,
+    flex: 1,
+    gap: 12,
   },
   name: {
     color: Colors.white,
@@ -222,37 +232,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  timelineRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.darkGray,
-  },
-  rank: {
-    color: Colors.gray,
-    fontSize: 16,
+  rankContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  rank: {
+    color: Colors.mediumGray,
+    fontSize: 16,
   },
   statusBadge: {
     backgroundColor: Colors.green,
     borderRadius: 8,
-    width: wp((63 / 430) * 100),
-    height: hp((36 / 919) * 100),
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   statusText: {
     color: Colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
+    fontFamily: Fonts.normal,
   },
   infoSection: {
     marginBottom: 20,
     padding: 15,
     borderBottomWidth: 0.5,
-    borderBottomColor: Colors.gray,
+    borderBottomColor: Colors.mediumGray,
   },
   infoText: {
     color: Colors.white,
@@ -261,10 +267,21 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 20,
   },
+  tableHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.darkGray,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+  },
+  tableHeaderText: {
+    color: Colors.white,
+    fontSize: 14,
+    textAlign: 'center',
+  },
   sectionTitle: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
     marginBottom: 5,
   },
   timelineText: {
@@ -282,22 +299,26 @@ const styles = StyleSheet.create({
   paymentRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: Colors.darkGray,
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 5,
+    backgroundColor: Colors.black,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.mediumGray,
   },
   paymentText: {
     color: Colors.white,
     fontSize: 14,
+    textAlign: 'center',
   },
   paymentStatus: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: 5,
+    alignSelf: 'center',
   },
   paymentStatusText: {
     color: Colors.white,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   addPaymentButton: {
@@ -319,21 +340,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
   modalContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    backgroundColor: Colors.white,
+    padding: 15,
+    borderRadius: 8,
+    width: '90%',
   },
   label: {
-    color: 'black',
-    fontSize: 14,
-    marginTop: 10,
+    color: Colors.black,
+    fontSize: 12,
+    marginTop: 8,
   },
   input: {
     borderWidth: 1,
@@ -343,7 +358,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   textArea: {
-    height: 80,
+    height: 63,
     textAlignVertical: 'top',
   },
   buttonContainer: {

@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  SafeAreaView,
   Modal,
   TouchableWithoutFeedback,
   Animated,
@@ -221,15 +220,9 @@ const DashBoardScreen = () => {
     {name: 'Timetable', icon: SVG.TimeEntry},
     {name: 'Invitations', icon: SVG.Invite},
     {name: 'Reports', icon: SVG.Report},
-    {name: 'Log Out', icon: SVG.LogOutIcon},
+    {name: 'Gym Profile', icon: SVG.Report},
+    {name: 'Switch to User', icon: SVG.Report},
   ];
-
-  const handleLogOut = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
-    });
-  };
 
   const toggleDrawer = () => {
     setIsDrawerVisible(!isDrawerVisible);
@@ -272,7 +265,7 @@ const DashBoardScreen = () => {
     setIsFiltersModalVisible(!isFiltersModalVisible);
   };
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity>
@@ -314,12 +307,9 @@ const DashBoardScreen = () => {
                       navigation.navigate('HomeScreen');
                       break;
 
-                    case 'Log Out':
-                      handleLogOut();
-                      break;
-
                     case 'Payments':
-                      handlePaymentsClick();
+                      // handlePaymentsClick();
+                      navigation.navigate('PricingDashboardScreen');
                       break;
 
                     case 'Attendance Tracking':
@@ -345,6 +335,12 @@ const DashBoardScreen = () => {
                     case 'Reports':
                       navigation.navigate('Reports and Insights');
                       break;
+                    case 'Gym Profile':
+                      navigation.navigate('Gym Profile');
+                      break;
+                    case 'Switch to User':
+                      navigation.navigate('HomeScreen');
+                      break;
 
                     default:
                       navigation.navigate(item.name);
@@ -358,6 +354,48 @@ const DashBoardScreen = () => {
           </View>
         </Modal>
 
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 15,
+            alignSelf: 'center',
+            alignItems: 'center',
+          }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              position: 'relative',
+            }}>
+            <TextInput
+              value={search}
+              placeholder="search"
+              onChangeText={setSearch}
+              style={[styles.search1, {paddingRight: 60}]}
+            />
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                right: 35,
+                top: '47%',
+                transform: [{translateY: -7}],
+              }}>
+              <SVG.Voice />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                right: 15,
+                top: '47%',
+                transform: [{translateY: -7}],
+              }}>
+              <SVG.Search />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={handlePaymentsClick}>
+            <SVG.VectorLine />
+          </TouchableOpacity>
+        </View>
         <Modal
           visible={isFiltersModalVisible}
           transparent={true}
@@ -423,48 +461,6 @@ const DashBoardScreen = () => {
             </TouchableOpacity>
           </View>
         </Modal>
-        <View
-          style={{
-            flexDirection: 'row',
-            gap: 15,
-            alignSelf: 'center',
-            alignItems: 'center',
-          }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              position: 'relative',
-            }}>
-            <TextInput
-              value={search}
-              placeholder="search"
-              onChangeText={setSearch}
-              style={styles.search1}
-            />
-            <TouchableOpacity
-              style={{
-                position: 'absolute',
-                right: 35,
-                top: '50%',
-                transform: [{translateY: -7}],
-              }}>
-              <SVG.Voice />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                position: 'absolute',
-                right: 15,
-                top: '50%',
-                transform: [{translateY: -7}],
-              }}>
-              <SVG.Search />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity>
-            <SVG.VectorLine />
-          </TouchableOpacity>
-        </View>
         <View>
           <Text style={styles.sectionTitle}>Monthly Revenue over time</Text>
           <LineChart
@@ -597,7 +593,7 @@ const DashBoardScreen = () => {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -608,6 +604,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 10,
+    paddingTop: 50,
   },
   header: {
     marginBottom: 20,
@@ -745,7 +742,7 @@ const styles = StyleSheet.create({
   },
   drawer: {
     position: 'absolute',
-    top: 0,
+    top: 52,
     right: 20,
     backgroundColor: Colors.white,
     borderRadius: 20,
@@ -782,7 +779,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.darkGray,
     borderRadius: 8,
     alignItems: 'center',
-    padding: 5,
+    padding: 18,
   },
   list: {
     fontSize: 16,
@@ -840,12 +837,12 @@ const styles = StyleSheet.create({
   filterModal: {
     backgroundColor: Colors.white,
     width: wp((250 / 430) * 100),
-    height: hp((410 / 919) * 100),
+    height: hp((435 / 919) * 100),
     borderRadius: 16,
     top: '10%',
     position: 'absolute',
     right: 20,
-    padding: 20,
+    padding: 25,
   },
 });
 
