@@ -13,6 +13,9 @@ import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
 import Colors from '../../theme/color';
 import {useNavigation} from '@react-navigation/native';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const gymsData = [
   {id: '1', name: 'gym jumper'},
@@ -22,7 +25,7 @@ const gymsData = [
   {id: '5', name: 'gym with josh'},
 ];
 
-const historyData = [
+const filteredHistory = [
   {id: '1', name: 'Gym with Josh', date: '02/01/2025', status: 'Active'},
   {id: '2', name: 'Fitness buster', date: '02/01/2025', status: 'Active'},
   {id: '3', name: 'Gym with mintoo', date: '02/01/2025', status: 'Rejected'},
@@ -53,24 +56,31 @@ const GymHistoryScreen = () => {
 
   const handleSearch = text => {
     setSearchQuery(text);
-    if (text === '') {
-      setFilteredGyms(gymsData);
-    } else {
-      setFilteredGyms(
-        gymsData.filter(gym =>
-          gym.name.toLowerCase().includes(text.toLowerCase()),
-        ),
-      );
+    setFilteredGyms(
+      text === ''
+        ? gymsData
+        : gymsData.filter(gym =>
+            gym.name.toLowerCase().includes(text.toLowerCase()),
+          ),
+    );
+  };
+
+  const applyTraining = async gymId => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.ApplyTraining,
+        method: 'POST',
+        body: {gym_id: gymId},
+      });
+      showToast({message: 'Training applied successfully!', type: 'success'});
+      closeConfirmationModal();
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const filteredHistory =
-    selectedTab === 'All Gyms'
-      ? historyData
-      : historyData.filter(gym => gym.status === selectedTab);
-
-  const openConfirmationModal = gymName => {
-    setSelectedGym(gymName);
+  const openConfirmationModal = gym => {
+    setSelectedGym(gym);
     setConfirmationModalVisible(true);
   };
 
@@ -102,7 +112,9 @@ const GymHistoryScreen = () => {
       </View>
 
       <FlatList
-        data={filteredHistory}
+        data={filteredHistory.filter(
+          item => selectedTab === 'All Gyms' || item.status === selectedTab,
+        )}
         keyExtractor={item => item.id}
         renderItem={({item}) => (
           <TouchableOpacity style={styles.card}>
@@ -111,22 +123,15 @@ const GymHistoryScreen = () => {
               <View>
                 <Text style={styles.gymName}>{item.name}</Text>
                 <Text style={styles.date}>
-                  {item.status === 'Active'
-                    ? 'Joined'
-                    : item.status === 'Rejected'
-                    ? 'Rejected'
-                    : 'Requested'}
-                  : {item.date}
+                  {item.status}: {item.date}
                 </Text>
               </View>
-              <View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {backgroundColor: statusColors[item.status]},
-                  ]}>
-                  <Text style={styles.statusText}>{item.status}</Text>
-                </View>
+              <View
+                style={[
+                  styles.statusBadge,
+                  {backgroundColor: statusColors[item.status]},
+                ]}>
+                <Text style={styles.statusText}>{item.status}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -187,18 +192,12 @@ const GymHistoryScreen = () => {
               animationType="fade">
               <View style={styles.modalOverlay1}>
                 <View style={styles.confirmationModal}>
-                  <View
-                    style={{
-                      borderBottomWidth: 1,
-                      borderBottomColor: Colors.litegray,
-                    }}>
-                    <Text style={styles.confirmationTitle}>
-                      Apply for {selectedGym}?
-                    </Text>
-                    <Text style={styles.confirmationMessage}>
-                      If you want to apply for this gym, click Yes below.
-                    </Text>
-                  </View>
+                  <Text style={styles.confirmationTitle}>
+                    Apply for {selectedGym?.name}?
+                  </Text>
+                  <Text style={styles.confirmationMessage}>
+                    If you want to apply for this gym, click Yes below.
+                  </Text>
                   <View style={styles.buttonContainer}>
                     <TouchableOpacity
                       onPress={closeConfirmationModal}
@@ -207,7 +206,7 @@ const GymHistoryScreen = () => {
                     </TouchableOpacity>
                     <View style={styles.divider} />
                     <TouchableOpacity
-                      onPress={() => navigation.goBack()}
+                      onPress={() => applyTraining(selectedGym?.id)}
                       style={styles.yesButton}>
                       <Text style={styles.yesText}>Yes</Text>
                     </TouchableOpacity>
@@ -283,6 +282,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 8,
+    margin: 5,
   },
   statusText: {
     color: Colors.white,

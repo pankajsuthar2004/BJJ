@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -14,9 +14,12 @@ import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
 import SVG from '../../assets/svg';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const RoundScreen = () => {
-  const [notes, setNotes] = useState(0);
+  const [notes, setNotes] = useState('');
   const [value, setValue] = useState(0);
   const navigation = useNavigation();
   const [listVisible, setListVisible] = useState('');
@@ -27,8 +30,14 @@ const RoundScreen = () => {
   const [showSparringInput, setShowSparringInput] = useState(false);
   const [sparringPartner, setSparringPartner] = useState('');
   const [sparringPartnersList, setSparringPartnersList] = useState([]);
+  const [options, setOptions] = useState({
+    'Submissions Achieved': [],
+    'Submissions Conceded': [],
+    'Positions Achieved': [],
+    'Positions Conceded': [],
+  });
 
-  const options = {
+  const optionss = {
     'Submissions Achieved': [
       'Guillotine',
       'Americana',
@@ -60,6 +69,28 @@ const RoundScreen = () => {
     ],
   };
 
+  useEffect(() => {
+    fetchTrainingOptions();
+  }, []);
+
+  const fetchTrainingOptions = async type => {
+    try {
+      const data = await makeRequest({
+        endPoint: `${EndPoints.GetTrainingOptions}?type=${encodeURIComponent(
+          type,
+        )}`,
+        method: 'GET',
+      });
+      console.log('Training Options:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching training options:', error);
+      showToast({
+        message: 'Failed to load training options. Please try again.',
+      });
+    }
+  };
+
   const incrementCount = item => {
     setItemCounts(prevCounts => ({
       ...prevCounts,
@@ -74,11 +105,20 @@ const RoundScreen = () => {
     }));
   };
 
-  const toggleDropdown = type => {
+  const toggleDropdown = async type => {
     setListVisible(prevType => (prevType === type ? '' : type));
     setSelectedType(type);
-  };
 
+    if (listVisible !== type) {
+      const trainingOptions = await fetchTrainingOptions(type);
+      if (trainingOptions) {
+        setOptions(prev => ({
+          ...prev,
+          [type]: trainingOptions,
+        }));
+      }
+    }
+  };
   const handleAddNewItem = () => {
     if (newItem.trim()) {
       setItemCounts(prevCounts => ({
@@ -222,19 +262,22 @@ const RoundScreen = () => {
               <View>
                 <FlatList
                   data={options[type]}
-                  keyExtractor={item => item}
+                  keyExtractor={item => item.id?.toString() || item.name}
                   renderItem={({item}) => (
                     <View style={styles.listOption}>
                       <SVG.ArrowRight />
-                      <Text style={styles.listOptionText}>{item}</Text>
+                      {/* Assuming 'name' is the display field */}
+                      <Text style={styles.listOptionText}>{item.name}</Text>
                       <View style={styles.counterContainer}>
-                        <TouchableOpacity onPress={() => decrementCount(item)}>
+                        <TouchableOpacity
+                          onPress={() => decrementCount(item.name)}>
                           <SVG.Delete1 />
                         </TouchableOpacity>
                         <Text style={styles.counterValue}>
-                          {itemCounts[item] || 0}
+                          {itemCounts[item.name] || 0}
                         </Text>
-                        <TouchableOpacity onPress={() => incrementCount(item)}>
+                        <TouchableOpacity
+                          onPress={() => incrementCount(item.name)}>
                           <SVG.PlusIcon style={styles.counterText} />
                         </TouchableOpacity>
                       </View>

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,9 @@ import Slider from '@react-native-community/slider';
 import {useNavigation} from '@react-navigation/native';
 import SVG from '../../assets/svg';
 import CustomButton from '../../components/CustomButton';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const trainingTypes = [
   'Gi',
@@ -42,9 +45,94 @@ const LogScreen = () => {
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [value, setValue] = useState('');
   const [learnings, setLearnings] = useState('');
+  const [gymAreas, setGymAreas] = useState([]);
 
   const isDarkMode = Appearance.getColorScheme() === 'dark';
   const placeholderColor = isDarkMode ? Colors.white : Colors.gray;
+
+  useEffect(() => {
+    fetchGymAreas();
+  }, []);
+
+  const uploadTrainingLog = async () => {
+    const formData = new FormData();
+    formData.append('gym_id', '1');
+    formData.append('date', '2025-03-01');
+    formData.append('training_type_id', '3');
+    formData.append('duration', '45');
+    formData.append('gym_area_id', '1');
+    formData.append('learnings', 'test learnings');
+    formData.append('rounds[0][duration]', '35');
+    formData.append('rounds[0][notes]', 'Test Medium Training');
+    formData.append('rounds[0][sparring_partners][0]', '2');
+    formData.append('rounds[0][submissions][0][training_option_id]', '1');
+    formData.append('rounds[0][submissions][0][type]', 'achieved');
+    formData.append('rounds[0][submissions][0][quantity]', '5');
+    formData.append('rounds[0][submissions][1][training_option_id]', '2');
+    formData.append('rounds[0][submissions][1][type]', 'conceded');
+    formData.append('rounds[0][submissions][1][quantity]', '4');
+    formData.append('rounds[0][positions][0][training_option_id]', '4');
+    formData.append('rounds[0][positions][0][type]', 'achieved');
+    formData.append('rounds[0][positions][0][quantity]', '3');
+    formData.append('rounds[0][positions][1][training_option_id]', '3');
+    formData.append('rounds[0][positions][1][type]', 'conceded');
+    formData.append('rounds[0][positions][1][quantity]', '7');
+
+    const files = [
+      {
+        uri: 'file:///path-to-your-file/black_panther.jpg',
+        name: 'black_panther.jpg',
+        type: 'image/jpeg',
+      },
+      {
+        uri: 'file:///path-to-your-file/iron_man.jpg',
+        name: 'iron_man.jpg',
+        type: 'image/jpeg',
+      },
+    ];
+
+    files.forEach((file, index) => {
+      formData.append(`training_files[]`, file);
+    });
+
+    files.forEach((file, index) => {
+      formData.append(`rounds[0][files][]`, file);
+    });
+
+    try {
+      const response = await fetch('http://your-api-url/training-log', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer YOUR_TOKEN',
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        Alert.alert('Success', 'Training log uploaded successfully!');
+        console.log('Response:', result);
+      } else {
+        throw new Error(result.message || 'Failed to upload training log');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', error.message);
+    }
+  };
+
+  const fetchGymAreas = async () => {
+    try {
+      const data = await makeRequest({
+        endPoint: EndPoints.GetGymArea,
+        method: 'GET',
+      });
+      setGymAreas(data || []);
+    } catch (error) {
+      console.error('Error fetching gym areas:', error);
+      showToast({message: 'There was a problem loading Gym Area.'});
+    }
+  };
 
   const areas = ['Fitness', 'Belly Training', 'Knee', 'Love Handles'];
 
@@ -486,7 +574,7 @@ const LogScreen = () => {
             <SVG.AttachFiles />
           </TouchableOpacity>
         </View>
-        <CustomButton title="Submit Now" />
+        <CustomButton title="Submit Now" onPress={uploadTrainingLog} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -736,8 +824,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.litegray,
-    // borderTopLeftRadius: 8,
-    // borderTopRightRadius: 8,
     borderRadius: 8,
     backgroundColor: 'white',
   },

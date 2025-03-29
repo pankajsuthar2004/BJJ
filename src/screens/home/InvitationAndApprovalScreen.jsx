@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,17 @@ import {
 } from 'react-native';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const InvitationAndApprovalScreen = () => {
   const [email, setEmail] = useState('');
+  const [invitation, setInvitation] = useState([]);
+  const [approvalWorkflow] = useState([
+    {name: 'Messy Petch'},
+    {name: 'Flex Fen'},
+  ]);
 
   const invitations = [
     {email: 'paulmason@gmail.com', status: 'Approved', color: Colors.green},
@@ -20,7 +28,40 @@ const InvitationAndApprovalScreen = () => {
     {email: 'joshjanes@gmail.com', status: 'Sent', color: Colors.yellow},
   ];
 
-  const approvalWorkflow = [{name: 'Messy Petch'}, {name: 'Flex Fen'}];
+  useEffect(() => {
+    fetchAppliedTraining();
+  }, []);
+
+  const fetchAppliedTraining = async () => {
+    try {
+      const data = await makeRequest({
+        endPoint: EndPoints.AppliedTraining,
+        method: 'GET',
+      });
+      setInvitation(data || []);
+      showToast({message: 'Data fetched successfully!'});
+    } catch (error) {
+      console.error('Error fetching applied training:', error);
+      showToast({message: error.message || 'Failed to fetch data'});
+    }
+  };
+  const handleTrainingRequest = async (requestId, status) => {
+    try {
+      const data = await makeRequest({
+        endPoint: EndPoints.HandleTrainingRequest,
+        method: 'POST',
+        body: {
+          request_id: requestId,
+          status,
+        },
+      });
+      showToast({message: 'Request handled successfully!'});
+      fetchAppliedTraining();
+    } catch (error) {
+      console.error('Error handling training request:', error);
+      showToast({message: error.message || 'Failed to handle request'});
+    }
+  };
 
   const renderInvitationItem = ({item}) => (
     <View style={styles.invitationItem}>
@@ -44,10 +85,14 @@ const InvitationAndApprovalScreen = () => {
     <View style={styles.approvalItem}>
       <Text style={styles.nameText}>{item.name}</Text>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.actionButton, styles.declineButton]}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.declineButton]}
+          onPress={() => handleTrainingRequest(item.request_id, 'Declined')}>
           <Text style={styles.actionText}>Decline</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.approveButton]}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.approveButton]}
+          onPress={() => handleTrainingRequest(item.request_id, 'Approved')}>
           <Text style={styles.actionText}>Approve</Text>
         </TouchableOpacity>
       </View>
@@ -68,7 +113,7 @@ const InvitationAndApprovalScreen = () => {
         <Text style={styles.sendButtonText}>Send Invitation</Text>
       </TouchableOpacity>
       <View style={{gap: 10}}>
-        <Text style={styles.label}>Invitation status</Text>
+        <Text style={styles.label}>Invitation Status</Text>
         <FlatList
           data={invitations}
           renderItem={renderInvitationItem}

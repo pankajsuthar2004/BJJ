@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,9 @@ import Colors from '../../theme/color';
 import {useNavigation} from '@react-navigation/native';
 import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -54,19 +57,51 @@ const ProfileScreen = () => {
     },
   ];
 
-  const gymData = [
+  const gymDataList = [
     {id: '2', title: 'Gym with Mintoo'},
     {id: '3', title: 'Fitness Fighter'},
     {id: '4', title: 'Body Builder'},
     {id: '5', title: 'Gym with Johny'},
   ];
 
+  useEffect(() => {
+    fetchActiveGym();
+    fetchGymList();
+  }, []);
+
+  const fetchActiveGym = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.ActiveGym,
+        method: 'GET',
+      });
+      if (response?.gymName) {
+        setSelectedGym(response.gymName);
+        setIsGymPending(response.isPending);
+      }
+    } catch (error) {
+      showToast({message: error.message, type: 'error'});
+    }
+  };
+
+  const fetchGymList = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GetGym,
+        method: 'GET',
+      });
+      setGymData(response?.gyms || []);
+    } catch (error) {
+      showToast({message: error.message, type: 'error'});
+    }
+  };
+
   const handleSelectGym = gym => {
     setSelectedGym(gym);
     setShowGymList(false);
   };
 
-  const filterData = gymData.filter(item =>
+  const filterData = gymDataList.filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
@@ -147,9 +182,6 @@ const ProfileScreen = () => {
                         <SVG.GymIcon />
                         <Text style={styles.listItemText}>{item.title}</Text>
                       </View>
-                      <View>
-                        <Text style={styles.activeBadge}>Active</Text>
-                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -158,7 +190,6 @@ const ProfileScreen = () => {
           </View>
         ))}
       </View>
-
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
         <SVG.LogOutIcon />
         <Text style={styles.logoutText}>Logout</Text>
