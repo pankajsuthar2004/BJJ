@@ -7,7 +7,6 @@ import {
   ScrollView,
   Image,
   ImageBackground,
-  Modal,
   StyleSheet,
 } from 'react-native';
 import IMAGES from '../../assets/images';

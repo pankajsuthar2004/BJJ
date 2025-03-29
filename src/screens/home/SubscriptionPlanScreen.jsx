@@ -6,24 +6,106 @@ import {
   StyleSheet,
   Modal,
   TextInput,
+  Alert,
 } from 'react-native';
 import {Fonts} from '../../assets/fonts';
 import Colors from '../../theme/color';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const SubscriptionPlanScreen = () => {
   const [plans, setPlans] = useState([
-    {id: 1, price: 50, type: 'Monthly Plan'},
-    {id: 2, price: 550, type: 'Yearly Plan'},
+    {id: 1, price: 50, type: 'Monthly Plan', duration: 30},
+    {id: 2, price: 550, type: 'Yearly Plan', duration: 365},
   ]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [newPlan, setNewPlan] = useState({name: '', price: ''});
+  const [newPlan, setNewPlan] = useState({name: '', price: '', duration: '7'});
+  const [editPlanData, setEditPlanData] = useState(null);
 
-  const addNewPlan = () => {
-    if (newPlan.name && newPlan.price) {
-      setPlans([...plans, {id: plans.length + 1, ...newPlan}]);
-      setNewPlan({name: '', price: ''});
-      setModalVisible(false);
+  const addNewPlan = async () => {
+    if (!newPlan.name || !newPlan.price) {
+      showToast({message: 'Name and Price are required!', type: 'error'});
+      return;
     }
+
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.CreatePlan,
+        method: 'POST',
+        body: newPlan,
+      });
+      showToast({message: 'Plan created successfully!', type: 'success'});
+      setPlans(prev => [...prev, {...newPlan, id: prev.length + 1}]);
+      setNewPlan({name: '', price: '', duration: '7'});
+      setModalVisible(false);
+    } catch (error) {
+      console.error(error);
+      showToast({message: 'Failed to create plan', type: 'error'});
+    }
+  };
+
+  const editPlan = async () => {
+    if (!editPlanData?.name || !editPlanData?.price) {
+      showToast({message: 'Name and Price are required!', type: 'error'});
+      return;
+    }
+
+    try {
+      const response = await makeRequest({
+        endPoint: `${EndPoints.UpdatePlan}?id=${editPlanData.id}&name=${editPlanData.name}&price=${editPlanData.price}&duration=${editPlanData.duration}`,
+        method: 'PATCH',
+      });
+
+      showToast({message: 'Plan updated successfully!', type: 'success'});
+      setPlans(prev =>
+        prev.map(plan =>
+          plan.id === editPlanData.id ? {...plan, ...editPlanData} : plan,
+        ),
+      );
+      setModalVisible(false);
+      setEditPlanData(null);
+    } catch (error) {
+      console.error(error);
+      showToast({message: 'Failed to update plan', type: 'error'});
+    }
+  };
+
+  const deletePlan = async id => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this plan?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              const response = await makeRequest({
+                endPoint: `${EndPoints.DeletePlan}?id=${id}`,
+                method: 'DELETE',
+              });
+              showToast({
+                message: 'Plan deleted successfully!',
+                type: 'success',
+              });
+              setPlans(prev => prev.filter(plan => plan.id !== id));
+            } catch (error) {
+              console.error(error);
+              showToast({message: 'Failed to delete plan', type: 'error'});
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const openEditModal = plan => {
+    setEditPlanData(plan);
+    setModalVisible(true);
   };
 
   return (
@@ -35,10 +117,14 @@ const SubscriptionPlanScreen = () => {
             <Text style={styles.planDetail}>{plan.type}</Text>
           </View>
           <View style={styles.buttonGroup}>
-            <TouchableOpacity style={styles.deleteButton}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => deletePlan(plan.id)}>
               <Text style={styles.buttonText}>Delete</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => openEditModal(plan)}>
               <Text style={styles.buttonText}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -47,7 +133,10 @@ const SubscriptionPlanScreen = () => {
 
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => setModalVisible(true)}>
+        onPress={() => {
+          setNewPlan({name: '', price: '', duration: '7'});
+          setModalVisible(true);
+        }}>
         <Text style={styles.addButtonText}>Add New Membership Plan</Text>
       </TouchableOpacity>
 
@@ -58,27 +147,40 @@ const SubscriptionPlanScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Enter plan name"
-              value={newPlan.name}
-              onChangeText={text => setNewPlan({...newPlan, name: text})}
+              value={editPlanData ? editPlanData.name : newPlan.name}
+              onChangeText={text =>
+                editPlanData
+                  ? setEditPlanData(prev => ({...prev, name: text}))
+                  : setNewPlan(prev => ({...prev, name: text}))
+              }
             />
             <Text style={styles.modalTitle}>Price</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter price"
+              placeholder="Amount here..."
               keyboardType="numeric"
-              value={newPlan.price}
-              onChangeText={text => setNewPlan({...newPlan, price: text})}
+              value={editPlanData ? editPlanData.price : newPlan.price}
+              onChangeText={text =>
+                editPlanData
+                  ? setEditPlanData(prev => ({...prev, price: text}))
+                  : setNewPlan(prev => ({...prev, price: text}))
+              }
             />
             <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}>
+                onPress={() => {
+                  setModalVisible(false);
+                  setEditPlanData(null);
+                }}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.addMembershipButton}
-                onPress={addNewPlan}>
-                <Text style={styles.addMembershipText}>Add Membership</Text>
+                onPress={editPlanData ? editPlan : addNewPlan}>
+                <Text style={styles.addMembershipText}>
+                  {editPlanData ? 'Update Membership' : 'Add Membership'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -89,9 +191,13 @@ const SubscriptionPlanScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#000', padding: 20},
+  container: {
+    flex: 1,
+    backgroundColor: Colors.black,
+    padding: 20,
+  },
   planCard: {
-    backgroundColor: '#222',
+    backgroundColor: Colors.darkGray,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -99,10 +205,33 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
   },
-  planInfo: {flexDirection: 'column'},
-  priceText: {fontSize: 22, fontFamily: Fonts.normal, color: '#fff'},
-  planDetail: {fontSize: 14, color: '#ccc'},
-  buttonGroup: {flexDirection: 'row'},
+  planInfo: {
+    flexDirection: 'column',
+  },
+  priceText: {
+    fontSize: 22,
+    fontFamily: Fonts.normal,
+    color: Colors.white,
+  },
+  planDetail: {
+    fontSize: 14,
+    color: Colors.white,
+  },
+  addButton: {
+    backgroundColor: Colors.red,
+    padding: 15,
+    alignItems: 'center',
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  addButtonText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontFamily: Fonts.normal,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+  },
   deleteButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -117,17 +246,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  buttonText: {color: '#fff', fontSize: 12},
-  addButton: {
-    backgroundColor: 'red',
-    padding: 15,
-    alignItems: 'center',
-    borderRadius: 10,
-    marginTop: 20,
+  buttonText: {
+    color: Colors.white,
+    fontSize: 12,
   },
-  addButtonText: {color: '#fff', fontSize: 16, fontFamily: Fonts.normal},
-
-  // Modal Styles
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
@@ -135,30 +257,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 10,
     width: '90%',
   },
-  modalTitle: {fontSize: 16, fontFamily: Fonts.normal, marginBottom: 5},
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.normal,
+    marginBottom: 5,
+  },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: Colors.litegray,
     padding: 10,
     borderRadius: 5,
     marginBottom: 15,
-    backgroundColor: '#f9f9f9',
   },
-  buttonRow: {flexDirection: 'row', justifyContent: 'flex-end', gap: 10},
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
   cancelButton: {
     padding: 8,
     borderWidth: 1,
-    borderColor: 'red',
+    borderColor: Colors.red,
     borderRadius: 8,
   },
-  cancelText: {color: 'red', fontSize: 14},
-  addMembershipButton: {backgroundColor: 'black', padding: 8, borderRadius: 8},
-  addMembershipText: {color: '#fff', fontSize: 14},
+  cancelText: {
+    color: Colors.red,
+    fontSize: 14,
+  },
+  addMembershipButton: {
+    backgroundColor: Colors.black,
+    padding: 8,
+    borderRadius: 8,
+  },
+  addMembershipText: {
+    color: Colors.white,
+    fontSize: 14,
+  },
 });
 
 export default SubscriptionPlanScreen;

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
 import {Calendar} from 'react-native-calendars';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const sessions = [
   {
@@ -51,11 +54,25 @@ const sessions = [
 ];
 
 const TrainingScreen = () => {
+  const [session, setSession] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedDate, setSelectedDate] = useState('2024-12-17');
   const [selectedEndDate, setSelectedEndDate] = useState('2024-12-17');
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [calendarEndVisible, setCalendarEndVisible] = useState(false);
+
+  useEffect(() => {
+    fetchTrainingLogs();
+  }, []);
+
+  const fetchTrainingLogs = async () => {
+    try {
+      const response = await makeRequest('GET', EndPoints.UserTrainingLogs);
+      setSession(response?.data || []);
+    } catch (error) {
+      showToast('Error fetching training logs');
+    }
+  };
 
   const handleDateSelect = (day, isEndDate = false) => {
     if (isEndDate) {
