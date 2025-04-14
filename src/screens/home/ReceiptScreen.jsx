@@ -85,7 +85,7 @@ const ReceiptScreen = () => {
       <CustomButton
         title="Back to Home"
         style={{marginTop: 35}}
-        onPress={() => navigation.goBack()}
+        onPress={() => navigation.navigate('billing')}
       />
     </View>
   );

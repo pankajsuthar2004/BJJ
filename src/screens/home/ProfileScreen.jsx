@@ -123,6 +123,9 @@ const ProfileScreen = () => {
           <View>
             <Image source={IMAGES.BigProfile} />
           </View>
+          <TouchableOpacity style={{position: 'absolute', left: 95, top: 115}}>
+            <SVG.Camera />
+          </TouchableOpacity>
           <View style={{justifyContent: 'center'}}>
             <Text style={styles.profileName}>Josh Jones</Text>
             <Text style={styles.profileEmail}>joshjones@gmail.com</Text>

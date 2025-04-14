@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   FlatList,
+  Image,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
@@ -17,6 +18,7 @@ import SVG from '../../assets/svg';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {launchImageLibrary} from 'react-native-image-picker';
 
 const RoundScreen = () => {
   const [notes, setNotes] = useState('');
@@ -30,6 +32,7 @@ const RoundScreen = () => {
   const [showSparringInput, setShowSparringInput] = useState(false);
   const [sparringPartner, setSparringPartner] = useState('');
   const [sparringPartnersList, setSparringPartnersList] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
   const [options, setOptions] = useState({
     'Submissions Achieved': [],
     'Submissions Conceded': [],
@@ -72,6 +75,26 @@ const RoundScreen = () => {
   useEffect(() => {
     fetchTrainingOptions();
   }, []);
+
+  const openImagePicker = () => {
+    launchImageLibrary({mediaType: 'photo', quality: 1}, response => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorMessage);
+      } else {
+        console.log('Image Picker Response:', response);
+
+        const selectedFiles = response.assets.map(asset => ({
+          uri: asset.uri,
+          name: asset.fileName,
+          type: asset.type,
+        }));
+
+        setSelectedImages(prevImages => [...prevImages, ...selectedFiles]);
+      }
+    });
+  };
 
   const fetchTrainingOptions = async type => {
     try {
@@ -119,6 +142,7 @@ const RoundScreen = () => {
       }
     }
   };
+
   const handleAddNewItem = () => {
     if (newItem.trim()) {
       setItemCounts(prevCounts => ({
@@ -266,7 +290,6 @@ const RoundScreen = () => {
                   renderItem={({item}) => (
                     <View style={styles.listOption}>
                       <SVG.ArrowRight />
-                      {/* Assuming 'name' is the display field */}
                       <Text style={styles.listOptionText}>{item.name}</Text>
                       <View style={styles.counterContainer}>
                         <TouchableOpacity
@@ -346,12 +369,25 @@ const RoundScreen = () => {
           onChangeText={setNotes}
         />
 
-        <View style={styles.section1}>
+        <View style={styles.section}>
           <Text style={styles.label}>Attach Files</Text>
-          <TouchableOpacity style={styles.fileButton1}>
-            <SVG.PaperClip />
-            <Text style={styles.fileButtonText}>Choose File</Text>
-          </TouchableOpacity>
+          <View style={{flexDirection: 'row', gap: 8}}>
+            {selectedImages.length > 0 && (
+              <ScrollView horizontal>
+                {selectedImages.map((image, index) => (
+                  <TouchableOpacity key={index} style={{marginRight: 10}}>
+                    <Image
+                      source={{uri: image.uri}}
+                      style={{width: 68, height: 68, borderRadius: 8}}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            <TouchableOpacity onPress={openImagePicker}>
+              <SVG.AttachFiles />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -490,9 +526,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: Colors.litegray,
     marginBottom: 20,
-  },
-  section1: {
-    marginBottom: 8,
   },
   fileButton1: {
     backgroundColor: Colors.gray,

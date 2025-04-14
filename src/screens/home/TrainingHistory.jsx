@@ -178,9 +178,9 @@ const TrainingScreen = () => {
           <Text style={styles.filterText}>Gym</Text>
           <SVG.ArrowIcon />
         </TouchableOpacity>
-        <View style={{flex: 1}}>
+        <View>
           <TextInput
-            style={[styles.searchBar, {height: 35}]}
+            style={[styles.searchBar, {height: 35, width: 84}]}
             placeholder="Search"
             placeholderTextColor="#ccc"
             multiline={false}
@@ -283,7 +283,6 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     gap: 2.5,
   },
   filterButton: {
@@ -305,6 +304,7 @@ const styles = StyleSheet.create({
   searchBar: {
     backgroundColor: Colors.white,
     paddingRight: 25,
+    paddingLeft: 5,
     borderRadius: 5,
     color: Colors.darkGray,
   },

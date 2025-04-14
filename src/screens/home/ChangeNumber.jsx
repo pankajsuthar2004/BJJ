@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {View, StyleSheet, ScrollView} from 'react-native';
 import Colors from '../../theme/color';
-import {Fonts} from '../../assets/fonts';
 import SVG from '../../assets/svg';
 import CustomTextInput from '../../components/CustomTextInput';
 import {useNavigation} from '@react-navigation/native';
@@ -9,6 +8,7 @@ import CustomButton from '../../components/CustomButton';
 import {showToast} from '../../utility/Toast';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
+import {Validation} from '../../utility/Validation';
 
 const ChangeNumber = () => {
   const [number, setNumber] = useState('');
@@ -18,6 +18,13 @@ const ChangeNumber = () => {
   const handleUpdate = async () => {
     if (!number.trim()) {
       showToast({message: 'Please enter a valid number', type: 'error'});
+      return;
+    }
+    if (!Validation.mobile.test(number)) {
+      showToast({
+        message: 'Please enter a valid 10-digit mobile number',
+        type: 'error',
+      });
       return;
     }
 

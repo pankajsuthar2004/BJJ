@@ -148,7 +148,7 @@ const PupilScreen = () => {
           keyExtractor={(item, index) => index.toString()}
           renderItem={({item}) => (
             <View style={styles.paymentRow}>
-              <Text style={styles.paymentText}>{item.date}</Text>
+              <Text style={styles.paymentDate}>{item.date}</Text>
               <Text style={styles.paymentText}>{item.amount}</Text>
               <View
                 style={[
@@ -297,6 +297,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   paymentRow: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: Colors.black,
@@ -306,20 +307,25 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.mediumGray,
   },
   paymentText: {
+    flex: 1,
     color: Colors.white,
-    fontSize: 14,
-    textAlign: 'center',
+    fontSize: 16,
+  },
+  paymentDate: {
+    flex: 1,
+    color: Colors.white,
+    fontSize: 16,
   },
   paymentStatus: {
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 5,
-    alignSelf: 'center',
   },
   paymentStatusText: {
+    flex: 1,
+
     color: Colors.white,
     fontSize: 12,
-    fontWeight: 'bold',
   },
   addPaymentButton: {
     backgroundColor: 'red',

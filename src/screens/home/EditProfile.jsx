@@ -16,6 +16,7 @@ import {Fonts} from '../../assets/fonts';
 import IMAGES from '../../assets/images';
 import CustomTextInput from '../../components/CustomTextInput';
 import SVG from '../../assets/svg';
+import {Validation} from '../../utility/Validation';
 
 const EditProfile = ({navigation, AUTH_TOKEN}) => {
   const [name, setName] = useState('');
@@ -55,14 +56,29 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
       showToast({message: 'Name is required', type: 'error'});
       return false;
     }
+    if (!Validation.name.test(name.trim())) {
+      showToast({message: 'Name contains invalid characters', type: 'error'});
+      return false;
+    }
+
     if (!email.trim()) {
       showToast({message: 'Email is required', type: 'error'});
       return false;
     }
+    if (!Validation.email.test(email.trim())) {
+      showToast({message: 'Please enter a valid email address', type: 'error'});
+      return false;
+    }
+
     if (!phone.trim()) {
       showToast({message: 'Phone number is required', type: 'error'});
       return false;
     }
+    if (!Validation.phone.test(phone.trim())) {
+      showToast({message: 'Phone number must be 10 digits', type: 'error'});
+      return false;
+    }
+
     return true;
   };
 
@@ -106,7 +122,6 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
           type: 'error',
         });
       }
-      console.log('sfvdfwtbvsfvf', response);
     } catch (error) {
       console.log('API Error:', error?.response?.data || error.message);
       showToast({message: 'Error updating profile', type: 'error'});
@@ -125,6 +140,9 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
             source={image ? {uri: image} : IMAGES.BigProfile}
             style={styles.profileImage}
           />
+          <TouchableOpacity style={{position: 'absolute', right: 150, top: 80}}>
+            <SVG.Camera />
+          </TouchableOpacity>
           <Text style={styles.editText}>Change Picture</Text>
         </TouchableOpacity>
         <Text style={styles.label}>Your Information</Text>

@@ -23,4 +23,6 @@ export const EndPoints = {
   GetGymArea: 'get-gym-area',
   TrainingLog: 'training-log',
   UserTrainingLogs: 'user-training-logs',
+  Members: 'members',
+  Attendance: 'attendance',
 };

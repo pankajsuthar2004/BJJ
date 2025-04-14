@@ -167,6 +167,12 @@ import Nogi from '../svg/nogi.svg';
 import Maskgroup from '../svg/maskgroup.svg';
 import IcEmail from '../svg/icemail.svg';
 import LightPhone from '../svg/lightphone.svg';
+import Attach1 from '../svg/attach1.svg';
+import Attach2 from '../svg/attach2.svg';
+import Attach3 from '../svg/attach3.svg';
+import Attach4 from '../svg/attach4.svg';
+import Camera from '../svg/camera.svg';
+import ImageCam from '../svg/imagecam.svg';
 
 const SVG = {
   Google,
@@ -338,5 +344,11 @@ const SVG = {
   Maskgroup,
   IcEmail,
   LightPhone,
+  Attach1,
+  Attach2,
+  Attach3,
+  Attach4,
+  Camera,
+  ImageCam,
 };
 export default SVG;

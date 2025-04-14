@@ -8,6 +8,7 @@ import CustomButton from '../../components/CustomButton';
 import {EndPoints} from '../../api/config';
 import makeRequest from '../../api/http';
 import {showToast} from '../../utility/Toast';
+import {Validation} from '../../utility/Validation';
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -22,9 +23,18 @@ const ChangePassword = () => {
       return;
     }
 
+    if (!Validation.password.test(newPassword)) {
+      showToast({
+        message:
+          'Password must be 8-16 characters long, contain at least one uppercase letter, one number, and one special character.',
+        type: 'error',
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       showToast({
-        message: 'New password and confirm password not match',
+        message: 'New password and confirm password do not match',
         type: 'error',
       });
       return;

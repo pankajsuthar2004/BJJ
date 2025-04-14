@@ -227,6 +227,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 100,
+    bottom: 10,
   },
   subscribeText: {
     color: Colors.black,

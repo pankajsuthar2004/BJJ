@@ -75,10 +75,13 @@ const FeedScreen = () => {
       <View
         style={{
           flexDirection: 'row',
-          gap: 15,
-          alignSelf: 'center',
           alignItems: 'center',
-          marginBottom: 15,
+          borderRadius: 8,
+          paddingHorizontal: 20,
+          height: 40,
+          gap: 16,
+          marginBottom: 20,
+          alignSelf: 'center',
         }}>
         <View>
           <TextInput

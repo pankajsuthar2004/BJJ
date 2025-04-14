@@ -33,16 +33,21 @@ const SignUpForm = () => {
   const dispatch = useAppDispatch();
 
   const isDarkMode = useColorScheme() === 'dark';
-  const placeholderColor = isDarkMode ? Colors.litegray : 'gray';
-  const inputTextColor = isDarkMode ? Colors.white : Colors.black;
+  const placeholderColor = isDarkMode ? Colors.gray : 'gray';
+  const inputTextColor = isDarkMode ? Colors.black : Colors.black;
 
   const onSignUpHandler = async () => {
     const enteredName = name.trim();
     const enteredEmail = email.trim();
     const enteredPass = password.trim();
     const enteredConfirmPass = confirmPassword.trim();
+
     if (enteredName.length === 0) {
       showToast({message: 'Enter Name'});
+      return;
+    }
+    if (!Validation.name.test(enteredName)) {
+      showToast({message: 'Invalid Name! Special characters are not allowed.'});
       return;
     }
     if (!Validation.email.test(enteredEmail)) {
@@ -55,7 +60,8 @@ const SignUpForm = () => {
     }
     if (!Validation.password.test(enteredPass)) {
       showToast({
-        message: 'Invalid Password',
+        message:
+          'Password must be 8-16 chars, include uppercase, number, and special character',
       });
       return;
     }
@@ -173,9 +179,6 @@ const SignUpForm = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   containerView: {
     justifyContent: 'center',
     alignItems: 'center',

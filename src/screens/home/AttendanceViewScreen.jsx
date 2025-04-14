@@ -5,7 +5,6 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
   Modal,
 } from 'react-native';
@@ -338,7 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   dropdownList: {
-    backgroundColor: Colors.darkGray,
+    backgroundColor: Colors.white,
     padding: 10,
     borderRadius: 8,
     marginTop: 5,
@@ -346,8 +345,9 @@ const styles = StyleSheet.create({
   dropdownItem: {
     fontSize: 16,
     padding: 10,
-    borderBottomWidth: 0.5,
-    color: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.litegray,
+    color: Colors.black,
     fontFamily: Fonts.normal,
   },
   modalContainer: {
