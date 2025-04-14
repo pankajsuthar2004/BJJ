@@ -48,7 +48,6 @@ const GymDetailScreen = () => {
           </View>
           <View style={{justifyContent: 'center'}}>
             <Text style={styles.profileName}>Josh Jones</Text>
-            <Text style={styles.profileEmail}>joshjones@gmail.com</Text>
             <TouchableOpacity
               style={styles.editProfileButton}
               onPress={goToEditProfile}>
@@ -103,11 +102,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: Colors.white,
-  },
-  profileEmail: {
-    fontSize: 16,
-    color: Colors.gray,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   editProfileButton: {
     alignItems: 'center',

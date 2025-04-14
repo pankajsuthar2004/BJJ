@@ -9,6 +9,7 @@ import {
   Modal,
   FlatList,
   ScrollView,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import IMAGES from '../../assets/images';
 import SVG from '../../assets/svg';
@@ -84,7 +85,7 @@ const CreatePostScreen = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState(['Session', 'Jiu Jitsu', 'Training']);
-  const [selectedTag, setSelectedTag] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([tags[0]]);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [peopleModalVisible, setPeopleModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -103,9 +104,15 @@ const CreatePostScreen = () => {
   );
 
   const handleTagPress = tag => {
-    setSelectedTag(selectedTag === tag ? null : tag);
+    if (selectedTags.includes(tag)) {
+      // Prevent unselecting if it's the only selected tag
+      if (selectedTags.length === 1) return;
+      setSelectedTags(prev => prev.filter(t => t !== tag));
+    } else {
+      // Select multiple tags
+      setSelectedTags(prev => [...prev, tag]);
+    }
   };
-
   const handleSelectLocation = location => {
     setSelectedLocation(location);
     setLocationModalVisible(false);
@@ -169,12 +176,15 @@ const CreatePostScreen = () => {
         {tags.map((tag, index) => (
           <TouchableOpacity
             key={index}
-            style={[styles.tag, selectedTag === tag && styles.selectedTag]}
+            style={[
+              styles.tag,
+              selectedTags.includes(tag) && styles.selectedTag,
+            ]}
             onPress={() => handleTagPress(tag)}>
             <Text
               style={[
                 styles.tagText,
-                selectedTag === tag && styles.selectedTagText,
+                selectedTags.includes(tag) && styles.selectedTagText,
               ]}>
               {tag}
             </Text>
@@ -307,52 +317,58 @@ const CreatePostScreen = () => {
           transparent={true}
           visible={audienceModalVisible}
           onRequestClose={() => setAudienceModalVisible(false)}>
-          <View style={styles.modalBackdrop}>
-            <View style={styles.audienceModalContainer}>
-              <View style={styles.modalHandle} />
-              <Text style={styles.audienceTitle}>Audience</Text>
-              <Text style={styles.audienceSubtitle}>
-                Who would you like to show your post with
-              </Text>
+          <TouchableWithoutFeedback
+            onPress={() => setAudienceModalVisible(false)}>
+            <View style={styles.modalBackdrop}>
+              <View style={styles.audienceModalContainer}>
+                <View style={styles.modalHandle} />
+                <Text style={styles.audienceTitle}>Audience</Text>
+                <Text style={styles.audienceSubtitle}>
+                  Who would you like to show your post with
+                </Text>
 
-              <TouchableOpacity
-                style={[styles.audienceOption, selectedAudience === 'Everyone']}
-                onPress={() => handleSelectAudience('Everyone')}>
-                <View style={styles.audienceOptionContent}>
-                  <SVG.EveryOne />
-                  <Text style={styles.audienceText}>Everyone</Text>
-                </View>
-                {selectedAudience === 'Everyone' ? (
-                  <SVG.Select />
-                ) : (
-                  <SVG.Unselect />
-                )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.audienceOption,
+                    selectedAudience === 'Everyone',
+                  ]}
+                  onPress={() => handleSelectAudience('Everyone')}>
+                  <View style={styles.audienceOptionContent}>
+                    <SVG.EveryOne />
+                    <Text style={styles.audienceText}>Everyone</Text>
+                  </View>
+                  {selectedAudience === 'Everyone' ? (
+                    <SVG.Select />
+                  ) : (
+                    <SVG.Unselect />
+                  )}
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.audienceOption,
-                  selectedAudience === 'Close Friends',
-                ]}
-                onPress={() => handleSelectAudience('Close Friends')}>
-                <View style={styles.audienceOptionContent}>
-                  <SVG.CloseFrnd />
-                  <Text style={styles.audienceText}>Close Friends</Text>
-                </View>
-                {selectedAudience === 'Close Friends' ? (
-                  <SVG.Select />
-                ) : (
-                  <SVG.Unselect />
-                )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.audienceOption,
+                    selectedAudience === 'Close Friends',
+                  ]}
+                  onPress={() => handleSelectAudience('Close Friends')}>
+                  <View style={styles.audienceOptionContent}>
+                    <SVG.CloseFrnd />
+                    <Text style={styles.audienceText}>Close Friends</Text>
+                  </View>
+                  {selectedAudience === 'Close Friends' ? (
+                    <SVG.Select />
+                  ) : (
+                    <SVG.Unselect />
+                  )}
+                </TouchableOpacity>
 
-              <Text style={styles.privacyDisclaimer}>Privacy Disclaimer</Text>
-              <Text style={styles.privacyDisclaimer1}>
-                Lorem Ipsum has been the industry's standard dummy text ever
-                since the 1500s.
-              </Text>
+                <Text style={styles.privacyDisclaimer}>Privacy Disclaimer</Text>
+                <Text style={styles.privacyDisclaimer1}>
+                  Lorem Ipsum has been the industry's standard dummy text ever
+                  since the 1500s.
+                </Text>
+              </View>
             </View>
-          </View>
+          </TouchableWithoutFeedback>
         </Modal>
 
         <Modal
@@ -407,7 +423,7 @@ const CreatePostScreen = () => {
           </View>
         </Modal>
       </View>
-      <View style={{marginBottom: 30}}>
+      <View style={{marginVertical: 10}}>
         <CustomButton title="Post Now" onPress={handleUpdate} />
       </View>
     </ScrollView>

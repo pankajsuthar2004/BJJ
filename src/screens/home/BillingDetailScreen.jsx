@@ -10,10 +10,12 @@ import SVG from '../../assets/svg';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
-import CustomButton from '../../components/CustomButton';
 
 const BillingDetailScreen = () => {
   const [savePayment, setSavePayment] = useState(false);
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [ccv, setCCV] = useState('');
   const navigation = useNavigation();
 
   return (
@@ -31,26 +33,58 @@ const BillingDetailScreen = () => {
           style={[styles.cardNumber, {height: 40}]}
           placeholder="XXXX XXXX XXXX XXXX"
           placeholderTextColor={Colors.gray}
+          keyboardType="numeric"
+          maxLength={19}
+          value={cardNumber}
+          onChangeText={text => {
+            const numericText = text.replace(/\D/g, '');
+            const formattedText = numericText.replace(/(\d{4})/g, '$1 ').trim();
+            setCardNumber(formattedText);
+          }}
         />
         <SVG.MasterCard />
       </View>
-
       <View style={styles.row}>
         <View style={styles.smallInputContainer}>
           <Text style={styles.label}>Expiry Date</Text>
           <TextInput
             style={[styles.smallInput, {height: 50}]}
-            placeholder="02/27"
+            placeholder="MM/YY"
             placeholderTextColor={Colors.gray}
+            keyboardType="numeric"
+            maxLength={5}
+            value={expiryDate}
+            onChangeText={text => {
+              let numericText = text.replace(/\D/g, '');
+
+              if (numericText.length > 4) {
+                numericText = numericText.slice(0, 4);
+              }
+
+              let formattedText = numericText.replace(
+                /(\d{2})(\d{1,2})?/,
+                (match, p1, p2) => (p2 ? `${p1}/${p2}` : p1),
+              );
+
+              setExpiryDate(formattedText);
+            }}
           />
         </View>
+
         <View style={styles.smallInputContainer}>
           <Text style={styles.label}>CCV</Text>
           <TextInput
             style={[styles.smallInput, {height: 50}]}
             placeholder="XXX"
             placeholderTextColor={Colors.gray}
+            keyboardType="numeric"
+            maxLength={3}
             secureTextEntry
+            value={ccv}
+            onChangeText={text => {
+              const numericText = text.replace(/\D/g, '');
+              setCCV(numericText.slice(0, 3));
+            }}
           />
         </View>
       </View>

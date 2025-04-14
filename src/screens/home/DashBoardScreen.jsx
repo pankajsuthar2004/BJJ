@@ -485,6 +485,7 @@ const DashBoardScreen = () => {
 
         <View>
           <Text style={styles.sectionTitle}>Paid and Unpaid Over time</Text>
+
           <LineChart
             data={TimeData}
             width={screenWidth - 18}
@@ -493,6 +494,15 @@ const DashBoardScreen = () => {
             style={styles.chart}
             bezier
           />
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <Text style={{color: Colors.red}}>Paid</Text>
+            </View>
+            <View style={styles.border} />
+            <View style={styles.legendItem}>
+              <Text style={{color: Colors.darkGray}}>Unpaid</Text>
+            </View>
+          </View>
         </View>
 
         <Text
@@ -604,7 +614,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 10,
-    paddingTop: 50,
   },
   header: {
     marginBottom: 20,
@@ -742,8 +751,8 @@ const styles = StyleSheet.create({
   },
   drawer: {
     position: 'absolute',
-    top: 52,
-    right: 20,
+    top: 25,
+    right: 10,
     backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 20,
@@ -843,6 +852,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     padding: 25,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    right: 10,
+    top: 55,
+  },
+  border: {
+    width: 1,
+    height: 20,
+    backgroundColor: Colors.gray,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+    gap: 5,
   },
 });
 

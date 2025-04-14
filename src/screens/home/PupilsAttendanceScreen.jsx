@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,9 @@ import SVG from '../../assets/svg';
 import {hp, wp} from '../../utility/ResponseUI';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const attendanceData = [
   {name: 'John Smith', classes: 21, image: IMAGES.Photo1},
@@ -37,6 +40,27 @@ const PupilsAttendanceScreen = () => {
     gi: true,
     noGi: true,
   });
+  // const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        setLoading(true);
+        const data = await makeRequest({
+          endPoint: EndPoints.Members,
+          method: 'GET',
+        });
+        setAttendanceData(data);
+      } catch (error) {
+        showToast({message: 'Failed to load members'});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, []);
 
   const toggleFilter = type => {
     setSelectedFilters(prev => ({...prev, [type]: !prev[type]}));

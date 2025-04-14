@@ -87,6 +87,7 @@ const HomeScreen = () => {
         strokeWidth: 2,
       },
     ],
+    // legend: ['Gi', 'No Gi'],
   };
 
   const barData = {
@@ -310,10 +311,8 @@ const HomeScreen = () => {
           />
         </View>
 
+        <Text style={styles.sectionTitle}>Time Distribution (Gi vs No Gi)</Text>
         <View>
-          <Text style={styles.sectionTitle}>
-            Time Distribution (Gi vs No Gi)
-          </Text>
           <LineChart
             data={TimeData}
             width={screenWidth - 24}
@@ -323,6 +322,16 @@ const HomeScreen = () => {
             bezier
             verticalLabelRotation={30}
           />
+          <View style={styles.legendContainer}>
+            <View style={styles.legendItem}>
+              <SVG.Maskgroup />
+              <Text style={{color: Colors.red}}>Gi</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <SVG.Nogi />
+              <Text style={{color: Colors.darkGray}}>No Gi</Text>
+            </View>
+          </View>
         </View>
 
         <Text
@@ -560,6 +569,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 30,
     right: 15,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    right: 10,
+    top: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+    gap: 5,
   },
 });
 

@@ -18,6 +18,7 @@ import {EndPoints} from '../../api/config';
 import makeRequest from '../../api/http';
 import {showToast} from '../../utility/Toast';
 import MapView, {Marker} from 'react-native-maps';
+import SVG from '../../assets/svg';
 
 const EditGymProfileScreen = () => {
   const [name, setName] = useState('');
@@ -126,6 +127,9 @@ const EditGymProfileScreen = () => {
           style={styles.image}
           onError={e => console.log('Image Load Error:', e.nativeEvent.error)}
         />
+        <TouchableOpacity style={{position: 'absolute', right: 155, top: 140}}>
+          <SVG.Camera />
+        </TouchableOpacity>
 
         <TouchableOpacity onPress={handleImagePick}>
           <Text style={styles.imageText}>Change Picture</Text>
@@ -135,7 +139,7 @@ const EditGymProfileScreen = () => {
       <View style={styles.contentContainer}>
         <Text style={styles.labels}>Basic Information</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, {height: 40}]}
           placeholder="Name"
           value={name}
           onChangeText={setName}
@@ -154,7 +158,7 @@ const EditGymProfileScreen = () => {
         />
         <Text style={styles.label}>Address & Location</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, {height: 40}]}
           placeholder="Address"
           value={address}
           onChangeText={setAddress}
@@ -162,7 +166,7 @@ const EditGymProfileScreen = () => {
           color={Colors.gray}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, {height: 40}]}
           placeholder="Country"
           value={country}
           onChangeText={setCountry}
@@ -170,7 +174,7 @@ const EditGymProfileScreen = () => {
           color={Colors.gray}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, {height: 40}]}
           placeholder="State/Province"
           value={state}
           onChangeText={setState}
@@ -178,7 +182,7 @@ const EditGymProfileScreen = () => {
           color={Colors.gray}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, {height: 40}]}
           placeholder="City"
           value={city}
           onChangeText={setCity}
@@ -186,7 +190,7 @@ const EditGymProfileScreen = () => {
           color={Colors.gray}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, {height: 40}]}
           placeholder="Postal/Zip Code"
           value={zipCode}
           onChangeText={setZipCode}

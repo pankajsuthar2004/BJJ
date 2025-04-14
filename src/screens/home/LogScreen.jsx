@@ -26,6 +26,7 @@ import CustomButton from '../../components/CustomButton';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {launchImageLibrary} from 'react-native-image-picker';
 
 const trainingTypes = [
   'Gi',
@@ -46,6 +47,7 @@ const LogScreen = () => {
   const [value, setValue] = useState('');
   const [learnings, setLearnings] = useState('');
   const [gymAreas, setGymAreas] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
 
   const isDarkMode = Appearance.getColorScheme() === 'dark';
   const placeholderColor = isDarkMode ? Colors.white : Colors.gray;
@@ -53,6 +55,26 @@ const LogScreen = () => {
   useEffect(() => {
     fetchGymAreas();
   }, []);
+
+  const openImagePicker = () => {
+    launchImageLibrary({mediaType: 'photo', quality: 1}, response => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorMessage);
+      } else {
+        console.log('Image Picker Response:', response);
+
+        const selectedFiles = response.assets.map(asset => ({
+          uri: asset.uri,
+          name: asset.fileName,
+          type: asset.type,
+        }));
+
+        setSelectedImages(prevImages => [...prevImages, ...selectedFiles]);
+      }
+    });
+  };
 
   const uploadTrainingLog = async () => {
     const formData = new FormData();
@@ -570,9 +592,23 @@ const LogScreen = () => {
         </View>
         <View style={styles.section}>
           <Text style={styles.label}>Attach Files</Text>
-          <TouchableOpacity style={{alignSelf: 'flex-start'}}>
-            <SVG.AttachFiles />
-          </TouchableOpacity>
+          <View style={{flexDirection: 'row', gap: 8}}>
+            {selectedImages.length > 0 && (
+              <ScrollView horizontal>
+                {selectedImages.map((image, index) => (
+                  <TouchableOpacity key={index} style={{marginRight: 10}}>
+                    <Image
+                      source={{uri: image.uri}}
+                      style={{width: 68, height: 68, borderRadius: 8}}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            <TouchableOpacity onPress={openImagePicker}>
+              <SVG.AttachFiles />
+            </TouchableOpacity>
+          </View>
         </View>
         <CustomButton title="Submit Now" onPress={uploadTrainingLog} />
       </ScrollView>
@@ -749,6 +785,7 @@ const styles = StyleSheet.create({
     height: hp((198 / 919) * 100),
     alignSelf: 'center',
     padding: 20,
+    fontSize: 16,
   },
   sliderView: {
     borderRadius: 15,

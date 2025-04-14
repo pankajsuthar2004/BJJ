@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import CalendarStrip from 'react-native-calendar-strip';
 import Colors from '../../theme/color';
-import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
 import moment from 'moment';
+import SVG from '../../assets/svg';
 
-const classes = [
+const initialClasses = [
   {id: '1', name: 'Gi class', time: '9AM - 10AM', color: Colors.green},
   {id: '2', name: 'No Gi class', time: '12PM - 3PM', color: Colors.yellow},
   {id: '3', name: 'Open Mat class', time: '5PM - 8PM', color: Colors.red},
@@ -28,10 +28,7 @@ const TimeTableScreen = () => {
   const [className, setClassName] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
-  const [recurringDays, setRecurringDays] = useState([
-    'Every Monday',
-    'Every Friday',
-  ]);
+  const [recurringDays, setRecurringDays] = useState([]);
   const [startTime, setStartTime] = useState('12:30 PM');
   const [endTime, setEndTime] = useState('4:30 PM');
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
@@ -41,6 +38,32 @@ const TimeTableScreen = () => {
   const [currentMonth, setCurrentMonth] = useState(moment());
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
+  const [classes, setClasses] = useState(initialClasses);
+
+  const daysOfWeek = [
+    'Every Monday',
+    'Every Tuesday',
+    'Every Wednesday',
+    'Every Thursday',
+    'Every Friday',
+    'Every Saturday',
+    'Every Sunday',
+  ];
+
+  const [currentDayIndex, setCurrentDayIndex] = useState(0);
+
+  const handleAddRecurringClass = () => {
+    if (currentDayIndex < daysOfWeek.length) {
+      setRecurringDays(prev => [...prev, daysOfWeek[currentDayIndex]]);
+      setCurrentDayIndex(currentDayIndex + 1);
+    }
+  };
+
+  const handleSelectRecurringDay = day => {
+    setRecurringDays(prev =>
+      prev.includes(day) ? prev.filter(item => item !== day) : [...prev, day],
+    );
+  };
 
   const goToPreviousMonth = () => {
     const newMonth = moment(currentMonth).subtract(1, 'months');
@@ -54,8 +77,24 @@ const TimeTableScreen = () => {
     setSelectedDate(moment(newMonth).startOf('month'));
   };
 
+  const handleAddClass = () => {
+    const newClass = {
+      id: (classes.length + 1).toString(),
+      name: className,
+      time: `${startTime} - ${endTime}`,
+      color: Colors.green,
+    };
+
+    setClasses(prevClasses => [...prevClasses, newClass]);
+    setModalVisible(false);
+    setClassName('');
+    setStartTime('12:30 PM');
+    setEndTime('4:30 PM');
+    setDescription('');
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View>
         <CalendarStrip
           scrollable
@@ -174,20 +213,30 @@ const TimeTableScreen = () => {
                     </TouchableOpacity>
                   </View>
                 )}
-
                 <Text style={styles.label}>Class Recurring</Text>
-                <View style={styles.recurringContainer}>
-                  {recurringDays.map((day, index) => (
+                <ScrollView
+                  horizontal
+                  contentContainerStyle={styles.recurringContainer}
+                  showsHorizontalScrollIndicator={false}>
+                  {daysOfWeek.map((day, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.recurringButton}>
+                      style={[
+                        styles.recurringButton,
+                        recurringDays.includes(day)
+                          ? {backgroundColor: Colors.black}
+                          : {backgroundColor: Colors.gray},
+                      ]}
+                      onPress={() => handleSelectRecurringDay(day)}>
                       <Text style={styles.recurringText}>{day}</Text>
                     </TouchableOpacity>
                   ))}
-                  <TouchableOpacity>
+
+                  {/* Button to add next recurring day */}
+                  <TouchableOpacity onPress={handleAddRecurringClass}>
                     <SVG.SmallRed />
                   </TouchableOpacity>
-                </View>
+                </ScrollView>
 
                 <Text style={styles.label}>Select Timing</Text>
                 <View style={styles.timeSelection}>
@@ -291,9 +340,7 @@ const TimeTableScreen = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.addClassButton}
-                    onPress={() => {
-                      setModalVisible(false);
-                    }}>
+                    onPress={handleAddClass}>
                     <Text style={styles.addClassButtonText}>Add Class</Text>
                   </TouchableOpacity>
                 </View>
@@ -312,7 +359,7 @@ const TimeTableScreen = () => {
                 <Text style={styles.label}>Class Name</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter new class details"
+                  placeholder="class name"
                   placeholderTextColor="#aaa"
                 />
                 <View style={styles.modalButtons}>
@@ -332,7 +379,7 @@ const TimeTableScreen = () => {
           </View>
         </Modal>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -501,10 +548,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flex: 1,
     borderWidth: 1,
-    padding: 5,
+    borderColor: Colors.gray,
+    padding: 8,
     borderRadius: 8,
-    borderColor: Colors.litegray,
-    marginBottom: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
   },
   timeText: {
     fontSize: 16,

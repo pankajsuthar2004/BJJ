@@ -18,6 +18,10 @@ import {hp} from '../../utility/ResponseUI';
 import {Fonts} from '../../assets/fonts';
 import CalendarStrip from 'react-native-calendar-strip';
 import moment from 'moment';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
+import {useSelector} from 'react-redux';
 
 const CircularProgress = ({percentage, color, label}) => {
   const radius = 35;
@@ -61,6 +65,7 @@ const AttendanceMarkingScreen = () => {
   const [currentMonth, setCurrentMonth] = useState(moment());
   const [selectedDate, setSelectedDate] = useState(moment());
   const [selectedClass, setSelectedClass] = useState('Select Class');
+  const user = useSelector(state => state.user?.user);
 
   const classes = [
     'Gi',
@@ -68,6 +73,42 @@ const AttendanceMarkingScreen = () => {
     'Beginners 12am kids',
     'Advanced Gi Class 9am',
   ];
+
+  const markAttendance = async status => {
+    console.log('Marking Attendance:', status);
+    setSelectedStatus(status);
+
+    if (!user) {
+      showToast('User not found!');
+      return;
+    }
+
+    if (!selectedClass) {
+      showToast('Please select a class');
+      return;
+    }
+
+    const body = {
+      user_id: user.id,
+      training_type_id: selectedClass,
+      attendance: status,
+      date: selectedDate.format('YYYY-MM-DD'),
+    };
+
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.Attendance,
+        method: 'POST',
+        body,
+      });
+
+      showToast('Attendance marked successfully');
+      console.log('Attendance Response:', response);
+      setSelectedStatus(status);
+    } catch (error) {
+      showToast(error.message || 'Failed to mark attendance');
+    }
+  };
 
   const attendanceData = {
     present: 21,
@@ -151,26 +192,17 @@ const AttendanceMarkingScreen = () => {
         : 'Unknown',
   }));
 
-  const getStatusButtonStyle = status => {
-    switch (status) {
-      case 'Present':
-        return {
-          backgroundColor:
-            selectedStatus === 'Present' ? Colors.green : 'transparent',
-        };
-      case 'Absent':
-        return {
-          backgroundColor:
-            selectedStatus === 'Absent' ? Colors.red : 'transparent',
-        };
-      default:
-        return {};
-    }
-  };
+  const getStatusButtonStyle = status => ({
+    backgroundColor:
+      selectedStatus === status
+        ? status === 'Present'
+          ? Colors.green
+          : Colors.red
+        : 'transparent',
+  });
 
   return (
     <ScrollView style={styles.container}>
-      {/* <View style={{flex: 1, flexDirection: 'row'}}> */}
       <TouchableOpacity
         style={{flex: 1, fontSize: 20}}
         onPress={() => setModalVisible(true)}>
@@ -199,7 +231,6 @@ const AttendanceMarkingScreen = () => {
         onPress={goToNextMonth}>
         <SVG.IconLeft />
       </TouchableOpacity>
-      {/* </View> */}
 
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -301,8 +332,10 @@ const AttendanceMarkingScreen = () => {
               flex: 1,
             }}>
             <View>
-              <Text style={styles.profileName}>John Smith</Text>
-              <Text style={styles.subText}>Gi</Text>
+              <Text style={styles.profileName}>{user?.name}</Text>
+              <Text style={styles.subText}>
+                Class: {selectedClass || 'Not Selected'}
+              </Text>
             </View>
             <TouchableOpacity>
               <SVG.Dots />
@@ -312,13 +345,13 @@ const AttendanceMarkingScreen = () => {
         <View style={{flexDirection: 'row', gap: 9}}>
           <TouchableOpacity
             style={[styles.statusButton, getStatusButtonStyle('Present')]}
-            onPress={() => setSelectedStatus('Present')}>
+            onPress={() => markAttendance('Present')}>
             <Text style={styles.statusText}>Present</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.statusButton, getStatusButtonStyle('Absent')]}
-            onPress={() => setSelectedStatus('Absent')}>
+            onPress={() => markAttendance('Absent')}>
             <Text style={styles.statusText}>Absent</Text>
           </TouchableOpacity>
         </View>
@@ -389,9 +422,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.8)',
   },
-  calendarStrip: {
-    height: 100,
-  },
   modalContent: {
     width: '95%',
     backgroundColor: 'white',
@@ -409,11 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  arrow: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 10,
-  },
   weekDay: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -424,16 +449,6 @@ const styles = StyleSheet.create({
   weekdayText: {
     fontWeight: 'bold',
     color: Colors.black,
-  },
-  closeButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: 'red',
-    borderRadius: 5,
-  },
-  closeText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
   dropdown: {
     padding: 10,
@@ -458,12 +473,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 16,
     marginTop: 15,
-  },
-  profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
   },
   profileName: {
     color: Colors.white,

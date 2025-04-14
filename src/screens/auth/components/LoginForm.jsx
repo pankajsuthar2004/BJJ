@@ -31,8 +31,8 @@ const LoginForm = () => {
   const dispatch = useAppDispatch();
 
   const isDarkMode = useColorScheme() === 'dark';
-  const placeholderColor = isDarkMode ? Colors.litegray : 'gray';
-  const inputTextColor = isDarkMode ? Colors.white : Colors.black;
+  const placeholderColor = isDarkMode ? Colors.gray : 'gray';
+  const inputTextColor = isDarkMode ? Colors.black : Colors.black;
 
   const onLoginHandler = async () => {
     const enteredEmail = email.trim();
@@ -89,7 +89,6 @@ const LoginForm = () => {
                 styles.inputWithIcon,
                 {
                   color: inputTextColor,
-                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
                 },
               ]}
               placeholder="Email"
@@ -106,7 +105,6 @@ const LoginForm = () => {
                 styles.inputWithIcon,
                 {
                   color: inputTextColor,
-                  backgroundColor: isDarkMode ? Colors.black : Colors.white,
                 },
               ]}
               placeholder="Password"
@@ -125,7 +123,7 @@ const LoginForm = () => {
             </TouchableOpacity>
           </View>
           <TouchableOpacity>
-            <Text style={styles.forgetPasswordText}>Forget Password</Text>
+            <Text style={styles.forgetPasswordText}>Forget Password?</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.signUpButton} onPress={onLoginHandler}>

@@ -110,9 +110,12 @@ const PricingManagementScreen = () => {
                 placeholder="Enter amount"
                 keyboardType="numeric"
                 value={amount}
-                onChangeText={setAmount}
+                onChangeText={text => {
+                  if (/^\d{0,6}$/.test(text)) {
+                    setAmount(text);
+                  }
+                }}
               />
-
               <Text style={styles.label}>Membership</Text>
               <TouchableOpacity
                 style={styles.dropdown}
@@ -143,7 +146,7 @@ const PricingManagementScreen = () => {
 
               <Text style={styles.label}>Description</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, {height: 40}]}
                 placeholder="Optional..."
                 value={description}
                 onChangeText={setDescription}

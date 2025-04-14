@@ -8,6 +8,7 @@ import CustomButton from '../../components/CustomButton';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
 import makeRequest from '../../api/http';
+import {Validation} from '../../utility/Validation';
 
 const ChangeEmail = () => {
   const [email, setEmail] = useState('');
@@ -17,6 +18,10 @@ const ChangeEmail = () => {
   const handleUpdate = async () => {
     if (!email.trim()) {
       showToast({message: 'Please enter a valid email', type: 'error'});
+      return;
+    }
+    if (!Validation.email.test(email)) {
+      showToast({message: 'Please enter a valid email address', type: 'error'});
       return;
     }
 

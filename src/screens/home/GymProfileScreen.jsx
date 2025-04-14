@@ -9,21 +9,90 @@ import {
   ImageBackground,
   StyleSheet,
 } from 'react-native';
-import IMAGES from '../../assets/images';
+import {launchImageLibrary} from 'react-native-image-picker';
 import MapView, {Marker} from 'react-native-maps';
+import {useNavigation} from '@react-navigation/native';
+import IMAGES from '../../assets/images';
 import {Fonts} from '../../assets/fonts';
 import Colors from '../../theme/color';
-import {useNavigation} from '@react-navigation/native';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const GymProfileScreen = () => {
+  const navigation = useNavigation();
   const [gymName, setGymName] = useState('');
   const [gymDescription, setGymDescription] = useState('');
-  const navigation = useNavigation();
+  const [address, setAddress] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [latitude, setLatitude] = useState('28.6139');
+  const [longitude, setLongitude] = useState('77.2090');
+  const [image, setImage] = useState(null);
+
+  const pickImage = async () => {
+    const result = await launchImageLibrary({mediaType: 'photo'});
+    if (!result.didCancel && result.assets?.length > 0) {
+      setImage(result.assets[0]);
+    }
+  };
+
+  const handleCreateProfile = async () => {
+    try {
+      if (!image) {
+        showToast({message: 'Please select an image'});
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', {
+        uri: image.uri,
+        type: image.type || 'image/jpeg',
+        name: image.fileName || 'profile.jpg',
+      });
+      formData.append('name', gymName.trim());
+      formData.append('description', gymDescription.trim());
+      formData.append('address', address.trim());
+      formData.append('country', country.trim());
+      formData.append('state', state.trim());
+      formData.append('city', city.trim());
+      formData.append('zip_code', zipCode.trim());
+      formData.append('latitude', latitude.toString());
+      formData.append('longitude', longitude.toString());
+
+      await makeRequest({
+        endPoint: EndPoints.ProfileStore,
+        method: 'POST',
+        body: {
+          isFormData: true,
+          data: formData,
+        },
+      });
+
+      showToast({message: 'Profile created successfully'});
+      navigation.navigate('gym profile');
+    } catch (error) {
+      console.log('Error while creating profile:', error?.response || error);
+      showToast({message: 'Failed to create profile'});
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
       <ImageBackground style={styles.imageBackground} source={IMAGES.BgImage}>
-        <Image source={IMAGES.BigProfile} />
+        {image ? (
+          <Image
+            source={{uri: image.uri}}
+            style={{width: 120, height: 120, borderRadius: 60}}
+          />
+        ) : (
+          <TouchableOpacity onPress={pickImage}>
+            <Image source={IMAGES.ProfileCam} />
+            {/* <SVG.ImageCam /> */}
+          </TouchableOpacity>
+        )}
       </ImageBackground>
 
       <View style={styles.contentContainer}>
@@ -45,23 +114,51 @@ const GymProfileScreen = () => {
         />
 
         <Text style={styles.label}>Address & Location</Text>
-        <TextInput style={styles.input} placeholder="Address" />
-        <TextInput style={styles.input} placeholder="Country" />
-        <TextInput style={styles.input} placeholder="State/Province" />
-        <TextInput style={styles.input} placeholder="City" />
-        <TextInput style={styles.input} placeholder="Postal/Zip Code" />
+        <TextInput
+          style={[styles.input, {height: 40}]}
+          placeholder="Address"
+          value={address}
+          onChangeText={setAddress}
+        />
+        <TextInput
+          style={[styles.input, {height: 40}]}
+          placeholder="Country"
+          value={country}
+          onChangeText={setCountry}
+        />
+        <TextInput
+          style={[styles.input, {height: 40}]}
+          placeholder="State/Province"
+          value={state}
+          onChangeText={setState}
+        />
+        <TextInput
+          style={[styles.input, {height: 40}]}
+          placeholder="City"
+          value={city}
+          onChangeText={setCity}
+        />
+        <TextInput
+          style={[styles.input, {height: 40}]}
+          placeholder="Postal/Zip Code"
+          value={zipCode}
+          onChangeText={setZipCode}
+        />
 
         <View style={styles.mapContainer}>
           <MapView
             style={{flex: 1}}
             initialRegion={{
-              latitude: 28.6139,
-              longitude: 77.209,
+              latitude: parseFloat(latitude),
+              longitude: parseFloat(longitude),
               latitudeDelta: 0.1,
               longitudeDelta: 0.1,
             }}>
             <Marker
-              coordinate={{latitude: 28.6139, longitude: 77.209}}
+              coordinate={{
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
+              }}
               title="Gym Location"
               description="This is the gym's location"
             />
@@ -74,7 +171,7 @@ const GymProfileScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.createButton}
-            onPress={() => navigation.navigate('gym profile')}>
+            onPress={handleCreateProfile}>
             <Text style={styles.createButtonText}>Create</Text>
           </TouchableOpacity>
         </View>

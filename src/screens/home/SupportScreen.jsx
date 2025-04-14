@@ -12,10 +12,10 @@ const SupportScreen = () => {
         The support allows users to seek help, report issues, or provide
         feedback.
       </Text>
-      <Text style={styles.label}>find support below</Text>
+      <Text style={styles.label}>Find Support Below</Text>
       <TouchableOpacity style={styles.btnView}>
         <SVG.Contact />
-        <Text style={styles.btnText}>Contact options</Text>
+        <Text style={styles.btnText}>Contact Options</Text>
         <SVG.WhiteRight />
       </TouchableOpacity>
       <TouchableOpacity style={styles.btnView}>
