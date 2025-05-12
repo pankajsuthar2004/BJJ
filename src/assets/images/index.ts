@@ -60,6 +60,7 @@ const IMAGES = {
   ThumbNail2: require('../images/thumbnail2.png'),
   ThumbNail3: require('../images/thumbnail3.png'),
   BgImage: require('../images/bgimage.png'),
-  ProfileCam: require('../images/profileCam.png'),
+  ProfileCam: require('../images/profilecam.png'),
+  ProfileWithCamera: require('../images/Profilewithcamera.png'),
 };
 export default IMAGES;

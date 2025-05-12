@@ -13,14 +13,14 @@ import {Fonts} from '../../assets/fonts';
 import Colors from '../../theme/color';
 import {useNavigation} from '@react-navigation/native';
 import CustomButton from '../../components/CustomButton';
-import * as ImagePicker from 'react-native-image-picker';
-import {EndPoints} from '../../api/config';
-import makeRequest from '../../api/http';
-import {showToast} from '../../utility/Toast';
+import {launchImageLibrary} from 'react-native-image-picker';
 import MapView, {Marker} from 'react-native-maps';
-import SVG from '../../assets/svg';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const EditGymProfileScreen = () => {
+  const navigation = useNavigation();
   const [name, setName] = useState('');
   const [gymDescription, setGymDescription] = useState('');
   const [address, setAddress] = useState('');
@@ -28,116 +28,85 @@ const EditGymProfileScreen = () => {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [latitude, setLatitude] = useState('28.6139');
-  const [longitude, setLongitude] = useState('77.209');
+  const [latitude, setLatitude] = useState(28.6139);
+  const [longitude, setLongitude] = useState(77.209);
   const [image, setImage] = useState(null);
-  const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
 
-  const handleImagePick = async () => {
-    const options = {mediaType: 'photo', quality: 1};
-
-    ImagePicker.launchImageLibrary(options, response => {
-      if (response.didCancel) {
-        showToast({message: 'Image selection cancelled', type: 'info'});
-        return;
-      }
-
-      if (response.errorCode) {
-        showToast({message: `Error: ${response.errorCode}`, type: 'error'});
-        return;
-      }
-
-      if (response.assets && response.assets.length > 0) {
-        const selectedImage = response.assets[0];
-
-        console.log('Selected Image URI:', selectedImage.uri);
-
-        if (selectedImage.uri) {
-          setImage(selectedImage);
-        } else {
-          showToast({message: 'Invalid Image URI', type: 'error'});
-        }
-      } else {
-        showToast({message: 'No image selected', type: 'error'});
-      }
-    });
+  const pickImage = async () => {
+    const result = await launchImageLibrary({mediaType: 'photo'});
+    if (!result.didCancel && result.assets?.length > 0) {
+      setImage(result.assets[0]);
+    }
   };
 
-  const handleUpdate = async () => {
-    if (
-      !name?.trim() ||
-      !gymDescription?.trim() ||
-      !address?.trim() ||
-      !country?.trim() ||
-      !state?.trim() ||
-      !city?.trim() ||
-      !zipCode?.trim() ||
-      !latitude?.trim() ||
-      !longitude?.trim()
-    ) {
-      showToast({message: 'All fields are required', type: 'error'});
-      return;
-    }
+  const handleCreateProfile = async () => {
+    try {
+      if (!image) {
+        showToast({message: 'Please select an image'});
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('description', gymDescription);
-    formData.append('address', address);
-    formData.append('country', country);
-    formData.append('state', state);
-    formData.append('city', city);
-    formData.append('zip_code', zipCode);
-    formData.append('latitude', latitude);
-    formData.append('longitude', longitude);
-
-    if (image) {
+      const formData = new FormData();
       formData.append('image', {
         uri: image.uri,
-        name: image.fileName || 'profile.jpg',
         type: image.type || 'image/jpeg',
+        name: image.fileName || 'profile.jpg',
       });
-    }
+      formData.append('name', name.trim());
+      formData.append('description', gymDescription.trim());
+      formData.append('address', address.trim());
+      formData.append('country', country.trim());
+      formData.append('state', state.trim());
+      formData.append('city', city.trim());
+      formData.append('zip_code', zipCode.trim());
+      formData.append('latitude', latitude.toString());
+      formData.append('longitude', longitude.toString());
 
-    try {
+      setLoading(true);
+
       const response = await makeRequest({
         endPoint: EndPoints.ProfileStore,
         method: 'POST',
         body: formData,
-        headers: {'Content-Type': 'multipart/form-data'},
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      showToast({
-        message: response.message || 'Profile updated successfully',
-        type: 'success',
-      });
+
+      showToast({message: 'Profile updated successfully', type: 'success'});
       navigation.goBack();
     } catch (error) {
-      console.error('Profile update failed:', error);
-      showToast({
-        message: error.message || 'Profile update failed',
-        type: 'error',
-      });
+      console.log('Error while updating profile:', error?.response || error);
+      showToast({message: 'Failed to update profile'});
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.image}>
-        <Image
-          source={image?.uri ? {uri: image.uri} : IMAGES.BigProfile}
-          style={styles.image}
-          onError={e => console.log('Image Load Error:', e.nativeEvent.error)}
-        />
-        <TouchableOpacity style={{position: 'absolute', right: 155, top: 140}}>
-          <SVG.Camera />
-        </TouchableOpacity>
+        {image ? (
+          <Image
+            source={{uri: image.uri}}
+            style={{width: 120, height: 120, borderRadius: 60}}
+          />
+        ) : (
+          <TouchableOpacity onPress={pickImage}>
+            <Image source={IMAGES.ProfileCam} />
+            {/* <SVG.ImageCam /> */}
+          </TouchableOpacity>
+        )}
 
-        <TouchableOpacity onPress={handleImagePick}>
+        <TouchableOpacity onPress={pickImage}>
           <Text style={styles.imageText}>Change Picture</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.contentContainer}>
         <Text style={styles.labels}>Basic Information</Text>
+
         <TextInput
           style={[styles.input, {height: 40}]}
           placeholder="Name"
@@ -156,7 +125,9 @@ const EditGymProfileScreen = () => {
           placeholderTextColor={Colors.gray}
           color={Colors.gray}
         />
+
         <Text style={styles.label}>Address & Location</Text>
+
         <TextInput
           style={[styles.input, {height: 40}]}
           placeholder="Address"
@@ -197,17 +168,18 @@ const EditGymProfileScreen = () => {
           placeholderTextColor={Colors.gray}
           color={Colors.gray}
         />
+
         <View style={styles.mapContainer}>
           <MapView
             style={{flex: 1}}
             initialRegion={{
-              latitude: 28.6139,
-              longitude: 77.209,
+              latitude,
+              longitude,
               latitudeDelta: 0.1,
               longitudeDelta: 0.1,
             }}>
             <Marker
-              coordinate={{latitude: 28.6139, longitude: 77.209}}
+              coordinate={{latitude, longitude}}
               title="Gym Location"
               description="This is the gym's location"
             />
@@ -215,7 +187,11 @@ const EditGymProfileScreen = () => {
         </View>
 
         <View style={{marginBottom: 20}}>
-          <CustomButton title="Update Now" onPress={handleUpdate} />
+          <CustomButton
+            title={loading ? 'Updating...' : 'Update Now'}
+            onPress={handleCreateProfile}
+            disabled={loading}
+          />
         </View>
       </View>
     </ScrollView>

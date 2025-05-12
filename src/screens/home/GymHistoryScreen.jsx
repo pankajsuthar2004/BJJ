@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -16,14 +16,7 @@ import {useNavigation} from '@react-navigation/native';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
-
-const gymsData = [
-  {id: '1', name: 'gym jumper'},
-  {id: '2', name: 'gym for fitness'},
-  {id: '3', name: 'gym wellness'},
-  {id: '4', name: 'gym jackpot'},
-  {id: '5', name: 'gym with josh'},
-];
+import moment from 'moment';
 
 const filteredHistory = [
   {id: '1', name: 'Gym with Josh', date: '02/01/2025', status: 'Active'},
@@ -33,20 +26,55 @@ const filteredHistory = [
 ];
 
 const statusColors = {
-  Active: '#4CAF50',
-  Rejected: '#E53935',
-  Pending: '#F4A026',
+  0: '#4CAF50',
+  1: '#F4A026',
+  2: '#E53935',
 };
+
+const status = {
+  0: 'Active',
+  1: 'Pending',
+  2: 'Rejected',
+};
+const tabStatus = {'All Gyms': null, Active: 0, Pending: 1, Rejected: 2};
 
 const GymHistoryScreen = () => {
   const [selectedTab, setSelectedTab] = useState('All Gyms');
   const [isModalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [historyData, setHistoryData] = useState([]);
+  const [gymsData, setGymsData] = useState([]);
   const [filteredGyms, setFilteredGyms] = useState(gymsData);
   const [confirmationModalVisible, setConfirmationModalVisible] =
     useState(false);
   const [selectedGym, setSelectedGym] = useState(null);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    getGymHistory();
+    getAllGym();
+  }, []);
+
+  const getAllGym = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.activegym,
+      });
+      setGymsData(response);
+      setFilteredGyms(response);
+    } catch (error) {}
+  };
+
+  const getGymHistory = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GymHistory,
+        body: {status: null},
+        method: 'POST',
+      });
+      setHistoryData(response);
+    } catch (error) {}
+  };
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
@@ -74,13 +102,30 @@ const GymHistoryScreen = () => {
       });
       showToast({message: 'Training applied successfully!', type: 'success'});
       closeConfirmationModal();
+      setModalVisible(false);
+      setConfirmationModalVisible(false);
+      getGymHistory();
+      setSelectedTab('All Gyms');
     } catch (error) {
       console.error(error);
     }
   };
 
+  const onTabChange = async tab => {
+    setSelectedTab(tab);
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GymHistory,
+        body: {status: tabStatus[tab]},
+        method: 'POST',
+      });
+      setHistoryData(response);
+    } catch (error) {
+      setHistoryData([]);
+    }
+  };
+
   const openConfirmationModal = gym => {
-    setSelectedGym(gym);
     setConfirmationModalVisible(true);
   };
 
@@ -92,14 +137,14 @@ const GymHistoryScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.tabsContainer}>
-        {['All Gyms', 'Active', 'Pending', 'Rejected'].map(tab => (
+        {['All Gyms', 'Active', 'Pending', 'Rejected'].map((tab, index) => (
           <TouchableOpacity
             key={tab}
             style={[
               styles.tabButton,
               selectedTab === tab ? styles.activeTab : null,
             ]}
-            onPress={() => setSelectedTab(tab)}>
+            onPress={() => onTabChange(tab)}>
             <Text
               style={[
                 styles.tabText,
@@ -112,26 +157,25 @@ const GymHistoryScreen = () => {
       </View>
 
       <FlatList
-        data={filteredHistory.filter(
-          item => selectedTab === 'All Gyms' || item.status === selectedTab,
-        )}
+        data={historyData}
         keyExtractor={item => item.id}
         renderItem={({item}) => (
           <TouchableOpacity style={styles.card}>
             <SVG.GymIcon />
             <View style={styles.gymInfo}>
               <View>
-                <Text style={styles.gymName}>{item.name}</Text>
+                <Text style={styles.gymName}>{item?.gym_name}</Text>
                 <Text style={styles.date}>
-                  {item.status}: {item.date}
+                  {status[item?.status]}:{' '}
+                  {moment(item?.updated_at).format('DD/MM/YYYY')}
                 </Text>
               </View>
               <View
                 style={[
                   styles.statusBadge,
-                  {backgroundColor: statusColors[item.status]},
+                  {backgroundColor: statusColors[item?.status]},
                 ]}>
-                <Text style={styles.statusText}>{item.status}</Text>
+                <Text style={styles.statusText}>{status[item?.status]}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -181,7 +225,9 @@ const GymHistoryScreen = () => {
               renderItem={({item}) => (
                 <TouchableOpacity
                   style={styles.listItem}
-                  onPress={() => openConfirmationModal(item.name)}>
+                  onPress={() => {
+                    setSelectedGym(item), openConfirmationModal(item.name);
+                  }}>
                   <Text style={styles.listText}>{item.name}</Text>
                 </TouchableOpacity>
               )}
@@ -282,7 +328,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 8,
-    margin: 5,
+    alignSelf: 'center',
   },
   statusText: {
     color: Colors.white,

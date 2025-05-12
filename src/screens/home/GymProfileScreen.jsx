@@ -18,6 +18,7 @@ import Colors from '../../theme/color';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import AppLoader from '../../components/AppLoader';
 
 const GymProfileScreen = () => {
   const navigation = useNavigation();
@@ -31,27 +32,37 @@ const GymProfileScreen = () => {
   const [latitude, setLatitude] = useState('28.6139');
   const [longitude, setLongitude] = useState('77.2090');
   const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
     const result = await launchImageLibrary({mediaType: 'photo'});
     if (!result.didCancel && result.assets?.length > 0) {
-      setImage(result.assets[0]);
+      const selectedImage = result.assets[0];
+      if (selectedImage.fileSize && selectedImage.fileSize > 2 * 1024 * 1024) {
+        showToast({message: 'Image size should be less than 2MB'});
+        return;
+      }
+      setImage(selectedImage);
     }
   };
 
   const handleCreateProfile = async () => {
     try {
-      if (!image) {
-        showToast({message: 'Please select an image'});
-        return;
+      const formData = new FormData();
+
+      if (image) {
+        if (image.fileSize && image.fileSize > 2 * 1024 * 1024) {
+          showToast({message: 'Image size should be less than 2MB'});
+          return;
+        }
+
+        formData.append('image', {
+          uri: image.uri,
+          type: image.type || 'image/jpeg',
+          name: image.fileName || 'profile.jpg',
+        });
       }
 
-      const formData = new FormData();
-      formData.append('image', {
-        uri: image.uri,
-        type: image.type || 'image/jpeg',
-        name: image.fileName || 'profile.jpg',
-      });
       formData.append('name', gymName.trim());
       formData.append('description', gymDescription.trim());
       formData.append('address', address.trim());
@@ -59,21 +70,26 @@ const GymProfileScreen = () => {
       formData.append('state', state.trim());
       formData.append('city', city.trim());
       formData.append('zip_code', zipCode.trim());
-      formData.append('latitude', latitude.toString());
-      formData.append('longitude', longitude.toString());
+      formData.append('latitude', latitude?.toString());
+      formData.append('longitude', longitude?.toString());
 
-      await makeRequest({
+      setLoading(true);
+
+      const response = await makeRequest({
         endPoint: EndPoints.ProfileStore,
         method: 'POST',
-        body: {
-          isFormData: true,
-          data: formData,
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      showToast({message: 'Profile created successfully'});
+      setLoading(false);
+
+      showToast({message: 'Profile created successfully', type: 'success'});
       navigation.navigate('gym profile');
     } catch (error) {
+      setLoading(false);
       console.log('Error while creating profile:', error?.response || error);
       showToast({message: 'Failed to create profile'});
     }
@@ -81,6 +97,7 @@ const GymProfileScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
+      {loading && <AppLoader loading={loading} />}
       <ImageBackground style={styles.imageBackground} source={IMAGES.BgImage}>
         {image ? (
           <Image
@@ -90,7 +107,6 @@ const GymProfileScreen = () => {
         ) : (
           <TouchableOpacity onPress={pickImage}>
             <Image source={IMAGES.ProfileCam} />
-            {/* <SVG.ImageCam /> */}
           </TouchableOpacity>
         )}
       </ImageBackground>

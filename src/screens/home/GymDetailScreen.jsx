@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,41 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  TextInput,
 } from 'react-native';
 import IMAGES from '../../assets/images';
 import Colors from '../../theme/color';
 import {useNavigation} from '@react-navigation/native';
 import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
+import {hp} from '../../utility/ResponseUI';
+import AppLoader from '../../components/AppLoader';
 
 const GymDetailScreen = () => {
   const navigation = useNavigation();
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await makeRequest({
+          endPoint: EndPoints.GetProfile,
+          method: 'GET',
+        });
+        setUserData(response);
+        console.log('response', response);
+      } catch (error) {
+        showToast({message: error.message, type: 'error'});
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const menuItems = [
     {
@@ -43,11 +68,19 @@ const GymDetailScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         <View style={styles.profileContainer}>
+          {loading && <AppLoader loading={loading} />}
           <View>
-            <Image source={IMAGES.BigProfile} />
+            <Image
+              source={
+                userData?.image ? {uri: userData?.image} : IMAGES.BigProfile
+              }
+              style={{height: hp(14), width: hp(14), borderRadius: hp(20)}}
+            />
           </View>
           <View style={{justifyContent: 'center'}}>
-            <Text style={styles.profileName}>Josh Jones</Text>
+            <Text style={styles.profileName}>
+              {`Gym with ${userData?.name}`}
+            </Text>
             <TouchableOpacity
               style={styles.editProfileButton}
               onPress={goToEditProfile}>
@@ -97,6 +130,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 10,
     gap: 15,
+    justifyContent: 'center',
   },
   profileName: {
     fontSize: 24,

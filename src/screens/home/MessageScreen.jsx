@@ -16,6 +16,9 @@ import {Fonts} from '../../assets/fonts';
 import SVG from '../../assets/svg';
 import IMAGES from '../../assets/images';
 import {wp} from '../../utility/ResponseUI';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const {width} = Dimensions.get('window');
 
@@ -47,6 +50,7 @@ const MessageScreen = () => {
   );
   const [selectedManualRecipients, setSelectedManualRecipients] = useState([]);
   const [value, setValue] = useState(0);
+  const [message, setMessage] = useState('');
 
   const toggleManualSelection = item => {
     setSelectedManualRecipients(prev =>
@@ -54,6 +58,49 @@ const MessageScreen = () => {
         ? prev.filter(selected => selected.id !== item.id)
         : [...prev, item],
     );
+  };
+
+  const handleSendNotification = async () => {
+    if (!message.trim()) {
+      showToast({message: 'Please enter a message'});
+      return;
+    }
+
+    if (selectedRecipient === 'Select Recipient Type') {
+      showToast({message: 'Please select recipient type'});
+      return;
+    }
+
+    let body = {
+      message,
+      recipient_type: selectedRecipient,
+    };
+
+    if (selectedRecipient === 'Manual Selection') {
+      const recipient_ids = selectedManualRecipients.map(r => r.id);
+      if (recipient_ids.length === 0) {
+        showToast({message: 'Please select at least one recipient'});
+        return;
+      }
+      body.recipient_ids = recipient_ids;
+    } else if (selectedRecipient === 'Last X Days Since Training') {
+      body.days = value;
+    }
+
+    try {
+      await makeRequest({
+        endPoint: EndPoints.SendNotification,
+        method: 'POST',
+        body,
+      });
+
+      showToast({message: 'Notification sent successfully'});
+      setMessage('');
+      setSelectedRecipient('Select Recipient Type');
+      setManualListVisible(false);
+      setDaysSliderVisible(false);
+      setSelectedManualRecipients([]);
+    } catch (err) {}
   };
 
   const filteredManualSelectionOptions = manualSelectionOptions.filter(item =>
@@ -68,6 +115,8 @@ const MessageScreen = () => {
         placeholder="message..."
         placeholderTextColor={Colors.gray}
         multiline
+        value={message}
+        onChangeText={setMessage}
       />
 
       <Text style={styles.label}>Recipients</Text>
@@ -111,6 +160,7 @@ const MessageScreen = () => {
           />
         )}
       </View>
+
       {manualListVisible && (
         <View style={styles.manualSelectionContainer}>
           <View style={styles.searchContainer}>
@@ -159,9 +209,7 @@ const MessageScreen = () => {
                   left: wp(((value - 0) / (40 - 0)) * 100),
                 },
               ]}>
-              <View>
-                <Text style={styles.valueText}>{value} days</Text>
-              </View>
+              <Text style={styles.valueText}>{value} days</Text>
             </View>
             <View style={{marginTop: 20}}>
               <Slider
@@ -175,11 +223,12 @@ const MessageScreen = () => {
               />
             </View>
           </View>
-          //{' '}
         </View>
       )}
 
-      <TouchableOpacity style={styles.sendButton}>
+      <TouchableOpacity
+        style={styles.sendButton}
+        onPress={handleSendNotification}>
         <Text style={styles.sendButtonText}>Send Notification</Text>
       </TouchableOpacity>
     </ScrollView>

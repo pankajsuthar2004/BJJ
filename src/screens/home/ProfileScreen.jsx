@@ -15,6 +15,10 @@ import {Fonts} from '../../assets/fonts';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {useAppDispatch} from '../../store/Hooks';
+import {clearUser} from '../../Slices/UserSlice';
+import AppLoader from '../../components/AppLoader';
+import {hp} from '../../utility/ResponseUI';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -22,6 +26,30 @@ const ProfileScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGymPending, setIsGymPending] = useState(true);
   const [selectedGym, setSelectedGym] = useState('Gym with Josh');
+  const [gymData, setGymData] = useState('Gym with Josh');
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [gymDataList, setGymDataList] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await makeRequest({
+          endPoint: EndPoints.GetProfile,
+          method: 'GET',
+        });
+        setUserData(response);
+      } catch (error) {
+        showToast({message: error.message, type: 'error'});
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const dispatch = useAppDispatch();
 
   const menuItems = [
     {
@@ -57,31 +85,21 @@ const ProfileScreen = () => {
     },
   ];
 
-  const gymDataList = [
-    {id: '2', title: 'Gym with Mintoo'},
-    {id: '3', title: 'Fitness Fighter'},
-    {id: '4', title: 'Body Builder'},
-    {id: '5', title: 'Gym with Johny'},
-  ];
-
   useEffect(() => {
     fetchActiveGym();
-    fetchGymList();
+    // fetchGymList();
   }, []);
 
   const fetchActiveGym = async () => {
     try {
       const response = await makeRequest({
-        endPoint: EndPoints.ActiveGym,
-        method: 'GET',
+        endPoint: EndPoints.GymHistory,
+        body: {status: 0},
+        method: 'POST',
       });
-      if (response?.gymName) {
-        setSelectedGym(response.gymName);
-        setIsGymPending(response.isPending);
-      }
-    } catch (error) {
-      showToast({message: error.message, type: 'error'});
-    }
+      setSelectedGym(response ? response?.[0]?.gym_name : '');
+      setGymDataList(response);
+    } catch (error) {}
   };
 
   const fetchGymList = async () => {
@@ -101,15 +119,12 @@ const ProfileScreen = () => {
     setShowGymList(false);
   };
 
-  const filterData = gymDataList.filter(item =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
   const goToEditProfile = () => {
     navigation.navigate('Edit Profile');
   };
 
   const handleLogOut = () => {
+    dispatch(clearUser());
     navigation.reset({
       index: 0,
       routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
@@ -120,15 +135,21 @@ const ProfileScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         <View style={styles.profileContainer}>
+          {loading && <AppLoader loading={loading} />}
           <View>
-            <Image source={IMAGES.BigProfile} />
+            <Image
+              source={
+                userData?.image ? {uri: userData?.image} : IMAGES.BigProfile
+              }
+              style={{height: hp(16), width: hp(16), borderRadius: hp(20)}}
+            />
           </View>
           <TouchableOpacity style={{position: 'absolute', left: 95, top: 115}}>
             <SVG.Camera />
           </TouchableOpacity>
           <View style={{justifyContent: 'center'}}>
-            <Text style={styles.profileName}>Josh Jones</Text>
-            <Text style={styles.profileEmail}>joshjones@gmail.com</Text>
+            <Text style={styles.profileName}>{userData?.name}</Text>
+            <Text style={styles.profileEmail}>{userData?.email}</Text>
             <TouchableOpacity
               style={styles.editProfileButton}
               onPress={goToEditProfile}>
@@ -164,11 +185,11 @@ const ProfileScreen = () => {
 
             {item.title === selectedGym && showGymList && (
               <View style={{marginBottom: 6}}>
-                {filterData.map(item => (
+                {gymDataList.map(item => (
                   <TouchableOpacity
                     style={styles.listItem}
-                    key={item.id}
-                    onPress={() => handleSelectGym(item.title)}>
+                    key={item?.gym_name}
+                    onPress={() => handleSelectGym(item?.gym_name)}>
                     <View
                       style={{
                         flex: 1,
@@ -183,7 +204,9 @@ const ProfileScreen = () => {
                           gap: 5,
                         }}>
                         <SVG.GymIcon />
-                        <Text style={styles.listItemText}>{item.title}</Text>
+                        <Text style={styles.listItemText}>
+                          {item?.gym_name}
+                        </Text>
                       </View>
                     </View>
                   </TouchableOpacity>

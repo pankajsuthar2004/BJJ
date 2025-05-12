@@ -105,11 +105,9 @@ const CreatePostScreen = () => {
 
   const handleTagPress = tag => {
     if (selectedTags.includes(tag)) {
-      // Prevent unselecting if it's the only selected tag
       if (selectedTags.length === 1) return;
       setSelectedTags(prev => prev.filter(t => t !== tag));
     } else {
-      // Select multiple tags
       setSelectedTags(prev => [...prev, tag]);
     }
   };

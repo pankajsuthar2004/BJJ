@@ -23,7 +23,10 @@ const userSlice = createSlice({
       state.user = action.payload;
     },
     // Clear user data
-    clearUser(state) {},
+    clearUser: state => {
+      console.log(state, 'clear user');
+      return {...initialState};
+    },
   },
 });
 

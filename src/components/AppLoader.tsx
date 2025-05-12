@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, View, Modal, ActivityIndicator} from 'react-native';
-import {Colors} from 'react-native/Libraries/NewAppScreen';
+import Colors from '../theme/color';
 
 enum LoaderSize {
   large = 'large',
@@ -18,7 +18,7 @@ const AppLoader = ({
   type = 'window',
   size = LoaderSize.large,
   loading = false,
-  color = Colors.primary,
+  color = Colors.red,
 }: AddLoaderProps) => {
   const Loader = (
     <ActivityIndicator animating={loading} size={size} color={color} />
