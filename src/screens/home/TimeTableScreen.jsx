@@ -232,7 +232,6 @@ const TimeTableScreen = () => {
                     </TouchableOpacity>
                   ))}
 
-                  {/* Button to add next recurring day */}
                   <TouchableOpacity onPress={handleAddRecurringClass}>
                     <SVG.SmallRed />
                   </TouchableOpacity>

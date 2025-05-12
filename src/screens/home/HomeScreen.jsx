@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,9 @@ import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
 import {hp, wp} from '../../utility/ResponseUI';
 import SVG from '../../assets/svg';
-import {store} from '../../store/Store';
+import {EndPoints} from '../../api/config';
+import makeRequest from '../../api/http';
+import AppLoader from '../../components/AppLoader';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -27,6 +29,27 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const [selectedToggle, setSelectedToggle] = useState('');
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await makeRequest({
+          endPoint: EndPoints.GetProfile,
+          method: 'GET',
+        });
+        setUserData(response);
+        console.log('response', response);
+      } catch (error) {
+        showToast({message: error.message, type: 'error'});
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const chartConfig = {
     backgroundColor: Colors.white,
@@ -121,12 +144,18 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {loading && <AppLoader loading={loading} />}
         <View style={styles.header}>
           <TouchableOpacity>
-            <Image source={IMAGES.ProfilePic} />
+            <Image
+              source={
+                userData?.image ? {uri: userData?.image} : IMAGES.ProfilePic
+              }
+              style={{height: hp(5), width: hp(5), borderRadius: hp(6)}}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            Welcome Josh{'\n'}
+            {`Welcome ${userData?.name}\n`}
             <Text style={styles.headerText}>The Next Level Starts Now</Text>
           </Text>
           <View style={styles.iconStyle}>

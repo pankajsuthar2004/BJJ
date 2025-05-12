@@ -17,6 +17,7 @@ import IMAGES from '../../assets/images';
 import CustomTextInput from '../../components/CustomTextInput';
 import SVG from '../../assets/svg';
 import {Validation} from '../../utility/Validation';
+import AppLoader from '../../components/AppLoader';
 
 const EditProfile = ({navigation, AUTH_TOKEN}) => {
   const [name, setName] = useState('');
@@ -109,7 +110,6 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
         body: formData,
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${AUTH_TOKEN}`,
         },
       });
 
@@ -133,6 +133,7 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
+        {loading && <AppLoader loading={loading} />}
         <TouchableOpacity
           onPress={handleChangePicture}
           style={styles.profileContainer}>

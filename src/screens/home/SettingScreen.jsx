@@ -12,9 +12,12 @@ import Colors from '../../theme/color';
 import {useNavigation} from '@react-navigation/native';
 import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
+import {useAppDispatch} from '../../store/Hooks';
+import {clearUser} from '../../Slices/UserSlice';
 
 const SettingScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
 
   const menuItems = [
     {
@@ -50,6 +53,7 @@ const SettingScreen = () => {
   ];
 
   const handleDelete = () => {
+    dispatch(clearUser());
     navigation.reset({
       index: 0,
       routes: [{name: 'AuthStack', params: {screen: 'SignupScreen'}}],

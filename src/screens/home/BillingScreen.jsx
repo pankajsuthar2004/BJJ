@@ -100,7 +100,6 @@ const BillingScreen = ({navigation}) => {
         ))}
       </View>
 
-      {/* Invoices List */}
       {updatedInvoices.map(invoice => {
         if (selectedFilter !== 'All' && invoice.status !== selectedFilter)
           return null;

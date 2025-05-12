@@ -7,8 +7,9 @@ import {
   ImageBackground,
   Animated,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {CommonActions, useNavigation} from '@react-navigation/native';
 import IMAGES from '../../assets/images';
+import {useAppSelector} from '../../store/Hooks';
 
 const {width, height} = Dimensions.get('window');
 
@@ -22,12 +23,30 @@ const SplashScreen = () => {
       duration: 3000,
       useNativeDriver: true,
     }).start(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'AuthStack'}],
-      });
+      const clearTimeoutFn = handleNavigation();
+      return clearTimeoutFn;
     });
-  }, [fadeAnim, navigation]);
+  }, [fadeAnim, navigation, user]);
+
+  const user = useAppSelector(state => (state ? state?.user?.user : null));
+
+  // Function to handle navigation and clearing timeout
+  const handleNavigation = () => {
+    const navigate = setTimeout(() => {
+      if (user) {
+        navigation.dispatch(
+          CommonActions.reset({index: 0, routes: [{name: 'HomeStack'}]}),
+        );
+      } else {
+        navigation.dispatch(
+          CommonActions.reset({routes: [{name: 'AuthStack'}]}),
+        );
+      }
+    }, 2000);
+
+    // Clear the timeout when it's no longer needed
+    return () => clearTimeout(navigate);
+  };
 
   return (
     <View style={styles.container}>

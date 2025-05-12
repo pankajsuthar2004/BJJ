@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,10 @@ import {Calendar} from 'react-native-calendars';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import SVG from '../../assets/svg';
-import {hp, wp} from '../../utility/ResponseUI';
-
-const attendanceData = [
-  {id: '1', className: 'Gi Class', present: 15, absent: 5},
-  {id: '2', className: 'No Gi Class', present: 20, absent: 12},
-  {id: '3', className: 'Competition Class', present: 8, absent: 13},
-];
-
-const totalPresent = attendanceData.reduce(
-  (sum, item) => sum + item.present,
-  0,
-);
-const totalAbsent = attendanceData.reduce((sum, item) => sum + item.absent, 0);
+import {hp} from '../../utility/ResponseUI';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const radius = 50;
 const strokeWidth = 15;
@@ -37,6 +28,31 @@ const AttendanceViewScreen = () => {
   const [classDropdownVisible, setClassDropdownVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [markedDates, setMarkedDates] = useState({});
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchAttendanceData = async () => {
+    try {
+      setLoading(true);
+      const response = await makeRequest({
+        endPoint: EndPoints.Pupil,
+        method: 'POST',
+        body: {},
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      setAttendanceData(response);
+    } catch (error) {
+      showToast({message: 'Failed to fetch attendance data'});
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendanceData();
+  }, []);
 
   const filteredData =
     selectedClass === 'All Classes'
@@ -49,8 +65,8 @@ const AttendanceViewScreen = () => {
   );
   const totalAbsent = filteredData.reduce((sum, item) => sum + item.absent, 0);
   const total = totalPresent + totalAbsent;
-  const presentPercentage = (totalPresent / total) * circumference;
-  const absentPercentage = (totalAbsent / total) * circumference;
+  const presentPercentage = (totalPresent / total) * circumference || 0;
+  const absentPercentage = (totalAbsent / total) * circumference || 0;
 
   const generateMarkedDates = () => {
     let dates = {};
@@ -95,6 +111,7 @@ const AttendanceViewScreen = () => {
           <SVG.SmallArrow />
         </TouchableOpacity>
       </View>
+
       {classDropdownVisible && (
         <View style={styles.dropdownList}>
           <ScrollView>
@@ -116,105 +133,116 @@ const AttendanceViewScreen = () => {
           </ScrollView>
         </View>
       )}
-      <FlatList
-        data={filteredData}
-        keyExtractor={item => item.id}
-        renderItem={({item}) => (
-          <View style={styles.card}>
-            <Text style={styles.className}>{item.className}</Text>
-            <View style={styles.attendanceRow}>
-              <View style={styles.attendanceGroup}>
-                <Text style={styles.present}>{item.present}</Text>
-                <Text style={styles.label}>Present</Text>
-              </View>
-              <View style={styles.attendanceGroup}>
-                <Text style={styles.absent}>{item.absent}</Text>
-                <Text style={styles.label}>Absent</Text>
+
+      {loading ? (
+        <Text style={{color: Colors.white, textAlign: 'center'}}>
+          Loading...
+        </Text>
+      ) : filteredData.length === 0 ? (
+        <Text style={{color: Colors.white, textAlign: 'center'}}>
+          No Data Found
+        </Text>
+      ) : (
+        <FlatList
+          data={filteredData}
+          keyExtractor={item => item.id?.toString()}
+          renderItem={({item}) => (
+            <View style={styles.card}>
+              <Text style={styles.className}>{item.className}</Text>
+              <View style={styles.attendanceRow}>
+                <View style={styles.attendanceGroup}>
+                  <Text style={styles.present}>{item.present}</Text>
+                  <Text style={styles.label}>Present</Text>
+                </View>
+                <View style={styles.attendanceGroup}>
+                  <Text style={styles.absent}>{item.absent}</Text>
+                  <Text style={styles.label}>Absent</Text>
+                </View>
               </View>
             </View>
-          </View>
-        )}
-        ListFooterComponent={
-          <View style={styles.chartContainer}>
-            <Svg width={250} height={250} viewBox="0 0 200 200">
-              <Circle
-                cx="100"
-                cy="100"
-                r={radius}
-                stroke={Colors.darkGray}
-                strokeWidth={strokeWidth}
-                fill="none"
-              />
-              <Circle
-                cx="100"
-                cy="100"
-                r={radius}
-                stroke={Colors.green}
-                strokeWidth={strokeWidth}
-                fill="none"
-                strokeDasharray={`${presentPercentage}, ${circumference}`}
-                strokeLinecap="butt"
-              />
-              <Circle
-                cx="100"
-                cy="100"
-                r={radius}
-                stroke={Colors.red}
-                strokeWidth={strokeWidth}
-                fill="none"
-                strokeDasharray={`${absentPercentage}, ${circumference}`}
-                strokeDashoffset={-presentPercentage}
-                strokeLinecap="butt"
-              />
+          )}
+          ListFooterComponent={
+            <View style={styles.chartContainer}>
+              <Svg width={250} height={250} viewBox="0 0 200 200">
+                <Circle
+                  cx="100"
+                  cy="100"
+                  r={radius}
+                  stroke={Colors.darkGray}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                />
+                <Circle
+                  cx="100"
+                  cy="100"
+                  r={radius}
+                  stroke={Colors.green}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                  strokeDasharray={`${presentPercentage}, ${circumference}`}
+                  strokeLinecap="butt"
+                />
+                <Circle
+                  cx="100"
+                  cy="100"
+                  r={radius}
+                  stroke={Colors.red}
+                  strokeWidth={strokeWidth}
+                  fill="none"
+                  strokeDasharray={`${absentPercentage}, ${circumference}`}
+                  strokeDashoffset={-presentPercentage}
+                  strokeLinecap="butt"
+                />
 
-              <Rect
-                x="135"
-                y="130"
-                width="42"
-                height="26"
-                fill="white"
-                rx="5"
-              />
-              <SvgText
-                x="160"
-                y="140"
-                fill="black"
-                fontSize="8"
-                fontWeight="bold"
-                textAnchor="end">
-                {totalPresent}
-              </SvgText>
-              <SvgText
-                x="175"
-                y="150 "
-                fill="black"
-                fontSize="6"
-                textAnchor="end">
-                Total Present
-              </SvgText>
+                <Rect
+                  x="135"
+                  y="130"
+                  width="42"
+                  height="26"
+                  fill="white"
+                  rx="5"
+                />
+                <SvgText
+                  x="160"
+                  y="140"
+                  fill="black"
+                  fontSize="8"
+                  fontWeight="bold"
+                  textAnchor="end">
+                  {totalPresent}
+                </SvgText>
+                <SvgText
+                  x="175"
+                  y="150"
+                  fill="black"
+                  fontSize="6"
+                  textAnchor="end">
+                  Total Present
+                </SvgText>
 
-              <Circle cx="90" cy="20" r="2" fill="green" />
-              <SvgText
-                x="120"
-                y="24"
-                fill="white"
-                fontSize="12"
-                textAnchor="middle">
-                Present
-              </SvgText>
-              <Circle cx="150" cy="20" r="2" fill="red" />
-              <SvgText
-                x="160"
-                y="24"
-                fill="white"
-                fontSize="12"
-                textAnchor="start">
-                Absent
-              </SvgText>
-            </Svg>
-          </View>
-        }
-      />
+                <Circle cx="90" cy="20" r="2" fill="green" />
+                <SvgText
+                  x="120"
+                  y="24"
+                  fill="white"
+                  fontSize="12"
+                  textAnchor="middle">
+                  Present
+                </SvgText>
+                <Circle cx="150" cy="20" r="2" fill="red" />
+                <SvgText
+                  x="160"
+                  y="24"
+                  fill="white"
+                  fontSize="12"
+                  textAnchor="start">
+                  Absent
+                </SvgText>
+              </Svg>
+            </View>
+          }
+        />
+      )}
 
       <Modal visible={calendarVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
@@ -230,8 +258,7 @@ const AttendanceViewScreen = () => {
                 arrowColor: '#FFF',
               }}
             />
-            <TouchableOpacity
-              onPress={() => setCalendarVisible(false)}></TouchableOpacity>
+            <TouchableOpacity onPress={() => setCalendarVisible(false)} />
           </View>
         </View>
       </Modal>

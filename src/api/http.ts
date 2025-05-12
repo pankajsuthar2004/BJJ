@@ -20,19 +20,17 @@ type Params = {
   headers?: Record<string, string>;
 };
 
+const isFormData = (data: object | undefined): data is FormData => {
+  return (data as FormData)?.append !== undefined;
+};
+
 const makeRequest = async <T>(params: Params) => {
   const {endPoint, method = 'GET', body = {}, headers = {}} = params;
   const url = BASE_URL + endPoint;
   try {
     const reqHeaders: Record<string, any> = {...defaultHeaders, ...headers};
-    console.log('URL: ', url);
-    console.log(reqHeaders, 'reqHeaders:');
-    console.log(method, 'methodApplied');
-
     // const user = await getValue('user');
     const user = store.getState().user?.user;
-    console.log('Redux Store User:', store.getState().user);
-
     if (!user || !user.token) {
       console.warn(
         'No valid token found. Authorization header will not be set.',
@@ -47,13 +45,9 @@ const makeRequest = async <T>(params: Params) => {
     };
 
     if (method !== 'GET') {
-      fetchOptions.body = JSON.stringify(body);
+      fetchOptions.body = isFormData(body) ? body : JSON.stringify(body);
     }
-    console.log(fetchOptions, 'FetchOptions');
-
     const response = await fetch(url, fetchOptions);
-
-    console.log(response, 'Api response');
     if (!response.ok) {
       console.log('Status Code: ', response.status);
       throw new Error(`Network error: ${response.statusText}`);
@@ -62,7 +56,7 @@ const makeRequest = async <T>(params: Params) => {
 
     console.log('URL: ', url);
     console.log('Body: ', body);
-    console.log('Response: ', result);
+    console.log('header: ', reqHeaders);
     console.log('--------------------------------------------');
     if (!result.success) {
       throw new Error(result.message || 'Api Error');

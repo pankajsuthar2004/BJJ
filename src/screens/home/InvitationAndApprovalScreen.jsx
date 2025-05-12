@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,10 @@ import {Fonts} from '../../assets/fonts';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {store} from '../../store/Store';
 
 const InvitationAndApprovalScreen = () => {
   const [email, setEmail] = useState('');
-  const [invitation, setInvitation] = useState([]);
-  const [approvalWorkflow] = useState([
-    {name: 'Messy Petch'},
-    {name: 'Flex Fen'},
-  ]);
 
   const invitations = [
     {email: 'paulmason@gmail.com', status: 'Approved', color: Colors.green},
@@ -28,38 +24,33 @@ const InvitationAndApprovalScreen = () => {
     {email: 'joshjanes@gmail.com', status: 'Sent', color: Colors.yellow},
   ];
 
-  useEffect(() => {
-    fetchAppliedTraining();
-  }, []);
+  const approvalWorkflow = [{name: 'Messy Petch'}, {name: 'Flex Fen'}];
 
-  const fetchAppliedTraining = async () => {
-    try {
-      const data = await makeRequest({
-        endPoint: EndPoints.AppliedTraining,
-        method: 'GET',
-      });
-      setInvitation(data || []);
-      showToast({message: 'Data fetched successfully!'});
-    } catch (error) {
-      console.error('Error fetching applied training:', error);
-      showToast({message: error.message || 'Failed to fetch data'});
+  const handleSendInvitation = async () => {
+    if (!email.trim()) {
+      showToast({message: 'Please enter an email address.'});
+      return;
     }
-  };
-  const handleTrainingRequest = async (requestId, status) => {
+
+    const user = store.getState().user?.user;
+    if (!user || !user.token) {
+      showToast({message: 'You are not logged in. Please login first.'});
+      return;
+    }
+
     try {
-      const data = await makeRequest({
-        endPoint: EndPoints.HandleTrainingRequest,
+      // Make the request without manually adding the Authorization header
+      await makeRequest({
+        endPoint: EndPoints.GymInvitation,
         method: 'POST',
-        body: {
-          request_id: requestId,
-          status,
-        },
+        body: {email},
       });
-      showToast({message: 'Request handled successfully!'});
-      fetchAppliedTraining();
+
+      showToast({message: 'Invitation sent successfully!'});
+      setEmail('');
     } catch (error) {
-      console.error('Error handling training request:', error);
-      showToast({message: error.message || 'Failed to handle request'});
+      // Error is already handled by makeRequest
+      showToast({message: error?.message || 'An error occurred'});
     }
   };
 
@@ -85,14 +76,10 @@ const InvitationAndApprovalScreen = () => {
     <View style={styles.approvalItem}>
       <Text style={styles.nameText}>{item.name}</Text>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.declineButton]}
-          onPress={() => handleTrainingRequest(item.request_id, 'Declined')}>
+        <TouchableOpacity style={[styles.actionButton, styles.declineButton]}>
           <Text style={styles.actionText}>Decline</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.approveButton]}
-          onPress={() => handleTrainingRequest(item.request_id, 'Approved')}>
+        <TouchableOpacity style={[styles.actionButton, styles.approveButton]}>
           <Text style={styles.actionText}>Approve</Text>
         </TouchableOpacity>
       </View>
@@ -109,11 +96,13 @@ const InvitationAndApprovalScreen = () => {
         value={email}
         onChangeText={setEmail}
       />
-      <TouchableOpacity style={styles.sendButton}>
+      <TouchableOpacity
+        style={styles.sendButton}
+        onPress={handleSendInvitation}>
         <Text style={styles.sendButtonText}>Send Invitation</Text>
       </TouchableOpacity>
       <View style={{gap: 10}}>
-        <Text style={styles.label}>Invitation Status</Text>
+        <Text style={styles.label}>Invitation status</Text>
         <FlatList
           data={invitations}
           renderItem={renderInvitationItem}
