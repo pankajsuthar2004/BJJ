@@ -26,17 +26,17 @@ const filteredHistory = [
 ];
 
 const statusColors = {
-  0: '#4CAF50',
-  1: '#F4A026',
+  0: '#F4A026',
+  1: '#4CAF50',
   2: '#E53935',
 };
 
 const status = {
-  0: 'Active',
-  1: 'Pending',
+  0: 'Pending',
+  1: 'Active',
   2: 'Rejected',
 };
-const tabStatus = {'All Gyms': null, Active: 0, Pending: 1, Rejected: 2};
+const tabStatus = {'All Gyms': null, Pending: 0, Active: 1, Rejected: 2};
 
 const GymHistoryScreen = () => {
   const [selectedTab, setSelectedTab] = useState('All Gyms');

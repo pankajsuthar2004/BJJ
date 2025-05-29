@@ -15,7 +15,7 @@ import {Fonts} from '../../assets/fonts';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
-import {useAppDispatch} from '../../store/Hooks';
+import {useAppDispatch, useAppSelector} from '../../store/Hooks';
 import {clearUser} from '../../Slices/UserSlice';
 import AppLoader from '../../components/AppLoader';
 import {hp} from '../../utility/ResponseUI';
@@ -25,7 +25,7 @@ const ProfileScreen = () => {
   const [showGymList, setShowGymList] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGymPending, setIsGymPending] = useState(true);
-  const [selectedGym, setSelectedGym] = useState('Gym with Josh');
+  const [selectedGym, setSelectedGym] = useState('');
   const [gymData, setGymData] = useState('Gym with Josh');
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -57,12 +57,16 @@ const ProfileScreen = () => {
       icon: SVG.Notification,
       action: () => navigation.navigate('Notifications'),
     },
-    {
-      title: selectedGym,
-      icon: SVG.GymIcon,
-      action: () => setShowGymList(prev => !prev),
-      isPending: isGymPending,
-    },
+    ...(gymDataList?.length
+      ? [
+          {
+            title: selectedGym,
+            icon: SVG.GymIcon,
+            action: () => setShowGymList(prev => !prev),
+            isPending: isGymPending,
+          },
+        ]
+      : []),
     {
       title: 'Join New Gym & History',
       icon: SVG.GymIcon,
@@ -88,13 +92,13 @@ const ProfileScreen = () => {
   useEffect(() => {
     fetchActiveGym();
     // fetchGymList();
-  }, []);
+  }, [navigation]);
 
   const fetchActiveGym = async () => {
     try {
       const response = await makeRequest({
         endPoint: EndPoints.GymHistory,
-        body: {status: 0},
+        body: {status: 1},
         method: 'POST',
       });
       setSelectedGym(response ? response?.[0]?.gym_name : '');
@@ -141,10 +145,10 @@ const ProfileScreen = () => {
               source={
                 userData?.image ? {uri: userData?.image} : IMAGES.BigProfile
               }
-              style={{height: hp(16), width: hp(16), borderRadius: hp(20)}}
+              style={{height: hp(14), width: hp(14), borderRadius: hp(20)}}
             />
           </View>
-          <TouchableOpacity style={{position: 'absolute', left: 95, top: 115}}>
+          <TouchableOpacity style={{position: 'absolute', left: 85, top: 95}}>
             <SVG.Camera />
           </TouchableOpacity>
           <View style={{justifyContent: 'center'}}>

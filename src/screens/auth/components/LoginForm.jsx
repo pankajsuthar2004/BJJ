@@ -61,10 +61,7 @@ const LoginForm = () => {
           password: enteredPass,
         },
       });
-
-      console.log('this is', user);
       dispatch(setUser(user));
-
       navigation.dispatch(
         CommonActions.reset({
           index: 0,

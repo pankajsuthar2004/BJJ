@@ -164,7 +164,10 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
         <CustomTextInput
           placeholder="Phone"
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={text => {
+            const numericText = text.replace(/[^0-9]/g, '');
+            setPhone(numericText);
+          }}
           keyboardType="phone-pad"
           icon={SVG.Phone}
         />

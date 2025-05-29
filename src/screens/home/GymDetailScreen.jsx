@@ -17,22 +17,23 @@ import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
 import {hp} from '../../utility/ResponseUI';
 import AppLoader from '../../components/AppLoader';
+import {useAppSelector} from '../../store/Hooks';
 
 const GymDetailScreen = () => {
   const navigation = useNavigation();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const user = useAppSelector(s => s.user);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const response = await makeRequest({
-          endPoint: EndPoints.GetProfile,
+          endPoint: EndPoints.GetGym,
           method: 'GET',
         });
-        setUserData(response);
-        console.log('response', response);
+        setUserData(response[0]);
       } catch (error) {
         showToast({message: error.message, type: 'error'});
       } finally {
@@ -63,7 +64,7 @@ const GymDetailScreen = () => {
   const goToEditProfile = () => {
     navigation.navigate('edit profile');
   };
-
+  console.log(userData);
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
@@ -72,15 +73,15 @@ const GymDetailScreen = () => {
           <View>
             <Image
               source={
-                userData?.image ? {uri: userData?.image} : IMAGES.BigProfile
+                userData?.image
+                  ? {uri: 'http://89.116.212.241:9083/' + userData?.image}
+                  : IMAGES.BigProfile
               }
               style={{height: hp(14), width: hp(14), borderRadius: hp(20)}}
             />
           </View>
           <View style={{justifyContent: 'center'}}>
-            <Text style={styles.profileName}>
-              {`Gym with ${userData?.name}`}
-            </Text>
+            <Text style={styles.profileName}>{user?.user?.gym?.name}</Text>
             <TouchableOpacity
               style={styles.editProfileButton}
               onPress={goToEditProfile}>

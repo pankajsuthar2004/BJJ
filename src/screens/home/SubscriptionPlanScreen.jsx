@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  ScrollView,
 } from 'react-native';
 import {Fonts} from '../../assets/fonts';
 import Colors from '../../theme/color';
@@ -15,29 +16,61 @@ import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
 
 const SubscriptionPlanScreen = () => {
-  const [plans, setPlans] = useState([
-    {id: 1, price: 50, type: 'Monthly Plan', duration: 30},
-    {id: 2, price: 550, type: 'Yearly Plan', duration: 365},
-  ]);
+  const [plans, setPlans] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [newPlan, setNewPlan] = useState({name: '', price: '', duration: '7'});
+  const [newPlan, setNewPlan] = useState({name: '', price: ''});
   const [editPlanData, setEditPlanData] = useState(null);
+  const [duration, setDuration] = useState('');
+
+  const gymId = 123;
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await makeRequest({
+          endPoint: `${EndPoints.GymPlans}?id=${gymId}`,
+          method: 'POST',
+          body: {
+            gym_id: gymId,
+          },
+        });
+        setPlans(response);
+      } catch (error) {
+        console.error(error);
+        showToast({message: 'Failed to fetch plans', type: 'error'});
+      }
+    };
+
+    fetchPlans();
+  }, []);
 
   const addNewPlan = async () => {
-    if (!newPlan.name || !newPlan.price) {
-      showToast({message: 'Name and Price are required!', type: 'error'});
+    if (!newPlan.name || !newPlan.price || !duration) {
+      showToast({
+        message: 'Name, Price, and Duration are required!',
+        type: 'error',
+      });
       return;
     }
 
     try {
+      const body = {
+        ...newPlan,
+        duration,
+        gym_id: gymId,
+      };
+
       const response = await makeRequest({
         endPoint: EndPoints.CreatePlan,
         method: 'POST',
-        body: newPlan,
+        body,
       });
+
       showToast({message: 'Plan created successfully!', type: 'success'});
-      setPlans(prev => [...prev, {...newPlan, id: prev.length + 1}]);
-      setNewPlan({name: '', price: '', duration: '7'});
+      const newArray = [...plans, response];
+      setPlans(newArray);
+      setNewPlan({name: '', price: ''});
+      setDuration('');
       setModalVisible(false);
     } catch (error) {
       console.error(error);
@@ -46,14 +79,21 @@ const SubscriptionPlanScreen = () => {
   };
 
   const editPlan = async () => {
-    if (!editPlanData?.name || !editPlanData?.price) {
-      showToast({message: 'Name and Price are required!', type: 'error'});
+    if (
+      !editPlanData?.name ||
+      !editPlanData?.price ||
+      !editPlanData?.duration
+    ) {
+      showToast({
+        message: 'Name, Price, and Duration are required!',
+        type: 'error',
+      });
       return;
     }
 
     try {
       const response = await makeRequest({
-        endPoint: `${EndPoints.UpdatePlan}?id=${editPlanData.id}&name=${editPlanData.name}&price=${editPlanData.price}&duration=${editPlanData.duration}`,
+        endPoint: `${EndPoints.UpdatePlan}?id=${editPlanData?.id}&name=${editPlanData?.name}&price=${editPlanData.price}&duration=${editPlanData.duration}`,
         method: 'PATCH',
       });
 
@@ -71,28 +111,26 @@ const SubscriptionPlanScreen = () => {
     }
   };
 
-  const deletePlan = async id => {
+  const deletePlan = async planId => {
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this plan?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        {text: 'Cancel', style: 'cancel'},
         {
           text: 'Delete',
           onPress: async () => {
             try {
-              const response = await makeRequest({
-                endPoint: `${EndPoints.DeletePlan}?id=${id}`,
+              await makeRequest({
+                endPoint: `${EndPoints.DeletePlan}?id=${planId}`,
                 method: 'DELETE',
               });
+
               showToast({
                 message: 'Plan deleted successfully!',
                 type: 'success',
               });
-              setPlans(prev => prev.filter(plan => plan.id !== id));
+              setPlans(prev => prev.filter(plan => plan.id !== planId));
             } catch (error) {
               console.error(error);
               showToast({message: 'Failed to delete plan', type: 'error'});
@@ -110,82 +148,105 @@ const SubscriptionPlanScreen = () => {
 
   return (
     <View style={styles.container}>
-      {plans.map(plan => (
-        <View key={plan.id} style={styles.planCard}>
-          <View style={styles.planInfo}>
-            <Text style={styles.priceText}>${plan.price}</Text>
-            <Text style={styles.planDetail}>{plan.type}</Text>
-          </View>
-          <View style={styles.buttonGroup}>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => deletePlan(plan.id)}>
-              <Text style={styles.buttonText}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => openEditModal(plan)}>
-              <Text style={styles.buttonText}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ))}
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          setNewPlan({name: '', price: '', duration: '7'});
-          setModalVisible(true);
-        }}>
-        <Text style={styles.addButtonText}>Add New Membership Plan</Text>
-      </TouchableOpacity>
-
-      <Modal visible={modalVisible} animationType="fade" transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter plan name"
-              value={editPlanData ? editPlanData.name : newPlan.name}
-              onChangeText={text =>
-                editPlanData
-                  ? setEditPlanData(prev => ({...prev, name: text}))
-                  : setNewPlan(prev => ({...prev, name: text}))
-              }
-            />
-            <Text style={styles.modalTitle}>Price</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Amount here..."
-              keyboardType="numeric"
-              value={editPlanData ? editPlanData.price : newPlan.price}
-              onChangeText={text =>
-                editPlanData
-                  ? setEditPlanData(prev => ({...prev, price: text}))
-                  : setNewPlan(prev => ({...prev, price: text}))
-              }
-            />
-            <View style={styles.buttonRow}>
+      <ScrollView>
+        {plans.map(plan => (
+          <View key={plan.id} style={styles.planCard}>
+            <View style={styles.planInfo}>
+              <Text style={styles.priceText}>${plan.price}</Text>
+              <Text style={styles.planDetail}>{plan.name}</Text>
+              <Text style={styles.durationDetail}>
+                {plan.duration} {Number(plan.duration) === 1 ? 'day' : 'days'}
+              </Text>
+            </View>
+            <View style={styles.buttonGroup}>
               <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setModalVisible(false);
-                  setEditPlanData(null);
-                }}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                style={styles.deleteButton}
+                onPress={() => deletePlan(plan?.id)}>
+                <Text style={styles.buttonText}>Delete</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.addMembershipButton}
-                onPress={editPlanData ? editPlan : addNewPlan}>
-                <Text style={styles.addMembershipText}>
-                  {editPlanData ? 'Update Membership' : 'Add Membership'}
-                </Text>
+                style={styles.editButton}
+                onPress={() => openEditModal(plan)}>
+                <Text style={styles.buttonText}>Edit</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        ))}
+
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            setNewPlan({name: '', price: ''});
+            setDuration('');
+            setEditPlanData(null);
+            setModalVisible(true);
+          }}>
+          <Text style={styles.addButtonText}>Add New Membership Plan</Text>
+        </TouchableOpacity>
+
+        <Modal visible={modalVisible} animationType="fade" transparent={true}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter plan name"
+                value={editPlanData ? editPlanData.name : newPlan.name}
+                onChangeText={text =>
+                  editPlanData
+                    ? setEditPlanData(prev => ({...prev, name: text}))
+                    : setNewPlan(prev => ({...prev, name: text}))
+                }
+              />
+              <Text style={styles.modalTitle}>Price</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Amount here..."
+                keyboardType="numeric"
+                value={editPlanData ? editPlanData.price : newPlan.price}
+                onChangeText={text =>
+                  editPlanData
+                    ? setEditPlanData(prev => ({...prev, price: text}))
+                    : setNewPlan(prev => ({...prev, price: text}))
+                }
+              />
+              <Text style={styles.modalTitle}>Duration</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Duration"
+                keyboardType="numeric"
+                value={
+                  editPlanData
+                    ? String(editPlanData.duration)
+                    : String(duration || '')
+                }
+                onChangeText={text =>
+                  editPlanData
+                    ? setEditPlanData(prev => ({...prev, duration: text}))
+                    : setDuration(text)
+                }
+              />
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    setModalVisible(false);
+                    setEditPlanData(null);
+                  }}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.addMembershipButton}
+                  onPress={editPlanData ? editPlan : addNewPlan}>
+                  <Text style={styles.addMembershipText}>
+                    {editPlanData ? 'Update Membership' : 'Add Membership'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
     </View>
   );
 };
@@ -214,7 +275,11 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   planDetail: {
-    fontSize: 14,
+    fontSize: 16,
+    color: Colors.white,
+  },
+  durationDetail: {
+    fontSize: 13,
     color: Colors.white,
   },
   addButton: {

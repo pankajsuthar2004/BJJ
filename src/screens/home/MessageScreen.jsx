@@ -29,6 +29,13 @@ const recipientOptions = [
   'Last X Days Since Training',
 ];
 
+const recipientTypeMap = {
+  Paid: 'paid',
+  Unpaid: 'unpaid',
+  'Manual Selection': 'manual',
+  'Last X Days Since Training': 'days',
+};
+
 const manualSelectionOptions = [
   {id: 1, name: 'Josh Jones', photo: IMAGES.Photo},
   {id: 2, name: 'Paul Walker', photo: IMAGES.Photo1},
@@ -71,19 +78,25 @@ const MessageScreen = () => {
       return;
     }
 
+    const mappedType = recipientTypeMap[selectedRecipient];
+    if (!mappedType) {
+      showToast({message: 'Invalid recipient type selected'});
+      return;
+    }
+
     let body = {
       message,
-      recipient_type: selectedRecipient,
+      recipient_type: mappedType,
     };
 
-    if (selectedRecipient === 'Manual Selection') {
+    if (mappedType === 'manual') {
       const recipient_ids = selectedManualRecipients.map(r => r.id);
       if (recipient_ids.length === 0) {
         showToast({message: 'Please select at least one recipient'});
         return;
       }
       body.recipient_ids = recipient_ids;
-    } else if (selectedRecipient === 'Last X Days Since Training') {
+    } else if (mappedType === 'days') {
       body.days = value;
     }
 
@@ -234,7 +247,6 @@ const MessageScreen = () => {
     </ScrollView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

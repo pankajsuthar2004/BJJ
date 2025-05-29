@@ -42,10 +42,12 @@ import BillingScreen from '../screens/home/BillingScreen';
 import GymJumperScreen from '../screens/home/GymJumperScreen';
 import InvoiceDetailScreen from '../screens/home/InvoiceDetailScreen';
 import BillingDetailScreen from '../screens/home/BillingDetailScreen';
+import {useAppSelector} from '../store/Hooks';
 
 const Stack = createNativeStackNavigator();
 
 const HomeStack = () => {
+  const a = useAppSelector(b => b.user);
   return (
     <Stack.Navigator
       screenOptions={{
@@ -54,7 +56,8 @@ const HomeStack = () => {
         },
         headerTintColor: '#fff',
         headerTitleAlign: 'center',
-      }}>
+      }}
+      initialRouteName={'HomeScreen'}>
       <Stack.Screen
         name="HomeScreen"
         component={HomeScreen}

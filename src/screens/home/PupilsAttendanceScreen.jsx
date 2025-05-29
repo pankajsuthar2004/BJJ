@@ -150,14 +150,14 @@ const PupilsAttendanceScreen = () => {
                 style={styles.filterOption}
                 onPress={() => toggleFilter('gi')}>
                 <Text style={styles.filterText}>Gi</Text>
-                {selectedFilters.gi ? <SVG.Tick /> : <SVG.EmptyTick />}
+                {selectedFilters.gi ? <SVG.FilterTick /> : <SVG.EmptyTick />}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.filterOption}
                 onPress={() => toggleFilter('noGi')}>
                 <Text style={styles.filterText}>No Gi</Text>
-                {selectedFilters.noGi ? <SVG.Tick /> : <SVG.EmptyTick />}
+                {selectedFilters.noGi ? <SVG.FilterTick /> : <SVG.EmptyTick />}
               </TouchableOpacity>
 
               <TouchableOpacity

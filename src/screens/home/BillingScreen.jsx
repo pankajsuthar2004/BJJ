@@ -4,43 +4,103 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ScrollView,
+  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import SVG from '../../assets/svg';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
-const gyms = ['Gym with Josh', 'Body Builder', 'Fitness Fanda'];
 const filters = ['All', 'Paid', 'Pending'];
-const invoicesData = [
-  {
-    id: '1',
-    title: 'Subscribe to Plan',
-    gym: 'Body Builder',
-    isSubscription: true,
-  },
-  {id: '2', title: 'Membership', amount: '$50.25', status: 'Pending'},
-  {id: '3', title: 'Trainer Fee', amount: '$50.25', status: 'Paid'},
-  {id: '4', title: 'July Invoice', amount: '$50.25', status: 'Pending'},
-  {id: '5', title: 'Membership-2.0', amount: '$50.25', status: 'Pending'},
-];
 
 const BillingScreen = ({navigation}) => {
-  const [selectedGym, setSelectedGym] = useState('Select Gym');
+  const [gyms, setGyms] = useState([]);
+  const [selectedGym, setSelectedGym] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('All');
-  const [updatedInvoices, setUpdatedInvoices] = useState(invoicesData);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const newInvoices = invoicesData.map(invoice =>
-      invoice.isSubscription ? {...invoice, gym: selectedGym} : invoice,
-    );
-    setUpdatedInvoices(newInvoices);
-  }, [selectedGym]);
+    const fetchGyms = async () => {
+      try {
+        setLoading(true);
+        const response = await makeRequest({
+          endPoint: EndPoints.UserGyms,
+          method: 'GET',
+        });
 
-  return (
-    <ScrollView style={styles.container}>
+        if (Array.isArray(response) && response.length > 0) {
+          setGyms(response);
+          setSelectedGym(response[0]);
+        } else {
+          showToast({message: 'No gyms found'});
+        }
+      } catch (error) {
+        console.error('Failed to fetch gyms:', error);
+        showToast({message: 'Failed to fetch gyms'});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGyms();
+  }, []);
+
+  const getStatus = selectedItem => {
+    switch (selectedItem) {
+      case 'All':
+        return 0;
+      case 'Paid':
+        return 1;
+      case 'Pending':
+        return 0;
+      default:
+        return 0;
+    }
+  };
+
+  useEffect(() => {
+    const fetchBillingHistory = async () => {
+      console.log('called');
+      if (!selectedGym) return;
+      try {
+        setLoading(true);
+        const body = {
+          gym_id: selectedGym.id,
+          status: getStatus(selectedFilter),
+        };
+        // if (selectedFilter !== 'All') {
+        // body.status = getStatus(selectedFilter);
+        // }
+
+        const response = await makeRequest({
+          endPoint: EndPoints.BillingHistory,
+          method: 'POST',
+          body,
+        });
+        console.log('Billing History Response:', response);
+        if (Array.isArray(response)) {
+          setInvoices(response);
+        } else {
+          setInvoices([]);
+          showToast({message: 'No billing records found'});
+        }
+      } catch (error) {
+        showToast({message: 'Failed to fetch billing history'});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBillingHistory();
+  }, [selectedGym, selectedFilter]);
+
+  const renderHeader = () => (
+    <View>
       <View style={styles.dropdownContainer}>
         <TouchableOpacity
           onPress={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -53,29 +113,28 @@ const BillingScreen = ({navigation}) => {
               borderBottomRightRadius: 0,
             },
           ]}>
-          <Text style={styles.dropdownText}>{selectedGym}</Text>
+          <Text style={styles.dropdownText}>
+            {selectedGym?.name || 'Select Gym'}
+          </Text>
           <SVG.SmallArrow />
         </TouchableOpacity>
 
         {isDropdownOpen && (
           <View style={styles.dropdownList}>
-            <FlatList
-              data={gyms}
-              keyExtractor={(_, index) => index.toString()}
-              renderItem={({item, index}) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedGym(item);
-                    setIsDropdownOpen(false);
-                  }}
-                  style={[
-                    styles.dropdownItem,
-                    index === gyms.length - 1 && {borderBottomWidth: 0},
-                  ]}>
-                  <Text>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
+            {gyms.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  setSelectedGym(item);
+                  setIsDropdownOpen(false);
+                }}
+                style={[
+                  styles.dropdownItem,
+                  index === gyms.length - 1 && {borderBottomWidth: 0},
+                ]}>
+                <Text>{item.name}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
       </View>
@@ -99,51 +158,58 @@ const BillingScreen = ({navigation}) => {
           </TouchableOpacity>
         ))}
       </View>
+    </View>
+  );
 
-      {updatedInvoices.map(invoice => {
-        if (selectedFilter !== 'All' && invoice.status !== selectedFilter)
-          return null;
-        return (
-          <View key={invoice.id} style={styles.invoiceCard}>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              <Text style={styles.invoiceTitle}>{invoice.title}</Text>
-              <Text style={styles.invoiceAmount}>{invoice.amount}</Text>
-            </View>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              {invoice.isSubscription ? (
-                <Text style={styles.invoiceGym}>{invoice.gym}</Text>
-              ) : (
-                <Text style={styles.invoiceId}>#256758</Text>
-              )}
+  const renderItem = ({item: invoice}) => (
+    <View style={styles.invoiceCard}>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+        <Text style={styles.invoiceTitle}>{invoice.title}</Text>
+        <Text style={styles.invoiceAmount}>{invoice.amount}</Text>
+      </View>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+        <Text style={styles.invoiceId}>#{invoice.invoice_id || 'N/A'}</Text>
+        <View
+          style={[
+            styles.invoiceStatus,
+            invoice.status === 'Paid'
+              ? styles.paidStatus
+              : styles.pendingStatus,
+          ]}>
+          <Text style={[styles.statusText, styles.paidText]}>
+            {invoice.status}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
 
-              {invoice.isSubscription ? (
-                <TouchableOpacity
-                  style={styles.subscribeButton}
-                  onPress={() => navigation.navigate('Gym Jumper')}>
-                  <Text style={styles.subscribeText}>Subscribe</Text>
-                </TouchableOpacity>
-              ) : (
-                <View>
-                  <View
-                    style={[
-                      styles.invoiceStatus,
-                      invoice.status === 'Paid'
-                        ? styles.paidStatus
-                        : styles.pendingStatus,
-                    ]}>
-                    <Text style={[styles.statusText, styles.paidText]}>
-                      {invoice.status}
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-        );
-      })}
-    </ScrollView>
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
+        <ActivityIndicator size="large" color={Colors.red} />
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      style={styles.container}
+      data={invoices}
+      keyExtractor={item => item.id?.toString()}
+      ListHeaderComponent={renderHeader}
+      renderItem={renderItem}
+      ListEmptyComponent={
+        <Text style={{color: Colors.white, textAlign: 'center', marginTop: 20}}>
+          No invoices found
+        </Text>
+      }
+      ListFooterComponent={<View style={{height: 16}} />}
+    />
   );
 };
 
@@ -213,24 +279,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: Fonts.normal,
   },
-  invoiceGym: {
-    color: Colors.gray,
-    fontSize: 16,
-  },
   invoiceId: {
     color: Colors.gray,
     fontSize: 16,
-  },
-  subscribeButton: {
-    backgroundColor: Colors.white,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 100,
-    bottom: 10,
-  },
-  subscribeText: {
-    color: Colors.black,
-    fontSize: 12,
   },
   invoiceAmount: {
     color: Colors.white,

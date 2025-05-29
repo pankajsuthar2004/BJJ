@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -16,15 +16,8 @@ import {store} from '../../store/Store';
 
 const InvitationAndApprovalScreen = () => {
   const [email, setEmail] = useState('');
-
-  const invitations = [
-    {email: 'paulmason@gmail.com', status: 'Approved', color: Colors.green},
-    {email: 'walkermint@gmail.com', status: 'Expired', color: Colors.red},
-    {email: 'paulmason@gmail.com', status: 'Invited', color: Colors.white},
-    {email: 'joshjanes@gmail.com', status: 'Sent', color: Colors.yellow},
-  ];
-
-  const approvalWorkflow = [{name: 'Messy Petch'}, {name: 'Flex Fen'}];
+  const [appliedTrainings, setAppliedTrainings] = useState([]);
+  const [invitations, setInvitations] = useState([]);
 
   const handleSendInvitation = async () => {
     if (!email.trim()) {
@@ -39,20 +32,110 @@ const InvitationAndApprovalScreen = () => {
     }
 
     try {
-      // Make the request without manually adding the Authorization header
       await makeRequest({
         endPoint: EndPoints.GymInvitation,
         method: 'POST',
-        body: {email},
+        body: {email: email},
       });
 
-      showToast({message: 'Invitation sent successfully!'});
       setEmail('');
+      showToast({message: 'Invitation sent successfully!'});
+      await fetchInvitations(); // Re-fetch latest invitations
     } catch (error) {
-      // Error is already handled by makeRequest
       showToast({message: error?.message || 'An error occurred'});
     }
   };
+
+  const fetchAppliedTraining = async () => {
+    const user = store.getState().user?.user;
+    if (!user || !user.token) {
+      showToast({message: 'You are not logged in. Please login first.'});
+      return;
+    }
+
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.AppliedTraining,
+        method: 'GET',
+      });
+
+      const updated = (response || []).map(item => ({
+        ...item,
+        localStatus: null,
+      }));
+
+      setAppliedTrainings(updated);
+    } catch (error) {
+      showToast({
+        message: error?.message || 'Failed to load applied trainings',
+      });
+    }
+  };
+
+  const fetchInvitations = async () => {
+    const user = store.getState().user?.user;
+    if (!user || !user.token) {
+      showToast({message: 'You are not logged in. Please login first.'});
+      return;
+    }
+
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.Invitations,
+        method: 'GET',
+      });
+
+      const formatted = (response || []).map(item => ({
+        email: item.email,
+        status: item.status || 'Invited',
+        color: Colors.white,
+      }));
+
+      setInvitations(formatted);
+    } catch (error) {
+      showToast({
+        message: error?.message || 'Failed to load invitations',
+      });
+    }
+  };
+
+  const handleTrainingRequest = async (requestId, status) => {
+    const user = store.getState().user?.user;
+    if (!user || !user.token) {
+      showToast({message: 'You are not logged in. Please login first.'});
+      return;
+    }
+
+    try {
+      await makeRequest({
+        endPoint: EndPoints.HandleTrainingRequest,
+        method: 'POST',
+        body: {
+          request_id: requestId,
+          status: status, // 1 = approved, 2 = declined
+        },
+      });
+
+      const updatedTrainings = appliedTrainings.map(item =>
+        item.id === requestId ? {...item, localStatus: status} : item,
+      );
+
+      setAppliedTrainings(updatedTrainings);
+      showToast({
+        message: `Request ${
+          status === 1 ? 'approved' : 'declined'
+        } successfully!`,
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({message: error?.message || 'Something went wrong'});
+    }
+  };
+
+  useEffect(() => {
+    fetchAppliedTraining();
+    fetchInvitations();
+  }, []);
 
   const renderInvitationItem = ({item}) => (
     <View style={styles.invitationItem}>
@@ -74,14 +157,24 @@ const InvitationAndApprovalScreen = () => {
 
   const renderApprovalItem = ({item}) => (
     <View style={styles.approvalItem}>
-      <Text style={styles.nameText}>{item.name}</Text>
+      <Text style={styles.nameText}>
+        {item?.user?.name || item?.user?.email}
+      </Text>
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.actionButton, styles.declineButton]}>
-          <Text style={styles.actionText}>Decline</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.approveButton]}>
-          <Text style={styles.actionText}>Approve</Text>
-        </TouchableOpacity>
+        {item.localStatus !== 2 && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.declineButton]}
+            onPress={() => handleTrainingRequest(item.id, 2)}>
+            <Text style={styles.actionText}>Decline</Text>
+          </TouchableOpacity>
+        )}
+        {item.localStatus !== 1 && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.approveButton]}
+            onPress={() => handleTrainingRequest(item.id, 1)}>
+            <Text style={styles.actionText}>Approve</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -101,6 +194,7 @@ const InvitationAndApprovalScreen = () => {
         onPress={handleSendInvitation}>
         <Text style={styles.sendButtonText}>Send Invitation</Text>
       </TouchableOpacity>
+
       <View style={{gap: 10}}>
         <Text style={styles.label}>Invitation status</Text>
         <FlatList
@@ -111,7 +205,7 @@ const InvitationAndApprovalScreen = () => {
 
         <Text style={styles.label}>Approval Workflow:</Text>
         <FlatList
-          data={approvalWorkflow}
+          data={appliedTrainings}
           renderItem={renderApprovalItem}
           keyExtractor={(item, index) => index.toString()}
         />

@@ -19,10 +19,12 @@ import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
 import {hp, wp} from '../../utility/ResponseUI';
 import SVG from '../../assets/svg';
+import {useAppSelector} from '../../store/Hooks';
 
 const screenWidth = Dimensions.get('window').width;
 
 const DashBoardScreen = () => {
+  const a = useAppSelector(b => b.user);
   const navigation = useNavigation();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [search, setSearch] = useState('');
@@ -269,10 +271,16 @@ const DashBoardScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity>
-            <Image source={IMAGES.ProfilePic2} />
+            <Image
+              source={
+                a?.user?.image ? {uri: a?.user?.image} : IMAGES.ProfilePic2
+              }
+              style={{height: hp(5), width: hp(5), borderRadius: hp(6)}}
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            Welcome Back, Josh{'\n'}
+            {a?.user?.gym?.name}
+            {'\n'}
             <Text style={styles.headerText}>Update are there</Text>
           </Text>
           <View style={styles.iconStyle}>
@@ -304,7 +312,6 @@ const DashBoardScreen = () => {
                 onPress={() => {
                   switch (item.name) {
                     case 'Home':
-                      navigation.navigate('HomeScreen');
                       break;
 
                     case 'Payments':
@@ -336,7 +343,7 @@ const DashBoardScreen = () => {
                       navigation.navigate('Reports and Insights');
                       break;
                     case 'Gym Profile':
-                      navigation.navigate('Gym Profile');
+                      navigation.navigate('gym profile');
                       break;
                     case 'Switch to User':
                       navigation.navigate('HomeScreen');
@@ -377,7 +384,7 @@ const DashBoardScreen = () => {
               style={{
                 position: 'absolute',
                 right: 35,
-                top: '47%',
+                top: '50%',
                 transform: [{translateY: -7}],
               }}>
               <SVG.Voice />
@@ -386,7 +393,7 @@ const DashBoardScreen = () => {
               style={{
                 position: 'absolute',
                 right: 15,
-                top: '47%',
+                top: '50%',
                 transform: [{translateY: -7}],
               }}>
               <SVG.Search />
@@ -410,21 +417,21 @@ const DashBoardScreen = () => {
               style={styles.filterOption}
               onPress={() => applyFilters('paymentPending')}>
               <Text style={styles.filterText}>Payment Pending</Text>
-              {filters.paymentPending ? <SVG.Tick /> : <SVG.EmptyTick />}
+              {filters.paymentPending ? <SVG.FilterTick /> : <SVG.EmptyTick />}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.filterOption}
               onPress={() => applyFilters('active')}>
               <Text style={styles.filterText}>Active</Text>
-              {filters.active ? <SVG.Tick /> : <SVG.EmptyTick />}
+              {filters.active ? <SVG.FilterTick /> : <SVG.EmptyTick />}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.filterOption}
               onPress={() => applyFilters('paymentPaid')}>
               <Text style={styles.filterText}>Payment Paid</Text>
-              {filters.paymentPaid ? <SVG.Tick /> : <SVG.EmptyTick />}
+              {filters.paymentPaid ? <SVG.FilterTick /> : <SVG.EmptyTick />}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -432,7 +439,7 @@ const DashBoardScreen = () => {
               onPress={() => applyFilters('attendanceGreaterThan10')}>
               <Text style={styles.filterText}>Attendance {'>'} 10</Text>
               {filters.attendanceGreaterThan10 ? (
-                <SVG.Tick />
+                <SVG.FilterTick />
               ) : (
                 <SVG.EmptyTick />
               )}
@@ -442,13 +449,21 @@ const DashBoardScreen = () => {
               style={styles.filterOption}
               onPress={() => applyFilters('monthlySubscription')}>
               <Text style={styles.filterText}>Monthly Subscription</Text>
-              {filters.monthlySubscription ? <SVG.Tick /> : <SVG.EmptyTick />}
+              {filters.monthlySubscription ? (
+                <SVG.FilterTick />
+              ) : (
+                <SVG.EmptyTick />
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.filterOption}
               onPress={() => applyFilters('yearlySubscription')}>
               <Text style={styles.filterText}>Yearly Subscription</Text>
-              {filters.yearlySubscription ? <SVG.Tick /> : <SVG.EmptyTick />}
+              {filters.yearlySubscription ? (
+                <SVG.FilterTick />
+              ) : (
+                <SVG.EmptyTick />
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -779,7 +794,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: wp((340 / 430) * 100),
     height: hp((42 / 919) * 100),
-    marginVertical: 4,
+    marginVertical: 8,
     paddingHorizontal: 15,
     justifyContent: 'center',
     alignSelf: 'center',
@@ -846,12 +861,12 @@ const styles = StyleSheet.create({
   filterModal: {
     backgroundColor: Colors.white,
     width: wp((250 / 430) * 100),
-    height: hp((435 / 919) * 100),
+    height: hp((415 / 919) * 100),
     borderRadius: 16,
-    top: '10%',
+    top: '9.7%',
     position: 'absolute',
-    right: 20,
-    padding: 25,
+    right: 15,
+    padding: 15,
   },
   legendContainer: {
     flexDirection: 'row',

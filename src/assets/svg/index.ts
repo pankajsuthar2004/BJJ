@@ -173,6 +173,8 @@ import Attach3 from '../svg/attach3.svg';
 import Attach4 from '../svg/attach4.svg';
 import Camera from '../svg/camera.svg';
 import ImageCam from '../svg/imagecam.svg';
+import DollarBag from '../svg/dollarbag.svg';
+import FilterTick from '../svg/filtertick.svg';
 
 const SVG = {
   Google,
@@ -350,5 +352,7 @@ const SVG = {
   Attach4,
   Camera,
   ImageCam,
+  DollarBag,
+  FilterTick,
 };
 export default SVG;

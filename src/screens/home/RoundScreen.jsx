@@ -143,17 +143,6 @@ const RoundScreen = () => {
     }
   };
 
-  const handleAddNewItem = () => {
-    if (newItem.trim()) {
-      setItemCounts(prevCounts => ({
-        ...prevCounts,
-        [newItem]: 1,
-      }));
-      setNewItem('');
-      setIsAddingArea(false);
-    }
-  };
-
   const handleAddSparringPartner = () => {
     if (sparringPartner.trim()) {
       setSparringPartnersList(prevList => [...prevList, sparringPartner]);
@@ -307,50 +296,6 @@ const RoundScreen = () => {
                     </View>
                   )}
                 />
-
-                {!isAddingArea ? (
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: Colors.black,
-                      padding: 15,
-                      margin: 5,
-                      borderRadius: 8,
-                      marginBottom: 15,
-                    }}
-                    onPress={() => setIsAddingArea(true)}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        color: Colors.white,
-                        textAlign: 'center',
-                        fontFamily: Fonts.normal,
-                      }}>
-                      Add New
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.addNewItemContainer}>
-                    <TextInput
-                      style={styles.newItemInput}
-                      placeholder="Add New"
-                      placeholderTextColor={Colors.gray}
-                      value={newItem}
-                      onChangeText={setNewItem}
-                    />
-                    <View style={styles.addItemButtons}>
-                      <TouchableOpacity
-                        style={styles.cancelButton}
-                        onPress={() => setIsAddingArea(false)}>
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={handleAddNewItem}>
-                        <Text style={styles.addButtonText}>Add</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
               </View>
             )}
           </View>
@@ -560,7 +505,7 @@ const styles = StyleSheet.create({
   selectLabel: {
     fontFamily: Fonts.normal,
     fontSize: 20,
-    marginBottom: 10,
+    marginVertical: 10,
     color: Colors.black,
   },
   addNewItemContainer: {

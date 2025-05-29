@@ -19,6 +19,8 @@ import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
 import AppLoader from '../../components/AppLoader';
+import {useAppDispatch, useAppSelector} from '../../store/Hooks';
+import {setUser} from '../../Slices/UserSlice';
 
 const GymProfileScreen = () => {
   const navigation = useNavigation();
@@ -33,6 +35,8 @@ const GymProfileScreen = () => {
   const [longitude, setLongitude] = useState('77.2090');
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(s => s.user);
 
   const pickImage = async () => {
     const result = await launchImageLibrary({mediaType: 'photo'});
@@ -83,11 +87,10 @@ const GymProfileScreen = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-
       setLoading(false);
-
+      dispatch(setUser({...user?.user, gym: response}));
       showToast({message: 'Profile created successfully', type: 'success'});
-      navigation.navigate('gym profile');
+      navigation.goBack();
     } catch (error) {
       setLoading(false);
       console.log('Error while creating profile:', error?.response || error);

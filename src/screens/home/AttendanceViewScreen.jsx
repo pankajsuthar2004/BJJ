@@ -44,7 +44,7 @@ const AttendanceViewScreen = () => {
       });
       setAttendanceData(response);
     } catch (error) {
-      showToast({message: 'Failed to fetch attendance data'});
+      showToast({message: 'Apply For A Gym First'});
     } finally {
       setLoading(false);
     }

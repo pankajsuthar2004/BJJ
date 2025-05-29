@@ -13,9 +13,9 @@ import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
 import {Calendar} from 'react-native-calendars';
-import makeRequest from '../../api/http';
-import {EndPoints} from '../../api/config';
-import {showToast} from '../../utility/Toast';
+// import makeRequest from '../../api/http';
+// import {EndPoints} from '../../api/config';
+// import {showToast} from '../../utility/Toast';
 
 const sessions = [
   {
@@ -185,7 +185,7 @@ const TrainingScreen = () => {
             placeholderTextColor="#ccc"
             multiline={false}
           />
-          <SVG.SearchIcon style={{position: 'absolute', right: 10, top: 9}} />
+          <SVG.SearchIcon style={{position: 'absolute', right: 10, top: 11}} />
         </View>
       </View>
 

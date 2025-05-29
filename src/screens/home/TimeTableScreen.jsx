@@ -160,7 +160,7 @@ const TimeTableScreen = () => {
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.label}>Class Name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {height: 40}]}
                   placeholder="Enter class name"
                   placeholderTextColor="#aaa"
                   value={className}
@@ -324,7 +324,7 @@ const TimeTableScreen = () => {
 
                 <Text style={styles.label}>Description</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {height: 40}]}
                   placeholder="Optional..."
                   placeholderTextColor="#aaa"
                   value={description}
@@ -357,7 +357,7 @@ const TimeTableScreen = () => {
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.label}>Class Name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {height: 40}]}
                   placeholder="class name"
                   placeholderTextColor="#aaa"
                 />

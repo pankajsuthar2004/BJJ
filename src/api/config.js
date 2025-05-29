@@ -32,4 +32,10 @@ export const EndPoints = {
   GetProfile: 'get-profile',
   GymHistory: 'gym-history',
   activegym: 'active-gym',
+  ManualUsers: 'manual-users',
+  Invitations: 'invitations',
+  UserGyms: 'user-gyms',
+  BillingHistory: 'billing-history',
+  GymPlans: 'gym-plans',
+  BuyPlan: 'buy-plan',
 };

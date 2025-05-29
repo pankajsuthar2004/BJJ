@@ -4,6 +4,7 @@ interface User {
   token: string;
   name: string;
   role: string;
+  gym?: null;
 }
 
 interface UserState {

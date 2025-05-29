@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   ScrollView,
   View,
@@ -114,8 +114,8 @@ const AttendanceMarkingScreen = () => {
     present: 21,
     absent: 7,
     holidays: 3,
-    giData: [60, 80, 75, 43, 70, 65, 95, 43, 34, 87, 100, 53, 32],
-    noGiData: [50, 70, 65, 80, 60, 75, 100, 85, 45, 32, 65, 87, 25],
+    giData: [60, 80, 75, 43, 70, 65, 95, 43, 34, 87, 100, 53, 75, 49],
+    noGiData: [50, 70, 65, 80, 60, 75, 100, 85, 45, 32, 65, 32, 44, 80],
   };
 
   const goToPreviousMonth = () => {
@@ -191,6 +191,17 @@ const AttendanceMarkingScreen = () => {
         ? attendanceDatas[i + 1]
         : 'Unknown',
   }));
+
+  useEffect(() => {
+    setSelectedDate(moment(currentMonth).startOf('month'));
+  }, []);
+  useEffect(() => {
+    setSelectedClass('Select Class');
+    setSelectedStatus(null);
+  }, []);
+  useEffect(() => {
+    setSelectedDate(moment(currentMonth).startOf('month'));
+  }, []);
 
   const getStatusButtonStyle = status => ({
     backgroundColor:

@@ -1,17 +1,43 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
+import {useAppSelector} from '../../store/Hooks';
+import {store} from '../../store/store';
 
 const GymJumperScreen = () => {
   const navigation = useNavigation();
-  const [selectedPlan, setSelectedPlan] = useState('$50');
+  const [plans, setPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const plans = [
-    {price: '$50', description: 'Billed Monthly'},
-    {price: '$550', description: 'Billed Yearly'},
-  ];
+  const gym_id = useAppSelector(state => state.user?.user?.gym_id);
+  // const gym_id = store.getState().user?.user?.gym_id;
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const data = await makeRequest({
+          endPoint: EndPoints.GymPlans,
+          method: 'POST',
+          body: {gym_id},
+        });
+
+        if (Array.isArray(data) && data.length > 0) {
+          setPlans(data);
+          setSelectedPlan(data[0].price);
+        } else {
+          showToast({message: 'No plans found'});
+        }
+      } catch (error) {
+        console.error('Fetching plans failed:', error);
+      }
+    };
+
+    fetchPlans();
+  }, []);
 
   return (
     <View style={styles.container}>

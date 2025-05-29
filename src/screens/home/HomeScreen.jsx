@@ -22,15 +22,20 @@ import SVG from '../../assets/svg';
 import {EndPoints} from '../../api/config';
 import makeRequest from '../../api/http';
 import AppLoader from '../../components/AppLoader';
+import {showToast} from '../../utility/Toast';
+import {useAppDispatch, useAppSelector} from '../../store/Hooks';
+import {setUser} from '../../Slices/UserSlice';
 
 const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = () => {
+  const a = useAppSelector(b => b.user);
   const navigation = useNavigation();
   const [selectedToggle, setSelectedToggle] = useState('');
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,8 +45,8 @@ const HomeScreen = () => {
           endPoint: EndPoints.GetProfile,
           method: 'GET',
         });
+        console.log(response);
         setUserData(response);
-        console.log('response', response);
       } catch (error) {
         showToast({message: error.message, type: 'error'});
       } finally {
@@ -49,7 +54,20 @@ const HomeScreen = () => {
       }
     };
     fetchData();
+    fetchData2();
   }, []);
+
+  const fetchData2 = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GetGym,
+        method: 'GET',
+      });
+      dispatch(setUser({...user?.user, gym: response[0]}));
+    } catch (error) {
+    } finally {
+    }
+  };
 
   const chartConfig = {
     backgroundColor: Colors.white,
@@ -141,6 +159,17 @@ const HomeScreen = () => {
     toggleDrawer();
   };
 
+  const onPressHandler = async () => {
+    // await fetchData2();
+    if (a?.user?.gym?.status == 0) {
+      showToast({message: 'Gym not approved by admin', type: 'error'});
+    } else if (a?.user?.gym) {
+      navigateToScreen('DashBoardScreen');
+    } else {
+      navigateToScreen('Gym Profile');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -218,7 +247,8 @@ const HomeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.drawerItem1}
-              onPress={() => navigateToScreen('DashBoardScreen')}>
+              // onPress={() => navigateToScreen('DashBoardScreen')}
+            >
               <SVG.HomeIcon />
               <Text style={styles.drawerText}>Home</Text>
             </TouchableOpacity>
@@ -260,9 +290,11 @@ const HomeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.drawerItem}
-              onPress={() => navigateToScreen('Gym Profile')}>
+              onPress={onPressHandler}>
               <SVG.IconProfile />
-              <Text style={styles.drawerText}>Become Gym Owner</Text>
+              <Text style={styles.drawerText}>
+                {a?.user?.gym ? 'Switch to Gym Profile' : 'Become Gym Owner'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.drawerItem}

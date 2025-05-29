@@ -94,11 +94,11 @@ const FeedScreen = () => {
             style={{
               position: 'absolute',
               right: 40,
-              top: 19,
+              top: 20,
             }}>
             <SVG.Voice />
           </TouchableOpacity>
-          <TouchableOpacity style={{position: 'absolute', right: 20, top: 19}}>
+          <TouchableOpacity style={{position: 'absolute', right: 15, top: 20}}>
             <SVG.Search />
           </TouchableOpacity>
         </View>
@@ -206,9 +206,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: wp((340 / 430) * 100),
     height: hp((42 / 919) * 100),
-    marginVertical: 4,
+    marginVertical: 5,
     justifyContent: 'center',
     alignSelf: 'center',
+    alignItems: 'center',
     paddingRight: 65,
     paddingLeft: 15,
   },

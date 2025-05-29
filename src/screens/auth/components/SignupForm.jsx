@@ -82,7 +82,6 @@ const SignUpForm = () => {
           password_confirmation: enteredConfirmPass,
         },
       });
-      console.log(response);
       dispatch(setUser(response));
       showToast({message: 'Signup successful!', type: 'success'});
       navigation.dispatch(

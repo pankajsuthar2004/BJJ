@@ -18,16 +18,22 @@ import MapView, {Marker} from 'react-native-maps';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {useAppDispatch, useAppSelector} from '../../store/Hooks';
+import {setUser} from '../../Slices/UserSlice';
 
 const EditGymProfileScreen = () => {
   const navigation = useNavigation();
-  const [name, setName] = useState('');
-  const [gymDescription, setGymDescription] = useState('');
-  const [address, setAddress] = useState('');
-  const [country, setCountry] = useState('');
-  const [state, setState] = useState('');
-  const [city, setCity] = useState('');
-  const [zipCode, setZipCode] = useState('');
+  const user = useAppSelector(s => s.user);
+  const dispatch = useAppDispatch();
+  const [name, setName] = useState(user?.user?.gym?.name ?? '');
+  const [gymDescription, setGymDescription] = useState(
+    user?.user?.gym?.description ?? '',
+  );
+  const [address, setAddress] = useState(user?.user?.gym?.address ?? '');
+  const [country, setCountry] = useState(user?.user?.gym?.country ?? '');
+  const [state, setState] = useState(user?.user?.gym?.state ?? '');
+  const [city, setCity] = useState(user?.user?.gym?.city ?? '');
+  const [zipCode, setZipCode] = useState(user?.user?.gym?.zip_code ?? '');
   const [latitude, setLatitude] = useState(28.6139);
   const [longitude, setLongitude] = useState(77.209);
   const [image, setImage] = useState(null);
@@ -49,7 +55,11 @@ const EditGymProfileScreen = () => {
 
       const formData = new FormData();
       formData.append('image', {
-        uri: image.uri,
+        uri:
+          image.uri ??
+          (!user?.user?.gym?.image
+            ? 'storage/uploads/profile/pmShalGbXBPhio0hczkWwIIuzbmxt6rhMAzsjVXD.jpg'
+            : null),
         type: image.type || 'image/jpeg',
         name: image.fileName || 'profile.jpg',
       });
@@ -73,6 +83,7 @@ const EditGymProfileScreen = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      dispatch(setUser({...user?.user, gym: response}));
 
       showToast({message: 'Profile updated successfully', type: 'success'});
       navigation.goBack();
@@ -90,6 +101,13 @@ const EditGymProfileScreen = () => {
         {image ? (
           <Image
             source={{uri: image.uri}}
+            style={{width: 120, height: 120, borderRadius: 60}}
+          />
+        ) : user?.user?.gym?.image ? (
+          <Image
+            source={{
+              uri: 'http://89.116.212.241:9083/' + user?.user?.gym?.image,
+            }}
             style={{width: 120, height: 120, borderRadius: 60}}
           />
         ) : (
@@ -113,7 +131,7 @@ const EditGymProfileScreen = () => {
           value={name}
           onChangeText={setName}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
 
         <TextInput
@@ -123,7 +141,7 @@ const EditGymProfileScreen = () => {
           value={gymDescription}
           onChangeText={setGymDescription}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
 
         <Text style={styles.label}>Address & Location</Text>
@@ -134,7 +152,7 @@ const EditGymProfileScreen = () => {
           value={address}
           onChangeText={setAddress}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
         <TextInput
           style={[styles.input, {height: 40}]}
@@ -142,7 +160,7 @@ const EditGymProfileScreen = () => {
           value={country}
           onChangeText={setCountry}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
         <TextInput
           style={[styles.input, {height: 40}]}
@@ -150,7 +168,7 @@ const EditGymProfileScreen = () => {
           value={state}
           onChangeText={setState}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
         <TextInput
           style={[styles.input, {height: 40}]}
@@ -158,7 +176,7 @@ const EditGymProfileScreen = () => {
           value={city}
           onChangeText={setCity}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
         <TextInput
           style={[styles.input, {height: 40}]}
@@ -166,7 +184,7 @@ const EditGymProfileScreen = () => {
           value={zipCode}
           onChangeText={setZipCode}
           placeholderTextColor={Colors.gray}
-          color={Colors.gray}
+          color={Colors.white}
         />
 
         <View style={styles.mapContainer}>
