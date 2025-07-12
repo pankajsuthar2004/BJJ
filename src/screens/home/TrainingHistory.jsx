@@ -13,63 +13,37 @@ import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import {hp, wp} from '../../utility/ResponseUI';
 import {Calendar} from 'react-native-calendars';
-// import makeRequest from '../../api/http';
-// import {EndPoints} from '../../api/config';
-// import {showToast} from '../../utility/Toast';
-
-const sessions = [
-  {
-    id: '1',
-    type: 'Gi',
-    icon: <SVG.Count2 />,
-    title: 'It is a long established fact that a reader will be more...',
-    date: '12/17/2024',
-    duration: '30 Minutes',
-    rounds: 2,
-    partners: 3,
-    status: 'Active',
-  },
-  {
-    id: '2',
-    type: 'No Gi',
-    icon: <SVG.Count10 />,
-    title: 'It is a long established fact that a reader will be more...',
-    date: '12/17/2024',
-    duration: '30 Minutes',
-    rounds: 2,
-    partners: 3,
-    status: 'Pending',
-  },
-  {
-    id: '3',
-    type: 'Gi',
-    icon: <SVG.Count2 />,
-    title: 'It is a long established fact that a reader will be more...',
-    date: '12/17/2024',
-    duration: '30 Minutes',
-    rounds: 2,
-    partners: 3,
-    status: 'Rejected',
-  },
-];
+import moment from 'moment';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const TrainingScreen = () => {
-  const [session, setSession] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
-  const [selectedDate, setSelectedDate] = useState('2024-12-17');
-  const [selectedEndDate, setSelectedEndDate] = useState('2024-12-17');
+  const [selectedDate, setSelectedDate] = useState('2025-01-01');
+  const [selectedEndDate, setSelectedEndDate] = useState('2025-01-01');
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [calendarEndVisible, setCalendarEndVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     fetchTrainingLogs();
-  }, []);
+  }, [selectedDate, selectedEndDate, searchText]);
 
   const fetchTrainingLogs = async () => {
     try {
-      const response = await makeRequest('GET', EndPoints.UserTrainingLogs);
-      setSession(response?.data || []);
+      const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+      const formatedEndDate = moment(selectedEndDate).format('YYYY-MM-DD');
+      const response = await makeRequest({
+        endPoint: `${EndPoints.UserTrainingLogs}?start_date=${formattedDate}&end_date=${formatedEndDate}`,
+        method: 'GET',
+      });
+      console.log('Training logs response:', response);
+
+      setSessions(response);
     } catch (error) {
+      console.error('Training logs fetch error:', error);
       showToast('Error fetching training logs');
     }
   };
@@ -83,15 +57,18 @@ const TrainingScreen = () => {
       setCalendarVisible(false);
     }
   };
-  const openModal = session => {
-    setSelectedSession(session);
-  };
 
-  const closeModal = () => {
-    setSelectedSession(null);
-  };
+  const openModal = session => setSelectedSession(session);
+  const closeModal = () => setSelectedSession(null);
 
   const renderItem = ({item}) => {
+    const uniquePartners =
+      item.rounds
+        ?.flatMap(round => round.sparring_partners || [])
+        .filter(
+          (v, i, arr) => v?.id && arr.findIndex(p => p?.id === v?.id) === i,
+        ) || [];
+
     return (
       <TouchableOpacity
         style={styles.sessionContainer}
@@ -100,35 +77,43 @@ const TrainingScreen = () => {
           <View style={styles.iconWrapper}>
             <View style={styles.main}>
               <View style={styles.main1}>
-                <Text>{item.icon}</Text>
+                <SVG.Count2 />
               </View>
-              <Text style={styles.sessionTitle}>{item.type}</Text>
+              <Text style={styles.sessionTitle}>
+                {item.training_type?.type || 'Gi'}
+              </Text>
             </View>
             <View style={styles.titleView}>
               <SVG.SolarNotes />
-              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.title}>{item.learnings || 'No notes'}</Text>
             </View>
           </View>
           <View style={styles.sessionDetails}>
             <View style={styles.titleView}>
               <SVG.UilCalender />
-              <Text style={styles.detailText}>{item.date}</Text>
+              <Text style={styles.detailText}>{item.date || 'N/A'}</Text>
             </View>
             <View style={styles.titleView}>
               <SVG.Time />
-              <Text style={styles.detailText}>{item.duration}</Text>
+              <Text style={styles.detailText}>
+                {item.duration ? `${item.duration} mins` : 'N/A'}
+              </Text>
             </View>
             <View style={styles.titleView}>
               <SVG.Rounds />
-              <Text style={styles.detailText}>Rounds {item.rounds}</Text>
+              <Text style={styles.detailText}>
+                Rounds {item.rounds?.length || 0}
+              </Text>
             </View>
             <View style={styles.titleView}>
               <SVG.Exchange />
-              <Text style={styles.detailText}>Partners {item.partners}</Text>
+              <Text style={styles.detailText}>
+                Partners {uniquePartners.length}
+              </Text>
             </View>
             <View style={styles.titleView}>
               <SVG.Gym1 />
-              <Text style={styles.statusText}>{item.status}</Text>
+              <Text style={styles.statusText}>{item.gym?.name || 'N/A'}</Text>
             </View>
           </View>
         </View>
@@ -139,60 +124,85 @@ const TrainingScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.filterBar}>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setCalendarVisible(true)}>
-          <Text style={styles.filterText}>{selectedDate}</Text>
-          <SVG.MiniCalendar />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setCalendarEndVisible(true)}>
-          <Text style={styles.filterText}>{selectedEndDate}</Text>
-          <SVG.MiniCalendar />
-        </TouchableOpacity>
-        <Modal visible={calendarVisible} transparent animationType="slide">
-          <View style={styles.modalOverlay1}>
-            <View style={styles.calendarContainer1}>
-              <Calendar
-                onDayPress={day => handleDateSelect(day)}
-                markedDates={{[selectedDate]: {selected: true}}}
-                theme={{selectedDayBackgroundColor: Colors.black}}
-              />
-            </View>
-          </View>
-        </Modal>
+        <View style={styles.filterItem}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setCalendarVisible(true)}>
+            <Text style={styles.filterText}>{selectedDate}</Text>
+            <SVG.MiniCalendar />
+          </TouchableOpacity>
+        </View>
 
-        <Modal visible={calendarEndVisible} transparent animationType="slide">
-          <View style={styles.modalOverlay1}>
-            <View style={styles.calendarContainer1}>
-              <Calendar
-                onDayPress={day => handleDateSelect(day, true)}
-                markedDates={{[selectedEndDate]: {selected: true}}}
-                theme={{selectedDayBackgroundColor: Colors.black}}
-              />
-            </View>
-          </View>
-        </Modal>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>Gym</Text>
-          <SVG.ArrowIcon />
-        </TouchableOpacity>
-        <View>
-          <TextInput
-            style={[styles.searchBar, {height: 35, width: 84}]}
-            placeholder="Search"
-            placeholderTextColor="#ccc"
-            multiline={false}
-          />
-          <SVG.SearchIcon style={{position: 'absolute', right: 10, top: 11}} />
+        <View style={styles.filterItem}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setCalendarEndVisible(true)}>
+            <Text style={styles.filterText}>{selectedEndDate}</Text>
+            <SVG.MiniCalendar />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.filterItem}>
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterText}>Gym</Text>
+            <SVG.ArrowIcon />
+          </TouchableOpacity>
         </View>
       </View>
 
+      <View>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search"
+          placeholderTextColor="gray"
+          multiline={false}
+          value={searchText}
+          onChangeText={text => setSearchText(text)}
+        />
+        <SVG.SearchIcon style={{position: 'absolute', right: 10, top: 11}} />
+      </View>
+      <Modal visible={calendarVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay1}>
+          <View style={styles.calendarContainer1}>
+            <Calendar
+              onDayPress={day => handleDateSelect(day)}
+              markedDates={{[selectedDate]: {selected: true}}}
+              theme={{selectedDayBackgroundColor: Colors.black}}
+            />
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={calendarEndVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay1}>
+          <View style={styles.calendarContainer1}>
+            <Calendar
+              onDayPress={day => handleDateSelect(day, true)}
+              markedDates={{[selectedEndDate]: {selected: true}}}
+              theme={{selectedDayBackgroundColor: Colors.black}}
+            />
+          </View>
+        </View>
+      </Modal>
+
       <FlatList
-        data={sessions}
-        keyExtractor={item => item.id}
+        data={sessions.filter(item =>
+          item.training_type?.type
+            ?.toLowerCase()
+            .includes(searchText.toLowerCase()),
+        )}
+        keyExtractor={item => item.id?.toString()}
         renderItem={renderItem}
+        ListEmptyComponent={
+          <Text
+            style={{
+              color: Colors.white,
+              textAlign: 'center',
+              marginTop: 20,
+              fontSize: 16,
+            }}>
+            No training sessions found...
+          </Text>
+        }
       />
 
       {selectedSession && (
@@ -208,49 +218,65 @@ const TrainingScreen = () => {
                 onPress={closeModal}>
                 <SVG.CrossIcon />
               </TouchableOpacity>
+
               <View style={styles.main}>
                 <View style={styles.main1}>
-                  <Text>{selectedSession.icon}</Text>
+                  <SVG.Count2 />
                 </View>
-                <Text style={styles.modalTitle}>{selectedSession.type}</Text>
+                <Text style={styles.modalTitle}>
+                  {selectedSession.training_type?.type || 'Training'}
+                </Text>
               </View>
+
               <View style={styles.sessionList}>
                 <View style={styles.sessionList1}>
-                  <View style={{top: 3}}>
-                    <SVG.UilCalender />
-                  </View>
-                  <Text style={styles.modalText}>{selectedSession.date}</Text>
-                </View>
-                <View style={styles.sessionList1}>
-                  <View style={{top: 3}}>
-                    <SVG.Time />
-                  </View>
+                  <SVG.UilCalender />
                   <Text style={styles.modalText}>
-                    {selectedSession.duration}
+                    {selectedSession.date || 'N/A'}
                   </Text>
                 </View>
                 <View style={styles.sessionList1}>
-                  <View style={{top: 3}}>
-                    <SVG.Rounds />
-                  </View>
+                  <SVG.Time />
                   <Text style={styles.modalText}>
-                    Rounds {selectedSession.rounds}
+                    {selectedSession.duration
+                      ? `${selectedSession.duration} mins`
+                      : 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.sessionList1}>
+                  <SVG.Rounds />
+                  <Text style={styles.modalText}>
+                    Rounds {selectedSession.rounds?.length || 0}
                   </Text>
                 </View>
               </View>
+
               <View style={styles.sessionList1}>
-                <View style={{top: 3}}>
-                  <SVG.Exchange />
-                </View>
+                <SVG.Exchange />
                 <Text style={styles.modalText}>
-                  Partners: {selectedSession.partners}
+                  Partners:{' '}
+                  {selectedSession.rounds
+                    ?.flatMap(round => round.sparring_partners || [])
+                    .map(partner => partner?.name)
+                    .filter(
+                      (name, index, arr) =>
+                        !!name && arr.indexOf(name) === index,
+                    )
+                    .join(', ') || 'N/A'}
+                </Text>
+              </View>
+
+              <View style={styles.sessionList1}>
+                <SVG.SolarNotes />
+                <Text style={styles.modalText}>
+                  {selectedSession.learnings || 'No notes'}
                 </Text>
               </View>
               <View style={styles.sessionList1}>
-                <View style={{top: 3}}>
-                  <SVG.SolarNotes />
-                </View>
-                <Text style={styles.modalText}>{selectedSession.title}</Text>
+                <SVG.Gym1 />
+                <Text style={styles.modalText}>
+                  {selectedSession.gym?.name || 'N/A'}
+                </Text>
               </View>
 
               <View style={styles.btnView}>
@@ -283,15 +309,24 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
-    gap: 2.5,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: wp(2),
+    marginBottom: -10,
+  },
+
+  filterItem: {
+    flex: 1,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: Colors.white,
-    padding: wp(1),
+    paddingVertical: hp(1),
+    paddingHorizontal: wp(3),
     borderRadius: 5,
-    gap: 4,
+    width: '100%',
   },
   title: {
     fontSize: 12,
@@ -299,12 +334,12 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: Colors.black,
-    marginLeft: 5,
+    fontSize: 14,
   },
   searchBar: {
     backgroundColor: Colors.white,
     paddingRight: 25,
-    paddingLeft: 5,
+    paddingLeft: 10,
     borderRadius: 5,
     color: Colors.darkGray,
   },
@@ -345,7 +380,7 @@ const styles = StyleSheet.create({
   },
   sessionDetails: {
     flex: 1,
-    left: 80,
+    left: 40,
   },
   detailText: {
     color: Colors.gray,

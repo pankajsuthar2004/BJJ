@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "862442063999",
+    "project_id": "bjjnoti",
+    "storage_bucket": "bjjnoti.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:862442063999:android:2c7cffa6745de782bf974a",
+        "android_client_info": {
+          "package_name": "com.demoproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmUe0LzGH5VuG1uU7fs7vCYXkeI676l6U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

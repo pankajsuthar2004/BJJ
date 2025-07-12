@@ -48,21 +48,20 @@ const EditGymProfileScreen = () => {
 
   const handleCreateProfile = async () => {
     try {
-      if (!image) {
+      if (!image && !user?.user?.gym?.image) {
         showToast({message: 'Please select an image'});
         return;
       }
 
       const formData = new FormData();
-      formData.append('image', {
-        uri:
-          image.uri ??
-          (!user?.user?.gym?.image
-            ? 'storage/uploads/profile/pmShalGbXBPhio0hczkWwIIuzbmxt6rhMAzsjVXD.jpg'
-            : null),
-        type: image.type || 'image/jpeg',
-        name: image.fileName || 'profile.jpg',
-      });
+      if (image) {
+        formData.append('image', {
+          uri: image.uri,
+          type: image.type || 'image/jpeg',
+          name: image.fileName || 'profile.jpg',
+        });
+      }
+
       formData.append('name', name.trim());
       formData.append('description', gymDescription.trim());
       formData.append('address', address.trim());
@@ -83,8 +82,8 @@ const EditGymProfileScreen = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      dispatch(setUser({...user?.user, gym: response}));
 
+      dispatch(setUser({...user?.user, gym: response}));
       showToast({message: 'Profile updated successfully', type: 'success'});
       navigation.goBack();
     } catch (error) {
@@ -94,6 +93,9 @@ const EditGymProfileScreen = () => {
       setLoading(false);
     }
   };
+
+  const filterAlphabet = text => text.replace(/[^a-zA-Z ]/g, '');
+  const filterNumbers = text => text.replace(/[^0-9]/g, '');
 
   return (
     <ScrollView style={styles.container}>
@@ -105,15 +107,12 @@ const EditGymProfileScreen = () => {
           />
         ) : user?.user?.gym?.image ? (
           <Image
-            source={{
-              uri: 'http://89.116.212.241:9083/' + user?.user?.gym?.image,
-            }}
+            source={{uri: 'https://bjj.beepr.us/' + user?.user?.gym?.image}}
             style={{width: 120, height: 120, borderRadius: 60}}
           />
         ) : (
           <TouchableOpacity onPress={pickImage}>
             <Image source={IMAGES.ProfileCam} />
-            {/* <SVG.ImageCam /> */}
           </TouchableOpacity>
         )}
 
@@ -154,35 +153,40 @@ const EditGymProfileScreen = () => {
           placeholderTextColor={Colors.gray}
           color={Colors.white}
         />
+
         <TextInput
           style={[styles.input, {height: 40}]}
           placeholder="Country"
           value={country}
-          onChangeText={setCountry}
+          onChangeText={text => setCountry(filterAlphabet(text))}
           placeholderTextColor={Colors.gray}
           color={Colors.white}
         />
+
         <TextInput
           style={[styles.input, {height: 40}]}
           placeholder="State/Province"
           value={state}
-          onChangeText={setState}
+          onChangeText={text => setState(filterAlphabet(text))}
           placeholderTextColor={Colors.gray}
           color={Colors.white}
         />
+
         <TextInput
           style={[styles.input, {height: 40}]}
           placeholder="City"
           value={city}
-          onChangeText={setCity}
+          onChangeText={text => setCity(filterAlphabet(text))}
           placeholderTextColor={Colors.gray}
           color={Colors.white}
         />
+
         <TextInput
           style={[styles.input, {height: 40}]}
           placeholder="Postal/Zip Code"
           value={zipCode}
-          onChangeText={setZipCode}
+          onChangeText={text => setZipCode(filterNumbers(text))}
+          keyboardType="numeric"
           placeholderTextColor={Colors.gray}
           color={Colors.white}
         />

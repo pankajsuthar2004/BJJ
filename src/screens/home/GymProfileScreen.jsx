@@ -24,6 +24,9 @@ import {setUser} from '../../Slices/UserSlice';
 
 const GymProfileScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(s => s.user);
+
   const [gymName, setGymName] = useState('');
   const [gymDescription, setGymDescription] = useState('');
   const [address, setAddress] = useState('');
@@ -35,8 +38,7 @@ const GymProfileScreen = () => {
   const [longitude, setLongitude] = useState('77.2090');
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const dispatch = useAppDispatch();
-  const user = useAppSelector(s => s.user);
+  const [errors, setErrors] = useState({});
 
   const pickImage = async () => {
     const result = await launchImageLibrary({mediaType: 'photo'});
@@ -50,7 +52,23 @@ const GymProfileScreen = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!gymName.trim()) newErrors.gymName = 'Gym name is required';
+    if (!gymDescription.trim())
+      newErrors.gymDescription = 'Description is required';
+    if (!address.trim()) newErrors.address = 'Address is required';
+    if (!country.trim()) newErrors.country = 'Country is required';
+    if (!state.trim()) newErrors.state = 'State is required';
+    if (!city.trim()) newErrors.city = 'City is required';
+    if (!zipCode.trim()) newErrors.zipCode = 'Zip code is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleCreateProfile = async () => {
+    if (!validateForm()) return;
+
     try {
       const formData = new FormData();
 
@@ -87,6 +105,7 @@ const GymProfileScreen = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+
       setLoading(false);
       dispatch(setUser({...user?.user, gym: response}));
       showToast({message: 'Profile created successfully', type: 'success'});
@@ -96,6 +115,43 @@ const GymProfileScreen = () => {
       console.log('Error while creating profile:', error?.response || error);
       showToast({message: 'Failed to create profile'});
     }
+  };
+
+  const renderInput = (
+    label,
+    value,
+    setValue,
+    field,
+    placeholder,
+    isMultiline = false,
+  ) => {
+    const handleTextChange = text => {
+      if (['country', 'state', 'city'].includes(field)) {
+        text = text.replace(/[^a-zA-Z ]/g, '');
+      } else if (field === 'zipCode') {
+        text = text.replace(/[^0-9]/g, '');
+      }
+      setValue(text);
+      if (errors[field]) setErrors(prev => ({...prev, [field]: ''}));
+    };
+
+    return (
+      <>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+          style={[
+            styles.input,
+            isMultiline && styles.textArea,
+            errors[field] && {borderColor: Colors.red, borderWidth: 1},
+          ]}
+          placeholder={placeholder}
+          multiline={isMultiline}
+          value={value}
+          onChangeText={handleTextChange}
+        />
+        {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
+      </>
+    );
   };
 
   return (
@@ -115,54 +171,26 @@ const GymProfileScreen = () => {
       </ImageBackground>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.label}>Gym Name</Text>
-        <TextInput
-          style={[styles.input, {height: 40}]}
-          placeholder="Name"
-          value={gymName}
-          onChangeText={setGymName}
-        />
-
-        <Text style={styles.label}>Gym Description</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="About the Gym"
-          multiline
-          value={gymDescription}
-          onChangeText={setGymDescription}
-        />
-
-        <Text style={styles.label}>Address & Location</Text>
-        <TextInput
-          style={[styles.input, {height: 40}]}
-          placeholder="Address"
-          value={address}
-          onChangeText={setAddress}
-        />
-        <TextInput
-          style={[styles.input, {height: 40}]}
-          placeholder="Country"
-          value={country}
-          onChangeText={setCountry}
-        />
-        <TextInput
-          style={[styles.input, {height: 40}]}
-          placeholder="State/Province"
-          value={state}
-          onChangeText={setState}
-        />
-        <TextInput
-          style={[styles.input, {height: 40}]}
-          placeholder="City"
-          value={city}
-          onChangeText={setCity}
-        />
-        <TextInput
-          style={[styles.input, {height: 40}]}
-          placeholder="Postal/Zip Code"
-          value={zipCode}
-          onChangeText={setZipCode}
-        />
+        {renderInput('Gym Name', gymName, setGymName, 'gymName', 'Name')}
+        {renderInput(
+          'Gym Description',
+          gymDescription,
+          setGymDescription,
+          'gymDescription',
+          'About the Gym',
+          true,
+        )}
+        {renderInput('Address', address, setAddress, 'address', 'Address')}
+        {renderInput('Country', country, setCountry, 'country', 'Country')}
+        {renderInput('State/Province', state, setState, 'state', 'State')}
+        {renderInput('City', city, setCity, 'city', 'City')}
+        {renderInput(
+          'Postal/Zip Code',
+          zipCode,
+          setZipCode,
+          'zipCode',
+          'Zip Code',
+        )}
 
         <View style={styles.mapContainer}>
           <MapView
@@ -278,6 +306,69 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: Colors.white,
+  },
+  mapContainer: {
+    height: 160,
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelFormButton: {
+    flex: 1,
+    backgroundColor: Colors.black,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.white,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  cancelFormButtonText: {
+    color: Colors.white,
+  },
+  createButton: {
+    flex: 1,
+    backgroundColor: Colors.red,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  createButtonText: {
+    color: Colors.white,
+    fontFamily: Fonts.normal,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.black,
+  },
+  imageBackground: {
+    alignItems: 'center',
+    paddingTop: 30,
+  },
+  contentContainer: {
+    margin: 15,
+  },
+  label: {
+    color: Colors.white,
+    marginBottom: 5,
+  },
+  input: {
+    backgroundColor: Colors.white,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 5,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  errorText: {
+    color: Colors.red,
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 4,
   },
   mapContainer: {
     height: 160,

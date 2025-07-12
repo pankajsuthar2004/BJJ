@@ -13,6 +13,7 @@ import {Fonts} from '../../assets/fonts';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {useAppSelector} from '../../store/Hooks';
 
 const filters = ['All', 'Paid', 'Pending'];
 
@@ -23,6 +24,8 @@ const BillingScreen = ({navigation}) => {
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const user = useAppSelector(state => state.user?.user);
 
   useEffect(() => {
     const fetchGyms = async () => {
@@ -52,37 +55,37 @@ const BillingScreen = ({navigation}) => {
 
   const getStatus = selectedItem => {
     switch (selectedItem) {
-      case 'All':
-        return 0;
       case 'Paid':
         return 1;
       case 'Pending':
         return 0;
+      case 'All':
       default:
-        return 0;
+        return null;
     }
   };
 
   useEffect(() => {
     const fetchBillingHistory = async () => {
-      console.log('called');
       if (!selectedGym) return;
+
       try {
         setLoading(true);
-        const body = {
-          gym_id: selectedGym.id,
-          status: getStatus(selectedFilter),
-        };
-        // if (selectedFilter !== 'All') {
-        // body.status = getStatus(selectedFilter);
-        // }
+
+        const status = getStatus(selectedFilter);
+        const body = {gym_id: selectedGym.id};
+        if (status !== null) {
+          body.status = status;
+        }
 
         const response = await makeRequest({
           endPoint: EndPoints.BillingHistory,
           method: 'POST',
           body,
         });
-        console.log('Billing History Response:', response);
+
+        console.log('Billing Response:', JSON.stringify(response, null, 2)); // DEBUG
+
         if (Array.isArray(response)) {
           setInvoices(response);
         } else {
@@ -90,6 +93,7 @@ const BillingScreen = ({navigation}) => {
           showToast({message: 'No billing records found'});
         }
       } catch (error) {
+        console.error('Failed to fetch billing history:', error);
         showToast({message: 'Failed to fetch billing history'});
       } finally {
         setLoading(false);
@@ -101,6 +105,7 @@ const BillingScreen = ({navigation}) => {
 
   const renderHeader = () => (
     <View>
+      {/* Dropdown */}
       <View style={styles.dropdownContainer}>
         <TouchableOpacity
           onPress={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -139,6 +144,7 @@ const BillingScreen = ({navigation}) => {
         )}
       </View>
 
+      {/* Filters */}
       <View style={styles.filterContainer}>
         {filters.map(filter => (
           <TouchableOpacity
@@ -158,31 +164,77 @@ const BillingScreen = ({navigation}) => {
           </TouchableOpacity>
         ))}
       </View>
-    </View>
-  );
 
-  const renderItem = ({item: invoice}) => (
-    <View style={styles.invoiceCard}>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-        <Text style={styles.invoiceTitle}>{invoice.title}</Text>
-        <Text style={styles.invoiceAmount}>{invoice.amount}</Text>
-      </View>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-        <Text style={styles.invoiceId}>#{invoice.invoice_id || 'N/A'}</Text>
+      {/* Subscribe Card */}
+      <View style={styles.invoiceCard}>
         <View
-          style={[
-            styles.invoiceStatus,
-            invoice.status === 'Paid'
-              ? styles.paidStatus
-              : styles.pendingStatus,
-          ]}>
-          <Text style={[styles.statusText, styles.paidText]}>
-            {invoice.status}
-          </Text>
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+          <View>
+            <Text style={styles.invoiceTitle}>Subscribe to Plan</Text>
+            <Text style={styles.invoiceId}>{selectedGym?.name}</Text>
+          </View>
+          <TouchableOpacity
+            style={{
+              backgroundColor: Colors.white,
+              borderRadius: 20,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+            }}
+            onPress={() => {
+              navigation.navigate('Gym Jumper', {
+                gymId: selectedGym?.id,
+                gymName: selectedGym?.name,
+              });
+            }}>
+            <Text style={{color: Colors.black, fontSize: 12}}>Subscribe</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
   );
+
+  const renderItem = ({item: invoice}) => {
+    const title = invoice.gym_plan?.name || 'Untitled';
+    const invoiceId = invoice.gym_plan_id || 'N/A';
+
+    return (
+      <View style={styles.invoiceCard}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <Text style={styles.invoiceTitle}>{title}</Text>
+          <Text style={styles.invoiceAmount}>${invoice.price || '0'}</Text>
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 6,
+          }}>
+          <Text style={styles.invoiceId}>#{invoiceId}</Text>
+          <View
+            style={[
+              styles.invoiceStatus,
+              invoice.status?.toLowerCase() === 'paid'
+                ? styles.paidStatus
+                : styles.pendingStatus,
+            ]}>
+            <Text
+              style={[
+                styles.statusText,
+                invoice.status?.toLowerCase() === 'paid'
+                  ? styles.paidText
+                  : styles.pendingText,
+              ]}>
+              {invoice.status}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   if (loading) {
     return (
@@ -304,6 +356,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   paidText: {
+    color: Colors.white,
+    fontSize: 12,
+  },
+  pendingText: {
     color: Colors.white,
     fontSize: 12,
   },

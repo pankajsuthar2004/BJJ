@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,21 @@ import CustomLineChart from '../../components/CustomLineChart';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
 import {hp, wp} from '../../utility/ResponseUI';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+// import RNHTMLtoPDF from 'react-native-html-to-pdf';
+// import FileViewer from 'react-native-file-viewer';
+import {showToast} from '../../utility/Toast';
 
 const ReportsAndInsightsScreen = () => {
   const navigation = useNavigation();
+  const [response, setResponse] = React.useState(null);
+  const [revenueData, setRevenueData] = React.useState([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ]);
+  const [attendanceData, setAttendanceData] = React.useState([
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ]);
 
   const sessionData = [
     {
@@ -31,14 +43,64 @@ const ReportsAndInsightsScreen = () => {
     {session: 'Competition', avg: 45, min: 55, max: 90, current: 100},
   ];
 
-  const attendanceData = {
-    giData: [0, 80, 0, 33, 51, 24, 10, 3, 63, 100, 8, 78, 43, 64],
-  };
-  const attendanceDatas = {
-    giDatas: [
-      0, 8180, 0, 1330, 5170, 2410, 1290, 200, 6300, 9000, 544, 7822, 10000,
-      564, 8786,
-    ],
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.Reports,
+        method: 'GET',
+      });
+      const reportData = Object.values(response?.monthly_revenue || {});
+      const revenueData = Object.values(response?.monthly_attendance || {});
+      setRevenueData(reportData);
+      setAttendanceData(revenueData);
+      setResponse(response);
+      //   if (!Array.isArray(data) || data.length === 0) {
+      //     throw new Error('Invalid report data');
+      //   }
+      //   const tableRows = data
+      //     .map(
+      //       item => `
+      //       <tr>
+      //         <td>${item.month}</td>
+      //         <td>${item.revenue}</td>
+      //         <td>${item.attendance}</td>
+      //       </tr>
+      //     `,
+      //     )
+      //     .join('');
+
+      //   const htmlContent = `
+      //   <h1>Gym Report - ${new Date().toLocaleString('default', {
+      //     month: 'long',
+      //     year: 'numeric',
+      //   })}</h1>
+      //   <h3>Monthly Revenue & Attendance</h3>
+      //   <table border="1" style="width:100%; border-collapse:collapse;">
+      //     <tr>
+      //       <th>Month</th>
+      //       <th>Revenue</th>
+      //       <th>Attendance</th>
+      //     </tr>
+      //     ${tableRows}
+      //   </table>
+      // `;
+
+      //   const options = {
+      //     html: htmlContent,
+      //     fileName: 'gym_report',
+      //     directory: 'Documents',
+      //   };
+
+      //   const pdf = await RNHTMLtoPDF.convert(options);
+      //   await FileViewer.open(pdf.filePath);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      showToast({message: 'Failed to export PDF', type: 'error'});
+    }
   };
 
   return (
@@ -54,7 +116,7 @@ const ReportsAndInsightsScreen = () => {
           <View>
             <Text style={styles.subHeader}>Monthly Revenue</Text>
           </View>
-          <View style={{}}>
+          <View>
             <Text style={styles.revenue}>$2,654</Text>
             <Text style={styles.percentage}>+36%</Text>
           </View>
@@ -77,7 +139,7 @@ const ReportsAndInsightsScreen = () => {
             ],
             datasets: [
               {
-                data: attendanceData.giData,
+                data: revenueData,
                 color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
               },
             ],
@@ -105,7 +167,7 @@ const ReportsAndInsightsScreen = () => {
             ],
             datasets: [
               {
-                data: attendanceDatas.giDatas,
+                data: attendanceData,
                 color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
               },
             ],
@@ -119,7 +181,7 @@ const ReportsAndInsightsScreen = () => {
             <SVG.RedMan />
           </View>
           <View>
-            <Text style={styles.memberCount}>1200</Text>
+            <Text style={styles.memberCount}>{response?.paid_users ?? 0}</Text>
             <Text style={styles.memberLabel}>active members</Text>
           </View>
           <View style={{position: 'absolute', top: 8, right: 8}}>
@@ -131,7 +193,9 @@ const ReportsAndInsightsScreen = () => {
             <SVG.RedMan />
           </View>
           <View>
-            <Text style={styles.memberCount}>350</Text>
+            <Text style={styles.memberCount}>
+              {response?.pending_users ?? 0}
+            </Text>
             <Text style={styles.memberLabel}>non-active members</Text>
           </View>
           <View style={{position: 'absolute', top: 8, right: 8}}>
@@ -174,12 +238,10 @@ const ReportsAndInsightsScreen = () => {
 
       <Text style={styles.header}>Export Options</Text>
       <View style={styles.exportContainer}>
-        <TouchableOpacity
-          style={styles.exportButton}
-          onPress={() => navigation.navigate('Messages')}>
+        <TouchableOpacity style={styles.exportButton}>
           <Text style={styles.exportText}>Export as CSV</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.exportButton}>
+        <TouchableOpacity style={styles.exportButton} onPress={getData}>
           <Text style={styles.exportText}>Export as PDF</Text>
         </TouchableOpacity>
       </View>
@@ -264,7 +326,7 @@ const styles = StyleSheet.create({
   },
   cell: {
     color: Colors.white,
-    fontSize: 12,
+    fontSize: 11.8,
     width: '20%',
     textAlign: 'center',
   },

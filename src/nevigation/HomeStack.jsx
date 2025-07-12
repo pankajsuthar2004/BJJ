@@ -281,12 +281,13 @@ const HomeStack = () => {
       <Stack.Screen
         name="Gym Jumper"
         component={GymJumperScreen}
-        options={{
+        options={({route}) => ({
           headerShown: true,
           headerStyle: {
             backgroundColor: Colors.darkBrown,
           },
-        }}
+          headerTitle: route.params?.gymName || 'Gym Jumper',
+        })}
       />
       <Stack.Screen
         name="Invoice Detail"

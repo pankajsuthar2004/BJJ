@@ -1,5 +1,5 @@
-export const BASE_URL = 'http://89.116.212.241:9083/api/';
-
+export const BASE_URL = 'https://bjj.beepr.us/api/';
+export const BASE_URL_FOR_IMAGE = 'https://bjj.beepr.us/';
 // export const BASE_URL = 'http://89.116.212.241:8083/api/';
 
 export const EndPoints = {
@@ -30,6 +30,7 @@ export const EndPoints = {
   SendNotification: 'send-notification',
   Pupil: 'pupil',
   GetProfile: 'get-profile',
+  UpdateSelectedGym: 'update-selected-gym',
   GymHistory: 'gym-history',
   activegym: 'active-gym',
   ManualUsers: 'manual-users',
@@ -38,4 +39,31 @@ export const EndPoints = {
   BillingHistory: 'billing-history',
   GymPlans: 'gym-plans',
   BuyPlan: 'buy-plan',
+  PupilClass: 'pupil-class',
+  PupilAttendance: 'pupil-attendance',
+  UpdateLog: 'update-log',
+  GymPayment: 'gym-payment',
+  ClassList: 'class-list',
+  ClassStore: 'class-store',
+  ClassUpdate: 'class-update',
+  DeleteClass: 'class-destroy',
+  Reports: 'reports',
+  TrainingType: 'training-type',
+  PaymentUser: 'payment-user',
+  SocialAuth: 'auth/redirect',
+  Logout: 'logout',
+  Store: 'store',
+  GetPosts: 'get-posts',
+  Like: 'like',
+  Comment: 'comment',
+  DeleteComment: 'delete-comment',
+  Users: 'users',
+  GymDashboard: 'gym-dashboard',
+  GymUserDetail: 'gym-user-detail',
+  DeviceToken: 'device-token',
+  LogType: 'log-type',
+  GymUserSummery: 'gym-user-summery',
+  ShowAttendance: 'show-attendance',
+  UserDash: 'user-dash',
+  GetPartners: 'get-partners',
 };

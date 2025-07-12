@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import Colors from '../../theme/color';
@@ -36,17 +37,6 @@ const recipientTypeMap = {
   'Last X Days Since Training': 'days',
 };
 
-const manualSelectionOptions = [
-  {id: 1, name: 'Josh Jones', photo: IMAGES.Photo},
-  {id: 2, name: 'Paul Walker', photo: IMAGES.Photo1},
-  {id: 3, name: 'Keir Starmer', photo: IMAGES.Photo2},
-  {id: 4, name: 'Joshy Watson', photo: IMAGES.Photo3},
-  {id: 5, name: 'William', photo: IMAGES.Photo4},
-  {id: 6, name: 'Richard Johnson', photo: IMAGES.Photo5},
-  {id: 7, name: 'Sanjay', photo: IMAGES.Photo6},
-  {id: 8, name: 'Piter', photo: IMAGES.Photo7},
-];
-
 const MessageScreen = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [manualListVisible, setManualListVisible] = useState(false);
@@ -58,6 +48,47 @@ const MessageScreen = () => {
   const [selectedManualRecipients, setSelectedManualRecipients] = useState([]);
   const [value, setValue] = useState(0);
   const [message, setMessage] = useState('');
+
+  const [manualSelectionOptions, setManualSelectionOptions] = useState([]);
+  const [loadingManualUsers, setLoadingManualUsers] = useState(false);
+
+  useEffect(() => {
+    fetchManualUsers();
+  }, []);
+
+  const fetchManualUsers = async () => {
+    try {
+      setLoadingManualUsers(true);
+      const response = await makeRequest({
+        endPoint: EndPoints.ManualUsers,
+        method: 'GET',
+      });
+
+      console.log('Manual Users API Response:', response);
+
+      const usersArray = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+      if (usersArray.length > 0) {
+        const users = usersArray.map(user => ({
+          id: user.id,
+          name: user.name,
+          photo: user.photo ? {uri: user.photo} : IMAGES.Photo,
+        }));
+        setManualSelectionOptions(users);
+      } else {
+        showToast({message: 'Failed to load users'});
+      }
+    } catch (err) {
+      console.log('Error fetching users:', err);
+      showToast({message: 'Error fetching users'});
+    } finally {
+      setLoadingManualUsers(false);
+    }
+  };
 
   const toggleManualSelection = item => {
     setSelectedManualRecipients(prev =>
@@ -95,7 +126,7 @@ const MessageScreen = () => {
         showToast({message: 'Please select at least one recipient'});
         return;
       }
-      body.recipient_ids = recipient_ids;
+      body.user_ids = user_ids;
     } else if (mappedType === 'days') {
       body.days = value;
     }
@@ -107,13 +138,16 @@ const MessageScreen = () => {
         body,
       });
 
-      showToast({message: 'Notification sent successfully'});
+      showToast({message: 'Notification sent successfully', type: 'success'});
       setMessage('');
       setSelectedRecipient('Select Recipient Type');
       setManualListVisible(false);
       setDaysSliderVisible(false);
       setSelectedManualRecipients([]);
-    } catch (err) {}
+    } catch (err) {
+      console.log('Error sending notification:', err);
+      showToast({message: 'Failed to send notification'});
+    }
   };
 
   const filteredManualSelectionOptions = manualSelectionOptions.filter(item =>
@@ -187,27 +221,31 @@ const MessageScreen = () => {
             <SVG.SearchIcon />
           </View>
 
-          <FlatList
-            data={filteredManualSelectionOptions}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({item}) => (
-              <TouchableOpacity
-                style={styles.manualItem}
-                onPress={() => toggleManualSelection(item)}>
-                <View style={styles.manualItemContent}>
-                  <Image source={item.photo} style={styles.profilePic} />
-                  <Text style={styles.manualItemText}>{item.name}</Text>
-                </View>
-                {selectedManualRecipients.some(
-                  selected => selected.id === item.id,
-                ) ? (
-                  <SVG.TickSelect />
-                ) : (
-                  <SVG.TickUnselect />
-                )}
-              </TouchableOpacity>
-            )}
-          />
+          {loadingManualUsers ? (
+            <ActivityIndicator color={Colors.red} />
+          ) : (
+            <FlatList
+              data={filteredManualSelectionOptions}
+              keyExtractor={item => item.id.toString()}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={styles.manualItem}
+                  onPress={() => toggleManualSelection(item)}>
+                  <View style={styles.manualItemContent}>
+                    <Image source={item.photo} style={styles.profilePic} />
+                    <Text style={styles.manualItemText}>{item.name}</Text>
+                  </View>
+                  {selectedManualRecipients.some(
+                    selected => selected.id === item.id,
+                  ) ? (
+                    <SVG.TickSelect />
+                  ) : (
+                    <SVG.TickUnselect />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          )}
         </View>
       )}
 
@@ -247,6 +285,7 @@ const MessageScreen = () => {
     </ScrollView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

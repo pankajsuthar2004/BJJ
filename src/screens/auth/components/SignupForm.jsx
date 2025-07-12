@@ -8,7 +8,7 @@ import {
   Image,
   useColorScheme,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, CommonActions} from '@react-navigation/native';
 import IMAGES from '../../../assets/images';
 import Colors from '../../../theme/color';
 import {hp, wp} from '../../../utility/ResponseUI';
@@ -19,10 +19,11 @@ import makeRequest from '../../../api/http';
 import {EndPoints} from '../../../api/config';
 import {useAppDispatch} from '../../../store/Hooks';
 import {setUser} from '../../../Slices/UserSlice';
-import {CommonActions} from '@react-navigation/native';
 
 const SignUpForm = () => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
+
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,45 +31,41 @@ const SignUpForm = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const dispatch = useAppDispatch();
+  const [errors, setErrors] = useState({});
 
   const isDarkMode = useColorScheme() === 'dark';
   const placeholderColor = isDarkMode ? Colors.gray : 'gray';
   const inputTextColor = isDarkMode ? Colors.black : Colors.black;
 
-  const onSignUpHandler = async () => {
-    const enteredName = name.trim();
-    const enteredEmail = email.trim();
-    const enteredPass = password.trim();
-    const enteredConfirmPass = confirmPassword.trim();
+  const validate = () => {
+    const newErrors = {};
+    if (!name.trim()) newErrors.name = 'Name is required';
+    else if (!Validation.name.test(name.trim()))
+      newErrors.name = 'Invalid name format';
 
-    if (enteredName.length === 0) {
-      showToast({message: 'Enter Name'});
-      return;
-    }
-    if (!Validation.name.test(enteredName)) {
-      showToast({message: 'Invalid Name! Special characters are not allowed.'});
-      return;
-    }
-    if (!Validation.email.test(enteredEmail)) {
-      showToast({message: 'Invalid Email Address'});
-      return;
-    }
-    if (enteredPass.length < 8) {
-      showToast({message: 'Password must be at least 8 characters long'});
-      return;
-    }
-    if (!Validation.password.test(enteredPass)) {
-      showToast({
-        message:
-          'Password must be 8-16 chars, include uppercase, number, and special character',
-      });
-      return;
-    }
-    if (enteredPass !== enteredConfirmPass) {
-      showToast({message: 'Passwords do not match'});
-      return;
-    }
+    if (!email.trim()) newErrors.email = 'Email address is required';
+    else if (!Validation.email.test(email.trim()))
+      newErrors.email = 'Invalid email format';
+
+    if (!password.trim()) newErrors.password = 'Password is required';
+    else if (password.length < 8)
+      newErrors.password = 'Password must be at least 8 characters long';
+    else if (!Validation.password.test(password))
+      newErrors.password =
+        'Password must include uppercase, number, special character';
+
+    if (!confirmPassword.trim())
+      newErrors.confirmPassword = 'Confirm Password is required';
+    else if (confirmPassword !== password)
+      newErrors.confirmPassword = 'Passwords do not match';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const onSignUpHandler = async () => {
+    if (!validate()) return;
+
     try {
       setLoading(true);
       const response = await makeRequest({
@@ -76,10 +73,10 @@ const SignUpForm = () => {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: {
-          name: enteredName,
-          email: enteredEmail,
-          password: enteredPass,
-          password_confirmation: enteredConfirmPass,
+          name: name.trim(),
+          email: email.trim(),
+          password: password.trim(),
+          password_confirmation: confirmPassword.trim(),
         },
       });
       dispatch(setUser(response));
@@ -91,7 +88,28 @@ const SignUpForm = () => {
         }),
       );
     } catch (error) {
-      showToast({message: 'Signup failed. Please try again.', type: 'error'});
+      const responseData = error?.response?.data;
+      console.log('Signup Error:', responseData);
+
+      const emailError =
+        responseData?.errors?.email?.[0] ||
+        responseData?.message ||
+        responseData?.error ||
+        error?.message ||
+        '';
+
+      if (
+        emailError.toLowerCase().includes('email') &&
+        (emailError.toLowerCase().includes('taken') ||
+          emailError.toLowerCase().includes('exist'))
+      ) {
+        showToast({message: 'Email already registered.', type: 'error'});
+      } else {
+        showToast({
+          message: emailError || 'Signup failed. Please try again.',
+          type: 'error',
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -99,32 +117,63 @@ const SignUpForm = () => {
 
   return (
     <View style={styles.containerView}>
-      <View style={[styles.formlogoView]}>
+      <View style={styles.formlogoView}>
         <Image source={IMAGES.Logo} style={styles.logoView} />
         <View style={styles.formView}>
           <View style={styles.inputView}>
+            {/* Name */}
             <TextInput
-              style={[styles.input, {color: inputTextColor}]}
+              style={[
+                styles.input,
+                {color: inputTextColor},
+                errors.name && styles.errorBorder,
+              ]}
               placeholder="Name"
               placeholderTextColor={placeholderColor}
               value={name}
-              onChangeText={setName}
+              onChangeText={text => {
+                setName(text);
+                if (errors.name) setErrors(prev => ({...prev, name: ''}));
+              }}
             />
+            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+
+            {/* Email */}
             <TextInput
-              style={[styles.input, {color: inputTextColor}]}
+              style={[
+                styles.input,
+                {color: inputTextColor},
+                errors.email && styles.errorBorder,
+              ]}
               placeholder="Email"
               placeholderTextColor={placeholderColor}
               keyboardType="email-address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={text => {
+                setEmail(text);
+                if (errors.email) setErrors(prev => ({...prev, email: ''}));
+              }}
             />
-            <View style={styles.inputContainer}>
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
+
+            {/* Password */}
+            <View
+              style={[
+                styles.inputContainer,
+                errors.password && styles.errorBorder,
+              ]}>
               <TextInput
                 style={[styles.inputWithIcon, {color: inputTextColor}]}
                 placeholder="Password"
                 placeholderTextColor={placeholderColor}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={text => {
+                  setPassword(text);
+                  if (errors.password)
+                    setErrors(prev => ({...prev, password: ''}));
+                }}
                 secureTextEntry={!passwordVisible}
               />
               <TouchableOpacity
@@ -136,13 +185,26 @@ const SignUpForm = () => {
                 />
               </TouchableOpacity>
             </View>
-            <View style={styles.inputContainer}>
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
+
+            {/* Confirm Password */}
+            <View
+              style={[
+                styles.inputContainer,
+                errors.confirmPassword && styles.errorBorder,
+              ]}>
               <TextInput
                 style={[styles.inputWithIcon, {color: inputTextColor}]}
                 placeholder="Confirm Password"
                 placeholderTextColor={placeholderColor}
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={text => {
+                  setConfirmPassword(text);
+                  if (errors.confirmPassword)
+                    setErrors(prev => ({...prev, confirmPassword: ''}));
+                }}
                 secureTextEntry={!confirmPasswordVisible}
               />
               <TouchableOpacity
@@ -158,7 +220,12 @@ const SignUpForm = () => {
                 />
               </TouchableOpacity>
             </View>
+            {errors.confirmPassword && (
+              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+            )}
           </View>
+
+          {/* Submit */}
           <TouchableOpacity
             style={styles.signUpButton}
             onPress={onSignUpHandler}>
@@ -167,7 +234,10 @@ const SignUpForm = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
+
+        <TouchableOpacity
+          style={{marginTop: 30}}
+          onPress={() => navigation.navigate('LoginScreen')}>
           <Text style={styles.signupText}>
             Already have an account? <Text style={styles.loginLink}>Login</Text>
           </Text>
@@ -181,7 +251,6 @@ const styles = StyleSheet.create({
   containerView: {
     justifyContent: 'center',
     alignItems: 'center',
-    opacity: '50%',
     marginTop: wp(13),
   },
   formlogoView: {
@@ -230,7 +299,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    marginTop: hp((20 / 919) * 100),
+    marginTop: hp((75 / 919) * 100),
   },
   signUpButtonText: {
     color: Colors.white,
@@ -249,6 +318,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontFamily: Fonts.normal,
+  },
+  errorText: {
+    color: Colors.red,
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 10,
+    marginLeft: 6,
+    alignSelf: 'flex-start',
+  },
+  errorBorder: {
+    borderColor: Colors.red,
+    borderWidth: 1,
+  },
+  icon: {
+    paddingHorizontal: 10,
+  },
+  iconImage: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
 });
 

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,19 @@ import {
   TouchableWithoutFeedback,
   Animated,
   TextInput,
+  SafeAreaView,
 } from 'react-native';
 import {LineChart, BarChart} from 'react-native-chart-kit';
 import {Dimensions} from 'react-native';
 import Colors from '../../theme/color';
 import IMAGES from '../../assets/images';
 import {Fonts} from '../../assets/fonts';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {hp, wp} from '../../utility/ResponseUI';
 import SVG from '../../assets/svg';
 import {useAppSelector} from '../../store/Hooks';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -28,6 +31,8 @@ const DashBoardScreen = () => {
   const navigation = useNavigation();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [search, setSearch] = useState('');
+  const [dashboardData, setDashboardData] = useState({});
+  const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     paymentPending: false,
     active: false,
@@ -39,6 +44,68 @@ const DashBoardScreen = () => {
   const [isFiltersModalVisible, setIsFiltersModalVisible] = useState(false);
   const [isPreviousModalVisible, setIsPreviousModalVisible] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+    }, [filters]),
+  );
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const queryParams = [];
+
+      if (filters.paymentPending) queryParams.push('payment_status=pending');
+      if (filters.paymentPaid) queryParams.push('payment_status=paid');
+      if (filters.active) queryParams.push('status=active');
+      if (filters.attendanceGreaterThan10) queryParams.push('attendance_gt=10');
+      if (filters.monthlySubscription)
+        queryParams.push('subscription_type=monthly');
+      if (filters.yearlySubscription)
+        queryParams.push('subscription_type=yearly');
+
+      const queryString = queryParams.length ? `?${queryParams.join('&')}` : '';
+      const fullEndpoint = `${EndPoints.GymDashboard}${queryString}`;
+
+      console.log('FILTERS:', filters);
+      console.log('API QUERY:', fullEndpoint);
+
+      const res = await makeRequest({endPoint: fullEndpoint, method: 'GET'});
+
+      const data = res || {};
+
+      console.log('Response pupils_list:', res?.pupils_list);
+      console.log(
+        'Statuses:',
+        res?.pupils_list?.map(p => p.payment_status),
+      );
+
+      setDashboardData({
+        revenue: data.revenue ?? 0,
+        pupils: data.pupils ?? 0,
+        regular_pupils: data.regular_pupils ?? 0,
+        pending: data.pending ?? 0,
+        invited: data.invited ?? 0,
+        new_pupils: data.new_pupils ?? 0,
+        unpaid_users: data.unpaid_users ?? 0,
+        monthly_revenue: Array.isArray(data.monthly_revenue)
+          ? data.monthly_revenue
+          : [],
+        gym_members_month: data.gym_members_month ?? {},
+        gym_paid_unpaid_monthly: data.gym_paid_unpaid_monthly ?? {},
+        students_per_class: Array.isArray(data.students_per_class)
+          ? data.students_per_class
+          : [],
+        plans: Array.isArray(data.plans) ? data.plans : [],
+        pupils_list: Array.isArray(data.pupils_list) ? data.pupils_list : [],
+      });
+    } catch (error) {
+      console.log('Failed to fetch dashboard data', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const chartConfig = {
     backgroundColor: Colors.white,
     backgroundGradientFrom: Colors.white,
@@ -46,11 +113,15 @@ const DashBoardScreen = () => {
     decimalPlaces: 0,
     color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    fillShadowGradient: 'transparent',
+    fillShadowGradient: Colors.red,
     fillShadowGradientOpacity: 0,
     propsForLabels: {
+      fontSize: 10,
+      textAnchor: 'middle',
+    },
+    propsForVerticalLabels: {
       fontSize: 11,
-      textAlign: 'center',
+      textAnchor: 'middle',
     },
     propsForDots: {
       r: '0',
@@ -76,143 +147,161 @@ const DashBoardScreen = () => {
     ],
     datasets: [
       {
-        data: [
-          0, 34, 60, 23, 55, 20, 8, 100, 60, 40, 60, 5, 30, 49, 57, 29, 2, 32,
-          13, 43,
-        ],
+        data: Array.isArray(dashboardData?.monthly_revenue)
+          ? dashboardData?.monthly_revenue.map(item => item.revenue ?? 0)
+          : Array(12).fill(0),
         color: () => Colors.red,
       },
     ],
   };
-  const OverTime = {
-    labels: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'No',
-      'Dec',
-    ],
-    datasets: [
-      {
-        data: [
-          34, 8, 60, 23, 55, 20, 8, 100, 60, 40, 60, 5, 30, 49, 57, 29, 2, 32,
-          13, 43,
-        ],
-        color: () => Colors.red,
-      },
-    ],
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  const monthIndexMap = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
   };
 
-  const TimeData = {
-    labels: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'No',
-      'Dec',
-    ],
+  const fullUsersArray = Array(12).fill(0);
+
+  if (Array.isArray(dashboardData?.gym_members_month)) {
+    dashboardData.gym_members_month.forEach(item => {
+      const index = monthIndexMap[item.month];
+      if (index !== undefined) {
+        fullUsersArray[index] = item.users ?? 0;
+      }
+    });
+  }
+
+  const OverTime = {
+    labels: months,
     datasets: [
       {
-        data: [0, 25, 10, 38, 5, 33, 60, 3, 35, 29, 8, 29, 8, 5, 32, 2],
+        data: fullUsersArray,
+        color: () => Colors.red,
+      },
+    ],
+  };
+  const paidUnpaidMonths = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  const monthMap = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
+  };
+
+  const paidArray = Array(12).fill(0);
+  const unpaidArray = Array(12).fill(0);
+
+  if (Array.isArray(dashboardData?.gym_paid_unpaid_monthly)) {
+    dashboardData.gym_paid_unpaid_monthly.forEach(item => {
+      const index = monthMap[item.month];
+      if (index !== undefined) {
+        paidArray[index] = parseInt(item.paid ?? 0);
+        unpaidArray[index] = parseInt(item.unpaid ?? 0);
+      }
+    });
+  }
+
+  const TimeData = {
+    labels: paidUnpaidMonths,
+    datasets: [
+      {
+        data: paidArray,
         color: () => Colors.red,
       },
       {
-        data: [0, 6, 8, 1, 7, 14, 10, 4, 2, 9, 1, 9, 4, 6, 9, 0],
-        color: () => `rgb(14, 14, 16)`,
+        data: unpaidArray,
+        color: () => Colors.darkGray,
         strokeWidth: 2,
       },
     ],
   };
 
   const data = {
-    labels: [
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-      'cls',
-    ],
+    labels: ['cls', 'cls', 'cls', 'cls', 'cls', 'cls'],
+    datasets: [{data: [80, 50, 75, 100]}],
+  };
+  const classLabels = Array.isArray(dashboardData?.students_per_class)
+    ? dashboardData.students_per_class.map(item =>
+        item.training_type.length > 8
+          ? item.training_type.substring(0, 8) + '...'
+          : item.training_type,
+      )
+    : [];
+
+  const classData = Array.isArray(dashboardData?.students_per_class)
+    ? dashboardData.students_per_class.map(item => item.students ?? 0)
+    : [];
+
+  const formattedBarChartData = {
+    labels: classLabels,
     datasets: [
       {
-        data: [80, 50, 75, 100, 60, 85, 75, 90, 23],
+        data: classData,
       },
     ],
   };
 
   const sessionStats = [
-    {svg: SVG.Count11, value: '$750', label: 'Revenue'},
-    {svg: SVG.Count12, value: '400', label: 'Pupils'},
-    {svg: SVG.Count12, value: '350', label: 'Regular Pupils'},
-    {svg: SVG.Count13, value: '$1200', label: 'Pending'},
-    {svg: SVG.Count14, value: '29', label: 'Invited'},
-    {svg: SVG.Count12, value: '28', label: 'New Pupil'},
-    {svg: SVG.Count13, value: '385', label: 'Sub Monthly'},
-    {svg: SVG.Count13, value: '15', label: 'Sub Yearly'},
+    {svg: SVG.Count11, value: dashboardData?.revenue, label: 'Revenue'},
+    {svg: SVG.Count12, value: dashboardData?.pupils, label: 'Pupils'},
+    {
+      svg: SVG.Count12,
+      value: dashboardData?.regular_pupils,
+      label: 'Regular Pupils',
+    },
+    {svg: SVG.Count13, value: dashboardData?.pending, label: 'Pending'},
+    {svg: SVG.Count14, value: dashboardData?.invited, label: 'Invited'},
+    {svg: SVG.Count12, value: dashboardData?.new_pupils, label: 'New Pupil'},
+    // {svg: SVG.Count13, value: '385', label: 'Sub Monthly'},
+    // {svg: SVG.Count13, value: '15', label: 'Sub Yearly'},
   ];
 
-  const subscriptions = [
-    {
-      name: 'Paul Watson',
-      subscriptionType: 'Monthly Subscription',
-      status: 'Paid',
-      statusStyle: styles.status1,
-      date: '17/12/24',
-      image: IMAGES.Paul,
-    },
-    {
-      name: 'John Manora',
-      subscriptionType: 'Yearly Subscription',
-      status: 'Pending',
-      statusStyle: styles.status2,
-      date: '17/12/24',
-      image: IMAGES.Jhon,
-    },
-    {
-      name: 'Shen Watson',
-      subscriptionType: 'Yearly Subscription',
-      status: 'Paid',
-      statusStyle: styles.status1,
-      date: '17/12/24',
-      image: IMAGES.Shen,
-    },
-    {
-      name: 'Smith Bewl',
-      subscriptionType: 'Yearly Subscription',
-      status: 'Pending',
-      statusStyle: styles.status2,
-      date: '17/12/24',
-      image: IMAGES.Smith,
-    },
-    {
-      name: 'Shen Watson',
-      subscriptionType: 'Yearly Subscription',
-      status: 'Paid',
-      statusStyle: styles.status1,
-      date: '17/12/24',
-      image: IMAGES.ShenWat,
-    },
-  ];
   const menuItems = [
     {name: 'Home', icon: SVG.HomeIcon},
     {name: 'Pupil Management', icon: SVG.RiLine},
@@ -222,6 +311,7 @@ const DashBoardScreen = () => {
     {name: 'Timetable', icon: SVG.TimeEntry},
     {name: 'Invitations', icon: SVG.Invite},
     {name: 'Reports', icon: SVG.Report},
+    {name: 'Messages', icon: SVG.Invite},
     {name: 'Gym Profile', icon: SVG.Report},
     {name: 'Switch to User', icon: SVG.Report},
   ];
@@ -266,8 +356,9 @@ const DashBoardScreen = () => {
   const toggleFiltersModal = () => {
     setIsFiltersModalVisible(!isFiltersModalVisible);
   };
+
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <TouchableOpacity>
@@ -324,7 +415,7 @@ const DashBoardScreen = () => {
                       break;
 
                     case 'Pupil Management':
-                      navigation.navigate('Pupils Attendance');
+                      // navigation.navigate('Pupils Attendance');
                       break;
 
                     case 'Prices':
@@ -468,7 +559,10 @@ const DashBoardScreen = () => {
 
             <TouchableOpacity
               style={styles.applyButton}
-              onPress={() => setIsFiltersModalVisible(false)}>
+              onPress={() => {
+                setIsFiltersModalVisible(false);
+                fetchDashboardData();
+              }}>
               <Text style={styles.applyButtonText}>Apply Filters</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
@@ -531,11 +625,20 @@ const DashBoardScreen = () => {
         </Text>
 
         <BarChart
-          data={data}
+          data={formattedBarChartData}
           width={screenWidth - 18}
-          height={250}
-          fromZero={true}
-          chartConfig={chartConfig}
+          height={300}
+          fromZero
+          chartConfig={{
+            ...chartConfig,
+            propsForVerticalLabels: {
+              ...chartConfig.propsForVerticalLabels,
+              rotation: -45,
+              fontSize: 10,
+            },
+          }}
+          verticalLabelRotation={45}
+          showValuesOnTopOfBars={true}
           style={styles.chart}
         />
 
@@ -555,7 +658,9 @@ const DashBoardScreen = () => {
                 <stat.svg />
               </View>
               <Text style={styles.statValue}>
-                {stat.value}
+                {stat.label === 'Revenue' || stat.label === 'Pending'
+                  ? `$${stat.value}`
+                  : stat.value}
                 {'\n'}
                 <Text style={styles.statLabel}>{stat.label}</Text>
               </Text>
@@ -591,34 +696,45 @@ const DashBoardScreen = () => {
           </TouchableOpacity>
         </View>
         <View style={{gap: 10}}>
-          {subscriptions.map((subscription, index) => (
-            <View
-              key={index}
-              style={[
-                styles.listView,
-                {flexDirection: 'row', justifyContent: 'space-between'},
-              ]}>
-              <View style={{flexDirection: 'row', gap: 10}}>
-                <Image source={subscription.image} />
-                <Text style={styles.list}>
-                  {subscription.name}
-                  {'\n'}
-                  <Text style={styles.listMsg}>
-                    {subscription.subscriptionType}
+          {dashboardData &&
+            dashboardData?.pupils_list?.map((subscription, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.listView,
+                  {flexDirection: 'row', justifyContent: 'space-between'},
+                ]}>
+                <View style={{flexDirection: 'row', gap: 10}}>
+                  <Image
+                    source={
+                      subscription.user_image
+                        ? {uri: subscription.user_image}
+                        : IMAGES?.ProfilePic
+                    }
+                    style={{height: 45, width: 45, borderRadius: 20}}
+                  />
+                  <Text style={styles.list}>
+                    {subscription.user_name}
+                    {'\n'}
+                    <Text style={styles.listMsg}>{subscription.plan_name}</Text>
                   </Text>
-                </Text>
+                </View>
+                <View style={styles.statusContainer}>
+                  <Text
+                    style={
+                      subscription.payment_status?.toLowerCase() === 'paid'
+                        ? styles.status1
+                        : styles.status2
+                    }>
+                    {subscription.payment_status}
+                  </Text>
+                  <Text style={styles.listMsg}>{subscription.valid_till}</Text>
+                </View>
               </View>
-              <View style={styles.statusContainer}>
-                <Text style={subscription.statusStyle}>
-                  {subscription.status}
-                </Text>
-                <Text style={styles.listMsg}>{subscription.date}</Text>
-              </View>
-            </View>
-          ))}
+            ))}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -798,6 +914,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     justifyContent: 'center',
     alignSelf: 'center',
+    fontSize: 13,
   },
   listView: {
     backgroundColor: Colors.darkGray,

@@ -19,18 +19,7 @@ import {useNavigation} from '@react-navigation/native';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
-
-const attendanceData = [
-  {name: 'John Smith', classes: 21, image: IMAGES.Photo1},
-  {name: 'Paul Watson', classes: 21, image: IMAGES.Photo2},
-  {name: 'Bobby Begula', classes: 25, image: IMAGES.Photo3},
-  {name: 'John Manora', classes: 18, image: IMAGES.Photo4},
-  {name: 'Shen Watson', classes: 17, image: IMAGES.Photo5},
-  {name: 'Smith Bewl', classes: 21, image: IMAGES.Photo6},
-  {name: 'Shemas Yogu', classes: 25, image: IMAGES.Photo7},
-  {name: 'Bouncer Batlar', classes: 25, image: IMAGES.Photo8},
-  {name: 'Watson Wangola', classes: 25, image: IMAGES.Photo9},
-];
+import {useAppSelector} from '../../store/Hooks';
 
 const PupilsAttendanceScreen = () => {
   const navigation = useNavigation();
@@ -40,30 +29,50 @@ const PupilsAttendanceScreen = () => {
     gi: true,
     noGi: true,
   });
-  // const [attendanceData, setAttendanceData] = useState([]);
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [graphData, setGraphData] = useState({});
   const [loading, setLoading] = useState(true);
+  const user = useAppSelector(state => state.user?.user);
+  const gymId = user?.gym?.id;
+
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const filterParams = [];
+      if (selectedFilters.gi) filterParams.push('gi=1');
+      if (selectedFilters.noGi) filterParams.push('noGi=1');
+      const queryString =
+        filterParams.length > 0 ? `&${filterParams.join('&')}` : '';
+
+      const data = await makeRequest({
+        endPoint: `${
+          EndPoints.Members
+        }?filter=${selectedButton.toLowerCase()}${queryString}`,
+        method: 'GET',
+      });
+
+      console.log('Members data:', data?.members);
+      setAttendanceData(data?.members || []);
+      setGraphData(data?.graph || {});
+    } catch (error) {
+      console.log('Fetch members error:', error);
+      showToast({message: 'Failed to load members'});
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        setLoading(true);
-        const data = await makeRequest({
-          endPoint: EndPoints.Members,
-          method: 'GET',
-        });
-        setAttendanceData(data);
-      } catch (error) {
-        showToast({message: 'Failed to load members'});
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMembers();
-  }, []);
+  }, [selectedButton, selectedFilters]);
 
   const toggleFilter = type => {
     setSelectedFilters(prev => ({...prev, [type]: !prev[type]}));
+  };
+
+  const applyFilters = () => {
+    fetchMembers();
+    setIsModalVisible(false);
   };
 
   return (
@@ -110,12 +119,16 @@ const PupilsAttendanceScreen = () => {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             datasets: [
               {
-                data: [50, 75, 60, 80, 55, 70, 100, 65, 96, 40, 54, 76, 23, 20],
+                data: [
+                  graphData.Monday || 0,
+                  graphData.Tuesday || 0,
+                  graphData.Wednesday || 0,
+                  graphData.Thursday || 0,
+                  graphData.Friday || 0,
+                  graphData.Saturday || 0,
+                  graphData.Sunday || 0,
+                ],
                 color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`,
-              },
-              {
-                data: [60, 55, 70, 100, 67, 30, 58, 39, 65, 75, 50, 39, 46, 79],
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
               },
             ],
           }}
@@ -124,22 +137,49 @@ const PupilsAttendanceScreen = () => {
 
       <FlatList
         data={attendanceData}
-        keyExtractor={item => item.name}
-        renderItem={({item}) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => {
-              navigation.navigate('Attendance Marking');
-            }}>
-            <Image source={item.image} style={styles.image} />
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.classes}>
-              {item.classes}
-              {'\n'}
-              <Text style={{color: Colors.white, fontSize: 12}}>classes</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
+        keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
+        renderItem={({item}) => {
+          const imageUri = item?.user?.image?.startsWith('http')
+            ? item.user.image
+            : `https://bjj.beepr.us/${item?.user?.image}`;
+
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => {
+                navigation.navigate('Attendance Marking', {
+                  user: item?.user,
+                  gym_member: item?.id,
+                  presentdays: item?.attendance_count || 0,
+                  absentdays: 0,
+                  gymId: item?.gym_id,
+                });
+              }}>
+              <Image
+                source={
+                  item?.user?.image ? {uri: imageUri} : IMAGES.ProfilePic2
+                }
+                style={styles.image}
+              />
+              <View style={{flex: 1}}>
+                <Text style={styles.name}>{item?.user?.name || 'Unnamed'}</Text>
+              </View>
+              <View style={{alignItems: 'flex-end'}}>
+                <Text style={styles.classes}>
+                  {item?.attendance_count || 0}
+                </Text>
+                <Text style={{color: Colors.white, fontSize: 12}}>classes</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={
+          !loading && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No Pupil's Available</Text>
+            </View>
+          )
+        }
       />
 
       <Modal visible={isModalVisible} transparent animationType="slide">
@@ -162,9 +202,10 @@ const PupilsAttendanceScreen = () => {
 
               <TouchableOpacity
                 style={styles.applyButton}
-                onPress={() => setIsModalVisible(false)}>
+                onPress={applyFilters}>
                 <Text style={styles.applyText}>Apply Filters</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={styles.resetButton}
                 onPress={() => {
@@ -184,7 +225,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.black,
-    padding: 12,
+    padding: 9,
   },
   main: {
     flexDirection: 'row',
@@ -256,11 +297,21 @@ const styles = StyleSheet.create({
     color: Colors.white,
     flex: 1,
     fontSize: 16,
+    top: 8,
   },
   classes: {
     color: Colors.green,
     fontSize: 16,
     textAlign: 'right',
+  },
+  emptyContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontStyle: 'italic',
   },
   modalOverlay: {
     flex: 1,

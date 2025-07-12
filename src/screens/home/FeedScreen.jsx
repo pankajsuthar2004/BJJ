@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -7,68 +7,86 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  Modal,
 } from 'react-native';
 import Video from 'react-native-video';
 import Colors from '../../theme/color';
 import {hp, wp} from '../../utility/ResponseUI';
 import SVG from '../../assets/svg';
 import {useNavigation} from '@react-navigation/native';
-
-const posts = [
-  {
-    id: '1',
-    user: {
-      name: 'Norman Hans',
-      location: 'Southall, United Kingdom',
-      avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    },
-    video:
-      'https://videos.pexels.com/video-files/7988880/7988880-sd_960_506_25fps.mp4',
-    title: 'Jiu Jitsu Training Session held at Castle',
-    description:
-      'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since......',
-    tags: ['Gi Training', 'Jiu Jitsu', 'Session'],
-    image:
-      'https://t3.ftcdn.net/jpg/01/27/09/22/360_F_127092211_76cbMikJKTB6Ms2rDjLGgnsLEOvCLhHI.jpg',
-  },
-  {
-    id: '2',
-    user: {
-      name: 'Paul Ben',
-      location: 'London, United Kingdom',
-      avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-    },
-    video:
-      'https://videos.pexels.com/video-files/7045336/7045336-sd_640_360_30fps.mp4',
-    title: 'Fundamental Steps to follow as Gi',
-    description:
-      'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since......',
-    tags: ['Gi Training', 'Jiu Jitsu', 'Session'],
-    image:
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi2aW5Uiknoa9Q21LKczr4LVHotZkhMz0M1A&s',
-  },
-  {
-    id: '3',
-    user: {
-      name: 'Nelson Watson',
-      location: 'Newyork, America',
-      avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-    },
-    video:
-      'https://videos.pexels.com/video-files/7988986/7988986-sd_960_506_25fps.mp4',
-    title: 'Coach announces new update',
-    description:
-      'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industrys standard dummy text ever since......',
-    tags: ['Gi Training', 'Jiu Jitsu', 'Session'],
-    image:
-      'https://cdn.pixabay.com/photo/2020/04/16/16/21/sunset-5051305_640.jpg',
-  },
-];
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const FeedScreen = () => {
   const [playingVideo, setPlayingVideo] = useState(null);
   const [search, setSearch] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState({});
   const navigation = useNavigation();
+
+  const fetchPosts = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GetPosts,
+        method: 'GET',
+      });
+      if (response) {
+        setPosts(response);
+      }
+    } catch (error) {
+      console.log('Error fetching posts:', error);
+    }
+  };
+  const handleLike = async postId => {
+    try {
+      const res = await makeRequest({
+        endPoint: EndPoints.Like,
+        method: 'POST',
+        body: {post_id: postId},
+      });
+      showToast({message: 'Post liked', type: 'success'});
+    } catch (error) {
+      console.log('Like error:', error);
+    }
+  };
+
+  const handleAddComment = async () => {
+    try {
+      await makeRequest({
+        endPoint: EndPoints.Comment,
+        method: 'POST',
+        body: {
+          post_id: selectedPostId,
+          comment: newComment,
+        },
+      });
+      showToast({message: 'Comment added', type: 'success'});
+      setNewComment('');
+      setCommentModalVisible(false);
+    } catch (error) {
+      console.log('Comment error:', error);
+    }
+  };
+
+  const handleDeleteComment = async commentId => {
+    try {
+      await makeRequest({
+        endPoint: `${EndPoints.DeleteComment}/${commentId}`,
+        method: 'DELETE',
+      });
+      showToast({message: 'Comment deleted'});
+    } catch (error) {
+      console.log('Delete comment error:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -77,13 +95,14 @@ const FeedScreen = () => {
           flexDirection: 'row',
           alignItems: 'center',
           borderRadius: 8,
-          paddingHorizontal: 20,
+          paddingHorizontal: 10,
           height: 40,
           gap: 16,
           marginBottom: 20,
           alignSelf: 'center',
         }}>
-        <View>
+        <View
+          style={{flex: 1, justifyContent: 'center', alignItems: 'flex-end'}}>
           <TextInput
             value={search}
             placeholder="search"
@@ -93,12 +112,12 @@ const FeedScreen = () => {
           <TouchableOpacity
             style={{
               position: 'absolute',
-              right: 40,
-              top: 20,
+              right: 35,
+              // top: 20,
             }}>
             <SVG.Voice />
           </TouchableOpacity>
-          <TouchableOpacity style={{position: 'absolute', right: 15, top: 20}}>
+          <TouchableOpacity style={{position: 'absolute', right: 10}}>
             <SVG.Search />
           </TouchableOpacity>
         </View>
@@ -109,18 +128,20 @@ const FeedScreen = () => {
 
       <FlatList
         data={posts}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id?.toString()}
         renderItem={({item}) => (
           <View style={styles.card}>
             <View style={styles.userInfo}>
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <Image source={{uri: item.user.avatar}} style={styles.avatar} />
+                <Image
+                  source={{uri: item.user?.avatar}}
+                  style={styles.avatar}
+                />
                 <View>
-                  <Text style={styles.userName}>{item.user.name}</Text>
-                  <Text style={styles.userLocation}>{item.user.location}</Text>
+                  <Text style={styles.userName}>{item.user?.name}</Text>
+                  <Text style={styles.userLocation}>{item.user?.location}</Text>
                 </View>
               </View>
-
               <TouchableOpacity>
                 <SVG.Dots />
               </TouchableOpacity>
@@ -150,21 +171,23 @@ const FeedScreen = () => {
                   marginTop: 10,
                 }}>
                 <View style={{flexDirection: 'row', gap: 10}}>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={handleLike.bind(null, item.id)}>
                     <SVG.Like />
                   </TouchableOpacity>
-                  <TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedPostId(item.id);
+                      setCommentModalVisible(true);
+                    }}>
                     <SVG.Comment />
                   </TouchableOpacity>
                   <TouchableOpacity>
                     <SVG.Share />
                   </TouchableOpacity>
                 </View>
-                <View>
-                  <TouchableOpacity>
-                    <SVG.Download />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity>
+                  <SVG.Download />
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
 
@@ -172,7 +195,7 @@ const FeedScreen = () => {
             <Text style={styles.postDescription}>{item.description}</Text>
 
             <View style={styles.tagsContainer}>
-              {item.tags.map((tag, index) => (
+              {item.tags?.map((tag, index) => (
                 <Text key={index} style={styles.tag}>
                   {tag}
                 </Text>
@@ -190,6 +213,35 @@ const FeedScreen = () => {
         <TouchableOpacity onPress={() => navigation.navigate('Create Post')}>
           <SVG.PlusBold />
         </TouchableOpacity>
+
+        <Modal
+          visible={commentModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setCommentModalVisible(false)}>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Add Comment</Text>
+              <TextInput
+                value={newComment}
+                onChangeText={setNewComment}
+                placeholder="Write a comment..."
+                style={styles.commentInput}
+                multiline
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleAddComment}>
+                <Text style={styles.sendButtonText}>Send</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setCommentModalVisible(false)}
+                style={styles.cancelButton}>
+                <Text style={{color: Colors.red}}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );
@@ -210,7 +262,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
     alignItems: 'center',
-    paddingRight: 65,
+    paddingRight: 45,
     paddingLeft: 15,
   },
   searchContainer: {
@@ -299,6 +351,49 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.gray,
     paddingVertical: 6,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: Colors.white,
+    padding: 20,
+    borderRadius: 10,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: Colors.black,
+  },
+  commentInput: {
+    height: 80,
+    borderColor: Colors.gray,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    textAlignVertical: 'top',
+    backgroundColor: Colors.white,
+    color: Colors.black,
+  },
+  sendButton: {
+    marginTop: 10,
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  sendButtonText: {
+    color: Colors.black,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    marginTop: 10,
+    alignItems: 'center',
   },
 });
 

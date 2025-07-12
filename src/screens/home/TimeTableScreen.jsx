@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -14,19 +14,19 @@ import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
 import moment from 'moment';
 import SVG from '../../assets/svg';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
-const initialClasses = [
-  {id: '1', name: 'Gi class', time: '9AM - 10AM', color: Colors.green},
-  {id: '2', name: 'No Gi class', time: '12PM - 3PM', color: Colors.yellow},
-  {id: '3', name: 'Open Mat class', time: '5PM - 8PM', color: Colors.red},
-  {id: '4', name: 'Competition class', time: '9PM - 11PM', color: Colors.white},
-];
+const capitalize = str =>
+  str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
 const TimeTableScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [addClassModalVisible, setAddClassModalVisible] = useState(false);
   const [className, setClassName] = useState('');
   const [selectedClass, setSelectedClass] = useState(null);
+  const [newClassTypeName, setNewClassTypeName] = useState('');
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const [recurringDays, setRecurringDays] = useState([]);
   const [startTime, setStartTime] = useState('12:30 PM');
@@ -38,31 +38,282 @@ const TimeTableScreen = () => {
   const [currentMonth, setCurrentMonth] = useState(moment());
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
-  const [classes, setClasses] = useState(initialClasses);
-
-  const daysOfWeek = [
-    'Every Monday',
-    'Every Tuesday',
-    'Every Wednesday',
-    'Every Thursday',
-    'Every Friday',
-    'Every Saturday',
-    'Every Sunday',
-  ];
-
+  const [classes, setClasses] = useState([]);
+  const [editingClassId, setEditingClassId] = useState(null);
+  const [trainingTypes, setTrainingTypes] = useState([]);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
-  const handleAddRecurringClass = () => {
-    if (currentDayIndex < daysOfWeek.length) {
-      setRecurringDays(prev => [...prev, daysOfWeek[currentDayIndex]]);
-      setCurrentDayIndex(currentDayIndex + 1);
-    }
-  };
+  const daysOfWeek = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+
+  useEffect(() => {
+    fetchClasses();
+    fetchTrainingTypes();
+  }, []);
 
   const handleSelectRecurringDay = day => {
     setRecurringDays(prev =>
-      prev.includes(day) ? prev.filter(item => item !== day) : [...prev, day],
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day],
     );
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.ClassList,
+        method: 'GET',
+      });
+
+      const data = response;
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          setClasses([]);
+        } else {
+          const formatted = data.map(item => ({
+            id: item?.id?.toString(),
+            name: item?.class_name,
+            time: `${item?.start_time} - ${item?.end_time}`,
+            color: item?.color || Colors.green,
+            start_time: item?.start_time,
+            end_time: item?.end_time,
+            training_type_id: item?.training_type_id,
+            class_days: item?.days,
+            description: item?.description || '',
+          }));
+
+          setClasses(formatted);
+        }
+      } else {
+        showToast({message: 'Invalid class data format', type: 'error'});
+      }
+    } catch (error) {
+      showToast({message: 'Failed to fetch class list', type: 'error'});
+    }
+  };
+
+  const fetchTrainingTypes = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.TrainingType,
+        method: 'GET',
+      });
+
+      if (Array.isArray(response)) {
+        const normalized = response.map(item => ({
+          id: item.id,
+          name: item.type,
+        }));
+        setTrainingTypes(normalized);
+      } else {
+        showToast({message: 'Invalid training types data', type: 'error'});
+      }
+    } catch (error) {
+      console.log('fetchTrainingTypes error:', error);
+      showToast({message: 'Error loading training types', type: 'error'});
+    }
+  };
+
+  const renderClassDropdownItems = () => {
+    if (!showClassDropdown) return null;
+    return trainingTypes.map(item => (
+      <TouchableOpacity
+        key={item.id}
+        style={[
+          styles.dropdownItem,
+          selectedClass?.id === item.id && styles.selectedItem,
+        ]}
+        onPress={() => {
+          setSelectedClass({id: item?.id, name: item?.name});
+          setShowClassDropdown(false);
+        }}>
+        <Text>{item?.name}</Text>
+      </TouchableOpacity>
+    ));
+  };
+
+  const resetForm = () => {
+    setClassName('');
+    setSelectedClass(null);
+    setRecurringDays([]);
+    setStartTime('12:30 PM');
+    setEndTime('4:30 PM');
+    setDescription('');
+    setShowStartTimePicker(false);
+    setShowEndTimePicker(false);
+    setSelectedStartTime(null);
+    setSelectedEndTime(null);
+    setEditingClassId(null);
+    setCurrentDayIndex(0);
+    setShowClassDropdown(false);
+  };
+
+  const formatTime = timeStr => moment(timeStr, ['h:mm A']).format('HH:mm');
+
+  const submitNewClassToAPI = async () => {
+    try {
+      const formattedDays = recurringDays.map(day =>
+        day.replace('Every ', '').trim(),
+      );
+
+      const payload = {
+        class_name: className,
+        training_type_id: selectedClass?.id,
+        class_days: formattedDays,
+        start_time: formatTime(startTime),
+        end_time: formatTime(endTime),
+        description,
+      };
+
+      console.log('Payload:', payload);
+
+      const response = await makeRequest({
+        endPoint: EndPoints.ClassStore,
+        method: 'POST',
+        body: payload,
+      });
+
+      console.log('Response:', response);
+
+      if (response && response.id) {
+        showToast({message: 'Class added successfully', type: 'success'});
+        setModalVisible(false);
+        fetchClasses();
+        resetForm();
+      } else {
+        showToast({
+          message: response?.message || 'Failed to add class',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.log('Error:', error);
+      showToast({message: 'Error submitting class', type: 'error'});
+    }
+  };
+
+  const updateClass = async () => {
+    try {
+      const formattedDays = recurringDays.map(day => day.replace('Every ', ''));
+
+      const payload = {
+        id: editingClassId,
+        class_name: className,
+        training_type_id: selectedClass?.id,
+        class_days: formattedDays,
+        start_time: formatTime(startTime),
+        end_time: formatTime(endTime),
+        description,
+      };
+
+      const response = await makeRequest({
+        endPoint: EndPoints.ClassUpdate,
+        method: 'POST',
+        body: payload,
+      });
+
+      if (response?.id) {
+        showToast({message: 'Class updated successfully', type: 'success'});
+        setModalVisible(false);
+        fetchClasses();
+        resetForm();
+      } else {
+        showToast({
+          message: response.message || 'Failed to update class',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      showToast({message: 'Error updating class', type: 'error'});
+    }
+  };
+
+  const handleAddNewClass = () => {
+    if (!className.trim()) {
+      showToast({message: 'Class name is required', type: 'error'});
+      return;
+    }
+    if (!selectedClass) {
+      showToast({message: 'Select a class type', type: 'error'});
+      return;
+    }
+    if (recurringDays.length === 0) {
+      showToast({
+        message: 'Please select at least one recurring day',
+        type: 'error',
+      });
+      return;
+    }
+
+    if (editingClassId) {
+      updateClass();
+    } else {
+      submitNewClassToAPI();
+    }
+  };
+
+  const handleEditClass = classItem => {
+    resetForm();
+    setEditingClassId(classItem.id);
+    setClassName(classItem.name);
+
+    const matchedType = trainingTypes.find(
+      t => t.id === classItem.training_type_id,
+    );
+    if (matchedType) {
+      setSelectedClass(matchedType);
+    } else {
+      setSelectedClass({id: classItem.training_type_id, name: 'Unknown Type'});
+    }
+
+    const formattedStart = moment(classItem.start_time, 'HH:mm').format(
+      'h:mm A',
+    );
+    const formattedEnd = moment(classItem.end_time, 'HH:mm').format('h:mm A');
+    setStartTime(formattedStart);
+    setEndTime(formattedEnd);
+    setSelectedStartTime(formattedStart);
+    setSelectedEndTime(formattedEnd);
+
+    if (classItem && Array.isArray(classItem.class_days)) {
+      const formattedDays = daysOfWeek.filter(day =>
+        classItem.class_days.some(
+          d => d?.class_day && day.toLowerCase() === d.class_day.toLowerCase(),
+        ),
+      );
+      setRecurringDays(formattedDays);
+    } else {
+      console.warn('classItem is not properly defined:', classItem);
+    }
+
+    // console.log('formattedDays', formattedDays);
+    // setRecurringDays(formattedDays);
+    // setRecurringDays(formattedDays);
+
+    setDescription(classItem.description || '');
+    setModalVisible(true);
+  };
+
+  const handleAddClassType = () => {
+    if (!newClassTypeName.trim()) {
+      showToast({message: 'Please enter class name', type: 'error'});
+      return;
+    }
+
+    const newType = {
+      id: Date.now(),
+      name: newClassTypeName,
+    };
+    setSelectedClass(newType);
+    setNewClassTypeName('');
+    setAddClassModalVisible(false);
+    showToast({message: 'Class type added and selected', type: 'success'});
   };
 
   const goToPreviousMonth = () => {
@@ -77,20 +328,11 @@ const TimeTableScreen = () => {
     setSelectedDate(moment(newMonth).startOf('month'));
   };
 
-  const handleAddClass = () => {
-    const newClass = {
-      id: (classes.length + 1).toString(),
-      name: className,
-      time: `${startTime} - ${endTime}`,
-      color: Colors.green,
-    };
-
-    setClasses(prevClasses => [...prevClasses, newClass]);
-    setModalVisible(false);
-    setClassName('');
-    setStartTime('12:30 PM');
-    setEndTime('4:30 PM');
-    setDescription('');
+  const handleAddRecurringClass = () => {
+    if (currentDayIndex < daysOfWeek.length) {
+      setRecurringDays(prev => [...prev, daysOfWeek[currentDayIndex]]);
+      setCurrentDayIndex(currentDayIndex + 1);
+    }
   };
 
   return (
@@ -125,22 +367,19 @@ const TimeTableScreen = () => {
           keyExtractor={item => item.id}
           renderItem={({item}) => (
             <TouchableOpacity
-              style={[styles.classItem, {backgroundColor: item.color}]}>
+              style={[styles.classItem, {backgroundColor: item.color}]}
+              onPress={() => handleEditClass(item)}>
               <Text
                 style={[
                   styles.classText,
-                  {
-                    color: item.id === '4' ? Colors.black : Colors.white,
-                  },
+                  {color: item.id === '4' ? Colors.black : Colors.white},
                 ]}>
                 {item.name}
               </Text>
               <Text
                 style={[
                   styles.classText1,
-                  {
-                    color: item.id === '4' ? Colors.black : Colors.white,
-                  },
+                  {color: item.id === '4' ? Colors.black : Colors.white},
                 ]}>
                 {item.time}
               </Text>
@@ -150,7 +389,10 @@ const TimeTableScreen = () => {
 
         <TouchableOpacity
           style={styles.addClass}
-          onPress={() => setModalVisible(true)}>
+          onPress={() => {
+            resetForm(); // ✅ Clear any previous values
+            setModalVisible(true);
+          }}>
           <Text style={styles.addClassText}>Add New Class</Text>
         </TouchableOpacity>
 
@@ -173,46 +415,27 @@ const TimeTableScreen = () => {
                     styles.dropdown,
                     showClassDropdown && styles.selectedDropdown,
                   ]}
-                  onPress={() => setShowClassDropdown(!showClassDropdown)}>
-                  <Text>{selectedClass || 'Class Type'}</Text>
+                  onPress={() => {
+                    setShowClassDropdown(prev => !prev);
+                  }}>
+                  <Text>{selectedClass?.name || 'Class Type'}</Text>
                   <SVG.SmallArrow />
                 </TouchableOpacity>
-                {showClassDropdown && (
-                  <View style={styles.dropdownList}>
-                    {classes.map(item => (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={[
-                          styles.dropdownItem,
-                          selectedClass === item.name && styles.selectedItem,
-                        ]}
-                        onPress={() => {
-                          setSelectedClass(item.name);
-                          setShowClassDropdown(false);
-                        }}>
-                        <Text>{item.name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity
-                      style={{
-                        backgroundColor: Colors.red,
-                        padding: 13,
-                        borderRadius: 8,
-                        alignItems: 'center',
-                        margin: 8,
-                      }}
-                      onPress={() => setAddClassModalVisible(true)}>
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontFamily: Fonts.normal,
-                        }}>
-                        Add New Class
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                {renderClassDropdownItems()}
+                {/* {trainingTypes.map(item => (
+                  <TouchableOpacity
+                    key={item?.id}
+                    style={[
+                      selectedClass?.id === item?.id && styles.selectedItem,
+                    ]}
+                    onPress={() => {
+                      setSelectedClass({id: item?.id, name: item?.name});
+                      setShowClassDropdown(false);
+                    }}>
+                    <Text>{item?.type}</Text>
+                  </TouchableOpacity>
+                ))} */}
+
                 <Text style={styles.label}>Class Recurring</Text>
                 <ScrollView
                   horizontal
@@ -282,6 +505,7 @@ const TimeTableScreen = () => {
                             onPress={() => {
                               setStartTime(time);
                               setSelectedStartTime(time);
+                              setShowStartTimePicker(false);
                             }}>
                             <Text>{time}</Text>
                           </TouchableOpacity>
@@ -313,6 +537,7 @@ const TimeTableScreen = () => {
                             onPress={() => {
                               setEndTime(time);
                               setSelectedEndTime(time);
+                              setShowEndTimePicker(false);
                             }}>
                             <Text>{time}</Text>
                           </TouchableOpacity>
@@ -334,12 +559,16 @@ const TimeTableScreen = () => {
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
                     style={styles.cancelButton}
-                    onPress={() => setModalVisible(false)}>
+                    onPress={() => {
+                      setModalVisible(false);
+                      setShowStartTimePicker(false);
+                      setShowEndTimePicker(false);
+                    }}>
                     <Text style={styles.cancelText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.addClassButton}
-                    onPress={handleAddClass}>
+                    onPress={handleAddNewClass}>
                     <Text style={styles.addClassButtonText}>Add Class</Text>
                   </TouchableOpacity>
                 </View>
@@ -360,6 +589,8 @@ const TimeTableScreen = () => {
                   style={[styles.input, {height: 40}]}
                   placeholder="class name"
                   placeholderTextColor="#aaa"
+                  value={newClassTypeName}
+                  onChangeText={setNewClassTypeName}
                 />
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
@@ -369,7 +600,7 @@ const TimeTableScreen = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.addClassButton}
-                    onPress={() => setAddClassModalVisible(false)}>
+                    onPress={handleAddClassType}>
                     <Text style={styles.addClassButtonText}>Add Class</Text>
                   </TouchableOpacity>
                 </View>
@@ -386,7 +617,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.black,
-    padding: 16,
+    paddingHorizontal: 16,
   },
   calendarStrip: {
     height: 100,
@@ -433,6 +664,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     borderRadius: 8,
+    marginBottom: 40,
   },
   addClassText: {
     color: Colors.white,
@@ -561,5 +793,4 @@ const styles = StyleSheet.create({
     margin: 5,
   },
 });
-
 export default TimeTableScreen;

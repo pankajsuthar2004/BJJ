@@ -1,77 +1,120 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import SVG from '../../assets/svg';
 import {Fonts} from '../../assets/fonts';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
-import {useAppSelector} from '../../store/Hooks';
-import {store} from '../../store/store';
 
 const GymJumperScreen = () => {
   const navigation = useNavigation();
-  const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const route = useRoute();
+  const {gymId, gymName} = route.params || {};
 
-  const gym_id = useAppSelector(state => state.user?.user?.gym_id);
-  // const gym_id = store.getState().user?.user?.gym_id;
+  const [plans, setPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+
   useEffect(() => {
     const fetchPlans = async () => {
+      if (!gymId) {
+        console.warn('No gym ID provided');
+        return;
+      }
+
       try {
-        const data = await makeRequest({
+        const response = await makeRequest({
           endPoint: EndPoints.GymPlans,
           method: 'POST',
-          body: {gym_id},
+          body: {
+            gym_id: gymId,
+          },
         });
 
-        if (Array.isArray(data) && data.length > 0) {
-          setPlans(data);
-          setSelectedPlan(data[0].price);
-        } else {
-          showToast({message: 'No plans found'});
-        }
+        setPlans(response?.data || response || []);
       } catch (error) {
-        console.error('Fetching plans failed:', error);
+        console.error(error);
+        showToast({message: 'Failed to fetch plans', type: 'error'});
       }
     };
 
     fetchPlans();
-  }, []);
+  }, [gymId]);
+
+  const handleBuyPlan = async () => {
+    if (!selectedPlanId) {
+      showToast({message: 'Please select a plan', type: 'warning'});
+      return;
+    }
+
+    try {
+      await makeRequest({
+        endPoint: EndPoints.BuyPlan,
+        method: 'POST',
+        body: {
+          gym_id: gymId,
+          gym_plan_id: selectedPlanId,
+        },
+      });
+
+      showToast({message: 'Plan purchased successfully', type: 'success'});
+      navigation.navigate('Invoice Detail');
+    } catch (error) {
+      console.error(error);
+      // showToast({message: 'Failed to purchase plan', type: 'error'});
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Select Your Plan</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>
+        {gymName ? `${gymName} - Select Your Plan` : 'Select Your Plan'}
+      </Text>
 
-      {plans.map(plan => (
-        <TouchableOpacity
-          key={plan.price}
-          style={[
-            styles.planContainer,
-            selectedPlan === plan.price && styles.selectedPlan,
-          ]}
-          onPress={() => setSelectedPlan(plan.price)}>
-          <View style={styles.planContent}>
-            <View>
-              <Text style={styles.price}>{plan.price}</Text>
-              <Text style={styles.description}>{plan.description}</Text>
+      {plans.length === 0 ? (
+        <Text style={styles.noPlans}>No plans available for this gym.</Text>
+      ) : (
+        plans.map(plan => (
+          <TouchableOpacity
+            key={plan.id}
+            style={[
+              styles.planContainer,
+              selectedPlanId === plan.id && styles.selectedPlan,
+            ]}
+            onPress={() => setSelectedPlanId(plan.id)}>
+            <View style={styles.planContent}>
+              <View>
+                <Text style={styles.price}>${plan.price}</Text>
+                <Text style={styles.description}>
+                  {plan.name} ({plan.duration}{' '}
+                  {Number(plan.duration) === 1 ? 'day' : 'days'})
+                </Text>
+              </View>
+              {selectedPlanId === plan.id ? <SVG.Select /> : <SVG.Unselect />}
             </View>
-            {selectedPlan === plan.price ? <SVG.Select /> : <SVG.Unselect />}
-          </View>
-        </TouchableOpacity>
-      ))}
+          </TouchableOpacity>
+        ))
+      )}
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.backButton]}>
+        <TouchableOpacity
+          style={[styles.button, styles.backButton]}
+          onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, styles.nextButton]}
-          onPress={() => navigation.navigate('Invoice Detail')}>
+          onPress={handleBuyPlan}>
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -86,6 +129,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginBottom: 15,
     fontFamily: Fonts.normal,
+  },
+  noPlans: {
+    color: 'gray',
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
   },
   planContainer: {
     backgroundColor: 'white',
@@ -117,7 +166,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 10,
+    marginBottom: 50,
   },
   button: {
     flex: 1,

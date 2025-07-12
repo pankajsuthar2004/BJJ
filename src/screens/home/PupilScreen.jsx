@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,75 +15,83 @@ import {Dimensions} from 'react-native';
 import Colors from '../../theme/color';
 import SVG from '../../assets/svg';
 import IMAGES from '../../assets/images';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {Fonts} from '../../assets/fonts';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
 
 const screenWidth = Dimensions.get('window').width;
 
-const attendanceData = {
-  labels: [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ],
-  datasets: [
-    {
-      data: [70, 90, 60, 80, 75, 50, 85, 60, 95, 80, 70, 50],
-    },
-  ],
-};
-
-const paymentHistory = [
-  {date: '2/8/24', amount: '$100', status: 'Pending'},
-  {date: '3/7/24', amount: '$76', status: 'Paid'},
-  {date: '4/6/24', amount: '$30', status: 'Paid'},
-  {date: '5/5/24', amount: '$50', status: 'Paid'},
-  {date: '6/4/24', amount: '$200', status: 'Paid'},
-  {date: '7/3/24', amount: '$10', status: 'Paid'},
-];
-
 const PupilScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const userId = route.params?.user_id;
+
+  const [userData, setUserData] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [membershipStatus, setMembershipStatus] = useState('');
+  const [monthlyAttendance, setMonthlyAttendance] = useState([]);
+  const [weeklyAverage, setWeeklyAverage] = useState(0);
+  const [allMemberships, setAllMemberships] = useState([]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchPaymentUserData();
+    }
+  }, [userId]);
+
+  const fetchPaymentUserData = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: `${EndPoints.PaymentUser}?user_id=${userId}`,
+        method: 'GET',
+      });
+
+      console.log('response-=-=-=', response);
+
+      if (response) {
+        const data = response;
+        setUserData(data?.user);
+        setMembershipStatus(data?.status);
+        setMonthlyAttendance(data.monthly_attendance);
+        setWeeklyAverage(data.weekly_average);
+        setAllMemberships(data.all_memberships);
+      }
+    } catch (error) {
+      console.error('Payment user fetch error:', error);
+    }
+  };
+
+  const attendanceData = {
+    labels: monthlyAttendance.map(item => item.month.slice(0, 3)),
+    datasets: [{data: monthlyAttendance.map(item => item.count)}],
+  };
+
+  console.log('user information', membershipStatus);
   return (
     <ScrollView style={styles.container}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingVertical: 12,
-          borderBottomWidth: 0.5,
-          borderBottomColor: Colors.mediumGray,
-        }}>
-        <View style={styles.profileContainer}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Pupil Profile')}>
-            <Image source={IMAGES.ProfilePic} />
-          </TouchableOpacity>
-
-          <View style={{flex: 1}}>
-            <Text style={styles.name}>Paul Watson</Text>
-            <View style={styles.rankContainer}>
-              <SVG.Belt />
-              <Text style={styles.rank}>Blue Belt</Text>
-            </View>
+      <View style={styles.profileContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Pupil Profile')}>
+          <Image source={IMAGES.ProfilePic || userData?.image} />
+        </TouchableOpacity>
+        <View style={{flex: 1}}>
+          <Text style={styles.name}>{userData?.name}</Text>
+          <View style={styles.rankContainer}>
+            <SVG.Belt />
+            <Text style={styles.rank}>Blue Belt</Text>
           </View>
         </View>
-
-        <TouchableOpacity style={styles.statusBadge}>
-          <Text style={styles.statusText}>Paid</Text>
+        <TouchableOpacity
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor:
+                membershipStatus === 'Paid' ? Colors.green : Colors.yellow,
+            },
+          ]}>
+          <Text style={styles.statusText}>{membershipStatus}</Text>
         </TouchableOpacity>
       </View>
 
@@ -101,6 +109,7 @@ const PupilScreen = () => {
           <Text style={styles.infoText}>Monthly</Text>
         </View>
       </View>
+
       <View style={styles.infoSection}>
         <View style={styles.infoRow}>
           <Text style={styles.infoText}>Belt Timeline</Text>
@@ -114,6 +123,7 @@ const PupilScreen = () => {
           <Text style={styles.infoText}>Promoted to Blue Belt</Text>
         </View>
       </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Attendance</Text>
         <BarChart
@@ -132,9 +142,10 @@ const PupilScreen = () => {
           style={styles.chartStyle}
         />
         <Text style={styles.attendanceStats}>
-          Classes Attended: 45 | Average: 3/week
+          Weekly Avg: {weeklyAverage.toFixed(1)} / week
         </Text>
       </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment History</Text>
         <View style={styles.tableHeader}>
@@ -144,21 +155,29 @@ const PupilScreen = () => {
         </View>
 
         <FlatList
-          data={paymentHistory}
+          data={allMemberships}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({item}) => (
             <View style={styles.paymentRow}>
-              <Text style={styles.paymentDate}>{item.date}</Text>
-              <Text style={styles.paymentText}>{item.amount}</Text>
+              <Text style={styles.paymentDate}>
+                {item?.payment_created_at
+                  ? new Date(item.payment_created_at).toLocaleDateString()
+                  : '-'}
+              </Text>
+              <Text style={styles.paymentText}>${item.price}</Text>
               <View
                 style={[
                   styles.paymentStatus,
                   {
                     backgroundColor:
-                      item.status === 'Paid' ? Colors.green : Colors.yellow,
+                      item.payment_status === 'success'
+                        ? Colors.green
+                        : Colors.yellow,
                   },
                 ]}>
-                <Text style={styles.paymentStatusText}>{item.status}</Text>
+                <Text style={styles.paymentStatusText}>
+                  {item.payment_status === 'success' ? 'Paid' : 'Pending'}
+                </Text>
               </View>
             </View>
           )}

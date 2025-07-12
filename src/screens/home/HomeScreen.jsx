@@ -35,6 +35,7 @@ const HomeScreen = () => {
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -48,13 +49,13 @@ const HomeScreen = () => {
         console.log(response);
         setUserData(response);
       } catch (error) {
-        showToast({message: error.message, type: 'error'});
       } finally {
         setLoading(false);
       }
     };
     fetchData();
     fetchData2();
+    fetchUserDash();
   }, []);
 
   const fetchData2 = async () => {
@@ -66,6 +67,18 @@ const HomeScreen = () => {
       dispatch(setUser({...user?.user, gym: response[0]}));
     } catch (error) {
     } finally {
+    }
+  };
+
+  const fetchUserDash = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.UserDash,
+        method: 'GET',
+      });
+      setDashboardData(response);
+    } catch (error) {
+      console.log('UserDash API Error:', error);
     }
   };
 
@@ -160,7 +173,6 @@ const HomeScreen = () => {
   };
 
   const onPressHandler = async () => {
-    // await fetchData2();
     if (a?.user?.gym?.status == 0) {
       showToast({message: 'Gym not approved by admin', type: 'error'});
     } else if (a?.user?.gym) {
@@ -168,6 +180,13 @@ const HomeScreen = () => {
     } else {
       navigateToScreen('Gym Profile');
     }
+  };
+
+  const getFullImageUri = () => {
+    if (!userData?.image) return null;
+    return userData.image.startsWith('http')
+      ? userData.image
+      : `https://bjj.beepr.us/${userData.image}`;
   };
 
   return (
@@ -178,7 +197,7 @@ const HomeScreen = () => {
           <TouchableOpacity>
             <Image
               source={
-                userData?.image ? {uri: userData?.image} : IMAGES.ProfilePic
+                getFullImageUri() ? {uri: getFullImageUri()} : IMAGES.BigProfile
               }
               style={{height: hp(5), width: hp(5), borderRadius: hp(6)}}
             />
@@ -260,7 +279,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.drawerItem}
-              onPress={() => navigateToScreen('RoundScreen')}>
+              onPress={() => navigateToScreen('LogScreen')}>
               <SVG.Entry />
               <Text style={styles.drawerText}>Add Entry</Text>
             </TouchableOpacity>

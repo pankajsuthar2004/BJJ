@@ -57,6 +57,7 @@ const makeRequest = async <T>(params: Params) => {
     console.log('URL: ', url);
     console.log('Body: ', body);
     console.log('header: ', reqHeaders);
+    console.log('response: ', result);
     console.log('--------------------------------------------');
     if (!result.success) {
       throw new Error(result.message || 'Api Error');

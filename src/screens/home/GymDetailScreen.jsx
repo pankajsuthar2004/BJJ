@@ -74,7 +74,7 @@ const GymDetailScreen = () => {
             <Image
               source={
                 userData?.image
-                  ? {uri: 'http://89.116.212.241:9083/' + userData?.image}
+                  ? {uri: 'https://bjj.beepr.us/' + userData?.image}
                   : IMAGES.BigProfile
               }
               style={{height: hp(14), width: hp(14), borderRadius: hp(20)}}
@@ -86,7 +86,7 @@ const GymDetailScreen = () => {
               style={styles.editProfileButton}
               onPress={goToEditProfile}>
               <Text style={styles.editProfileText}>edit profile</Text>
-              <SVG.IconEdit />
+              <SVG.IconEdit style={{marginRight: 10}} />
             </TouchableOpacity>
           </View>
         </View>
@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 16,
     marginRight: 5,
+    marginHorizontal: 10,
   },
   menuContainer: {
     paddingHorizontal: 15,

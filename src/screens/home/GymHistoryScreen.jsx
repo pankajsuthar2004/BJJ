@@ -180,6 +180,11 @@ const GymHistoryScreen = () => {
             </View>
           </TouchableOpacity>
         )}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No Gym History Found</Text>
+          </View>
+        }
       />
 
       <TouchableOpacity style={styles.fab} onPress={toggleModal}>
@@ -430,6 +435,17 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     backgroundColor: Colors.litegray,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 50,
+  },
+
+  emptyText: {
+    color: Colors.gray,
+    fontSize: 16,
+    fontFamily: Fonts.normal,
   },
 });
 

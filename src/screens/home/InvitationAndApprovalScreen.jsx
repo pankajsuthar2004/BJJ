@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
@@ -35,12 +36,12 @@ const InvitationAndApprovalScreen = () => {
       await makeRequest({
         endPoint: EndPoints.GymInvitation,
         method: 'POST',
-        body: {email: email},
+        body: {email},
       });
 
       setEmail('');
-      showToast({message: 'Invitation sent successfully!'});
-      await fetchInvitations(); // Re-fetch latest invitations
+      showToast({message: 'Invitation sent successfully!', type: 'success'});
+      await fetchInvitations();
     } catch (error) {
       showToast({message: error?.message || 'An error occurred'});
     }
@@ -58,13 +59,10 @@ const InvitationAndApprovalScreen = () => {
         endPoint: EndPoints.AppliedTraining,
         method: 'GET',
       });
-
-      const updated = (response || []).map(item => ({
-        ...item,
-        localStatus: null,
-      }));
-
-      setAppliedTrainings(updated);
+      const sortedData = (response || []).sort((a, b) => {
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      setAppliedTrainings(sortedData);
     } catch (error) {
       showToast({
         message: error?.message || 'Failed to load applied trainings',
@@ -85,11 +83,34 @@ const InvitationAndApprovalScreen = () => {
         method: 'GET',
       });
 
-      const formatted = (response || []).map(item => ({
-        email: item.email,
-        status: item.status || 'Invited',
-        color: Colors.white,
-      }));
+      const formatted = (response || []).map(item => {
+        let status = 'Invited';
+        let color = Colors.white;
+
+        switch (item.status) {
+          case 1:
+            status = 'Approved';
+            color = Colors.green;
+            break;
+          case 2:
+            status = 'Expired';
+            color = Colors.red;
+            break;
+          case 3:
+            status = 'Sent';
+            color = Colors.orange;
+            break;
+          default:
+            status = 'Invited';
+            color = Colors.white;
+        }
+
+        return {
+          email: item.email,
+          status,
+          color,
+        };
+      });
 
       setInvitations(formatted);
     } catch (error) {
@@ -112,12 +133,12 @@ const InvitationAndApprovalScreen = () => {
         method: 'POST',
         body: {
           request_id: requestId,
-          status: status, // 1 = approved, 2 = declined
+          status: status.toString(),
         },
       });
 
       const updatedTrainings = appliedTrainings.map(item =>
-        item.id === requestId ? {...item, localStatus: status} : item,
+        item.id === requestId ? {...item, status} : item,
       );
 
       setAppliedTrainings(updatedTrainings);
@@ -141,7 +162,10 @@ const InvitationAndApprovalScreen = () => {
     <View style={styles.invitationItem}>
       <Text style={styles.emailText}>{item.email}</Text>
       <TouchableOpacity
-        style={[styles.statusBadge, {backgroundColor: item.color}]}>
+        style={[
+          styles.statusBadge,
+          {backgroundColor: item.color || Colors.white},
+        ]}>
         <Text
           style={[
             styles.statusText,
@@ -155,32 +179,42 @@ const InvitationAndApprovalScreen = () => {
     </View>
   );
 
-  const renderApprovalItem = ({item}) => (
-    <View style={styles.approvalItem}>
-      <Text style={styles.nameText}>
-        {item?.user?.name || item?.user?.email}
-      </Text>
-      <View style={styles.buttonContainer}>
-        {item.localStatus !== 2 && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.declineButton]}
-            onPress={() => handleTrainingRequest(item.id, 2)}>
-            <Text style={styles.actionText}>Decline</Text>
-          </TouchableOpacity>
-        )}
-        {item.localStatus !== 1 && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.approveButton]}
-            onPress={() => handleTrainingRequest(item.id, 1)}>
-            <Text style={styles.actionText}>Approve</Text>
-          </TouchableOpacity>
-        )}
+  const renderApprovalItem = ({item}) => {
+    return (
+      <View style={styles.approvalItem}>
+        <Text style={styles.nameText}>
+          {item?.user?.name || item?.user?.email}
+        </Text>
+        <View style={styles.buttonContainer}>
+          {item.status == 1 ? (
+            <Text style={[styles.statusText, {color: Colors.green}]}>
+              Approved
+            </Text>
+          ) : item.status == 2 ? (
+            <Text style={[styles.statusText, {color: Colors.red}]}>
+              Declined
+            </Text>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.declineButton]}
+                onPress={() => handleTrainingRequest(item.id, 2)}>
+                <Text style={styles.actionText}>Decline</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.approveButton]}
+                onPress={() => handleTrainingRequest(item.id, 1)}>
+                <Text style={styles.actionText}>Approve</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.label}>Invitation</Text>
       <TextInput
         style={styles.input}
@@ -195,22 +229,20 @@ const InvitationAndApprovalScreen = () => {
         <Text style={styles.sendButtonText}>Send Invitation</Text>
       </TouchableOpacity>
 
-      <View style={{gap: 10}}>
-        <Text style={styles.label}>Invitation status</Text>
-        <FlatList
-          data={invitations}
-          renderItem={renderInvitationItem}
-          keyExtractor={(item, index) => index.toString()}
-        />
+      <Text style={styles.label}>Invitation status</Text>
+      <FlatList
+        data={invitations}
+        renderItem={renderInvitationItem}
+        keyExtractor={(item, index) => index.toString()}
+      />
 
-        <Text style={styles.label}>Approval Workflow:</Text>
-        <FlatList
-          data={appliedTrainings}
-          renderItem={renderApprovalItem}
-          keyExtractor={(item, index) => index.toString()}
-        />
-      </View>
-    </View>
+      <Text style={styles.label}>Approval Workflow:</Text>
+      <FlatList
+        data={appliedTrainings}
+        renderItem={renderApprovalItem}
+        keyExtractor={(item, index) => index.toString()}
+      />
+    </ScrollView>
   );
 };
 

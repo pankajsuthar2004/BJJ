@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,10 @@ import {hp, wp} from '../../utility/ResponseUI';
 import {Fonts} from '../../assets/fonts';
 import CustomButton from '../../components/CustomButton';
 import {useNavigation} from '@react-navigation/native';
+import {launchImageLibrary} from 'react-native-image-picker';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
 
 const locations = [
   {name: 'Jiu Jitsu Gym', distance: '31 km away'},
@@ -31,61 +35,13 @@ const locations = [
   {name: 'Cinpex Cinema, United Kingdom', distance: '14 km away'},
   {name: 'Cinpex Cinema, UK', distance: '9 km away'},
 ];
-const users = [
-  {name: 'Josh Jones', username: '@joshjones', photos: IMAGES.Photo},
-  {name: 'Paul Walker', username: '@paul.walker', photos: IMAGES.Photo1},
-  {name: 'Keir Starmer', username: '@keir_Starmer', photos: IMAGES.Photo2},
-  {name: 'Joshy Watson', username: '@joshy', photos: IMAGES.Photo3},
-  {name: 'William', username: '@willium', photos: IMAGES.Photo4},
-  {name: 'Richard Johnson', username: '@rich.johnson', photos: IMAGES.Photo5},
-  {name: 'Neeraj Arora', username: '@neeraj', photos: IMAGES.Photo6},
-  {name: 'Johny Dep', username: '@johnydep23', photos: IMAGES.Photo7},
-  {name: 'Boys Are Back', username: '@boysareback', photos: IMAGES.Photo8},
-  {name: 'Manshu', username: '@manshuram', photos: IMAGES.Photo9},
-  {name: 'Billion Messy', username: '@billion', photos: IMAGES.Photo10},
-  {name: 'Wiliam Paul', username: '@wiliumpaul', photos: IMAGES.Photo11},
-];
-const friendsList = [
-  {id: 1, name: 'Josh Jones', username: '@joshjones', photos: IMAGES.Photo},
-  {id: 2, name: 'Paul Walker', username: '@paul.walker', photos: IMAGES.Photo1},
-  {
-    id: 3,
-    name: 'Keir Starmer',
-    username: '@keir_Starmer',
-    photos: IMAGES.Photo2,
-  },
-  {id: 4, name: 'Joshy Watson', username: '@joshy', photos: IMAGES.Photo3},
-  {id: 5, name: 'William', username: '@willium', photos: IMAGES.Photo4},
-  {
-    id: 6,
-    name: 'Richard Johnson',
-    username: '@rich.johnson',
-    photos: IMAGES.Photo5,
-  },
-  {id: 7, name: 'Neeraj Arora', username: '@neeraj', photos: IMAGES.Photo6},
-  {id: 8, name: 'Johny Dep', username: '@johnydep23', photos: IMAGES.Photo7},
-  {
-    id: 9,
-    name: 'Boys Are Back',
-    username: '@boysareback',
-    photos: IMAGES.Photo8,
-  },
-  {id: 10, name: 'Manshu', username: '@manshuram', photos: IMAGES.Photo9},
-  {id: 11, name: 'Billion Messy', username: '@billion', photos: IMAGES.Photo10},
-  {
-    id: 12,
-    name: 'Wiliam Paul',
-    username: '@wiliumpaul',
-    photos: IMAGES.Photo11,
-  },
-];
 
 const CreatePostScreen = () => {
   const navigation = useNavigation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState(['Session', 'Jiu Jitsu', 'Training']);
-  const [selectedTags, setSelectedTags] = useState([tags[0]]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [peopleModalVisible, setPeopleModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -94,13 +50,23 @@ const CreatePostScreen = () => {
   const [selectedAudience, setSelectedAudience] = useState('Everyone');
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedFriends, setSelectedFriends] = useState([]);
-
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const [media, setMedia] = useState([]);
+  const [users, setUsers] = useState([]);
 
   const filteredLocations = locations.filter(loc =>
     loc.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const filteredUsers = users.filter(
+    user =>
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.username.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const filteredFriends = users.filter(
+    user =>
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.username.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleTagPress = tag => {
@@ -111,36 +77,110 @@ const CreatePostScreen = () => {
       setSelectedTags(prev => [...prev, tag]);
     }
   };
+
   const handleSelectLocation = location => {
     setSelectedLocation(location);
     setLocationModalVisible(false);
   };
 
   const handleSelectUser = user => {
-    console.log(user);
-  };
-
-  const handleUpdate = () => {
-    navigation.goBack();
-  };
-  const toggleFriendSelection = id => {
     setSelectedFriends(prev =>
-      prev.includes(id) ? prev.filter(friend => friend !== id) : [...prev, id],
+      prev.includes(user.id)
+        ? prev.filter(id => id !== user.id)
+        : [...prev, user.id],
     );
   };
 
-  const filteredFriends = friendsList.filter(friend =>
-    friend.name.toLowerCase().includes(search.toLowerCase()),
-  );
-  const handleSelectAudience = audience => {
-    if (audience === 'Close Friends') {
-      setAudienceModalVisible(false);
-      setModalVisible(true);
-    } else {
-      setSelectedAudience(audience);
-      setAudienceModalVisible(false);
+  const toggleFriendSelection = id => {
+    setSelectedFriends(prev =>
+      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id],
+    );
+  };
+
+  const handleSelectImages = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'mixed',
+        selectionLimit: 5,
+      },
+      res => {
+        if (!res.didCancel && res.assets) {
+          const selected = res.assets.map(asset => ({
+            uri: asset.uri,
+            name: asset.fileName || 'image.jpg',
+            type: asset.type,
+          }));
+          setMedia(prev => [...prev, ...selected]);
+        }
+      },
+    );
+  };
+
+  const handleSelectAudience = value => {
+    setSelectedAudience(value);
+    setAudienceModalVisible(false);
+    if (value === 'Close Friends') setModalVisible(true);
+  };
+
+  const handleSubmitPost = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('audience', selectedAudience === 'Everyone' ? '0' : '1');
+      formData.append('latitude', '345435');
+      formData.append('longitude', '34534');
+      formData.append('address', selectedLocation?.name || 'Unknown');
+      selectedTags.forEach(tag => formData.append('tags[]', tag));
+      media.forEach(file => {
+        formData.append('media[]', {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        });
+      });
+
+      selectedFriends.forEach(id =>
+        formData.append('tagged_people[]', id.toString()),
+      );
+      if (selectedAudience === 'Close Friends') {
+        selectedFriends.forEach(id =>
+          formData.append('close_friends[]', id.toString()),
+        );
+      }
+
+      await makeRequest({
+        endPoint: EndPoints.Store,
+        method: 'POST',
+        body: formData,
+        headers: {'Content-Type': 'multipart/form-data'},
+      });
+
+      showToast({message: 'Post submitted successfully', type: 'success'});
+      navigation.goBack();
+    } catch (error) {
+      console.log('Submit post error: ', error);
+      showToast({message: 'Failed to submit post', type: 'error'});
     }
   };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.Users,
+        method: 'GET',
+      });
+      if (response && response.data) {
+        setUsers(response.data);
+      }
+    } catch (error) {
+      console.log('Error fetching users:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
@@ -194,10 +234,19 @@ const CreatePostScreen = () => {
       </View>
 
       <Text style={styles.label}>Select Media</Text>
-      <TouchableOpacity style={styles.fileButton}>
+      <TouchableOpacity style={styles.fileButton} onPress={handleSelectImages}>
         <Text style={styles.fileButtonText}>Choose Files</Text>
         <SVG.Add />
       </TouchableOpacity>
+      <ScrollView horizontal style={{marginTop: 10}}>
+        {media.map((img, index) => (
+          <Image
+            key={index}
+            source={{uri: img.uri}}
+            style={{width: 100, height: 100, marginRight: 10, borderRadius: 8}}
+          />
+        ))}
+      </ScrollView>
 
       <View style={styles.border}></View>
       <View style={{gap: 8}}>
@@ -421,8 +470,8 @@ const CreatePostScreen = () => {
           </View>
         </Modal>
       </View>
-      <View style={{marginVertical: 10}}>
-        <CustomButton title="Post Now" onPress={handleUpdate} />
+      <View style={{marginBottom: 40}}>
+        <CustomButton title="Post Now" onPress={handleSubmitPost} />
       </View>
     </ScrollView>
   );
@@ -612,7 +661,8 @@ const styles = StyleSheet.create({
   },
   audienceModalContainer: {
     backgroundColor: Colors.white,
-    borderRadius: 10,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 15,
     alignItems: 'center',
   },
@@ -680,11 +730,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
-  },
-  leftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
   },
   btnText: {
     fontSize: 16,

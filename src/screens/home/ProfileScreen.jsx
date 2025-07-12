@@ -15,7 +15,7 @@ import {Fonts} from '../../assets/fonts';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
-import {useAppDispatch, useAppSelector} from '../../store/Hooks';
+import {useAppDispatch} from '../../store/Hooks';
 import {clearUser} from '../../Slices/UserSlice';
 import AppLoader from '../../components/AppLoader';
 import {hp} from '../../utility/ResponseUI';
@@ -23,33 +23,133 @@ import {hp} from '../../utility/ResponseUI';
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const [showGymList, setShowGymList] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isGymPending, setIsGymPending] = useState(true);
   const [selectedGym, setSelectedGym] = useState('');
-  const [gymData, setGymData] = useState('Gym with Josh');
+  const [selectedGymId, setSelectedGymId] = useState(null);
+  const [gymData, setGymData] = useState([]);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [gymDataList, setGymDataList] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const response = await makeRequest({
-          endPoint: EndPoints.GetProfile,
-          method: 'GET',
-        });
-        setUserData(response);
-      } catch (error) {
-        showToast({message: error.message, type: 'error'});
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const dispatch = useAppDispatch();
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GetProfile,
+        method: 'GET',
+      });
+      setUserData(response);
+      setSelectedGymId(response?.selected_gym);
+    } catch (error) {
+      console.log('Fetch Profile Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [navigation]);
+
+  useEffect(() => {
+    fetchActiveGym();
+    fetchGymList();
+  }, [selectedGymId]);
+
+  const fetchActiveGym = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GymHistory,
+        body: {status: 1},
+        method: 'POST',
+      });
+      setGymDataList(response);
+      const matchedGym = response.find(gym => gym.gym_id === selectedGymId);
+      if (matchedGym) {
+        setSelectedGym(matchedGym.gym_name);
+      }
+    } catch (error) {
+      console.log('Gym fetch error', error);
+    }
+  };
+
+  const fetchGymList = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GetGym,
+        method: 'GET',
+      });
+      setGymData(response?.gyms || []);
+    } catch (error) {
+      showToast({message: error.message, type: 'error'});
+    }
+  };
+
+  const updateSelectedGym = async gymId => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.UpdateSelectedGym,
+        method: 'POST',
+        body: {gym_id: gymId?.toString()},
+      });
+      if (response?.success) {
+        showToast({
+          message: response?.message || 'Gym updated successfully',
+          type: 'success',
+        });
+      }
+    } catch (error) {
+      showToast({
+        message: error?.message || 'Failed to update gym',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSelectGym = async gym => {
+    setSelectedGym(gym?.gym_name);
+    setSelectedGymId(gym?.gym_id);
+    setShowGymList(false);
+    await updateSelectedGym(gym?.gym_id);
+    await fetchData();
+  };
+
+  const goToEditProfile = () => {
+    navigation.navigate('Edit Profile');
+  };
+
+  const confirmLogout = () => setShowLogoutModal(true);
+  const cancelLogout = () => setShowLogoutModal(false);
+
+  const handleLogOut = async () => {
+    setShowLogoutModal(false);
+    try {
+      setLoading(true);
+      await makeRequest({
+        endPoint: EndPoints.Logout,
+        method: 'POST',
+      });
+    } catch (error) {
+      showToast({message: 'Logout failed', type: 'error'});
+    } finally {
+      setLoading(false);
+      dispatch(clearUser());
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
+      });
+    }
+  };
+
+  const getFullImageUri = () => {
+    if (!userData?.image) return null;
+    return userData.image.startsWith('http')
+      ? userData.image
+      : `https://bjj.beepr.us/${userData.image}`;
+  };
 
   const menuItems = [
     {
@@ -89,52 +189,6 @@ const ProfileScreen = () => {
     },
   ];
 
-  useEffect(() => {
-    fetchActiveGym();
-    // fetchGymList();
-  }, [navigation]);
-
-  const fetchActiveGym = async () => {
-    try {
-      const response = await makeRequest({
-        endPoint: EndPoints.GymHistory,
-        body: {status: 1},
-        method: 'POST',
-      });
-      setSelectedGym(response ? response?.[0]?.gym_name : '');
-      setGymDataList(response);
-    } catch (error) {}
-  };
-
-  const fetchGymList = async () => {
-    try {
-      const response = await makeRequest({
-        endPoint: EndPoints.GetGym,
-        method: 'GET',
-      });
-      setGymData(response?.gyms || []);
-    } catch (error) {
-      showToast({message: error.message, type: 'error'});
-    }
-  };
-
-  const handleSelectGym = gym => {
-    setSelectedGym(gym);
-    setShowGymList(false);
-  };
-
-  const goToEditProfile = () => {
-    navigation.navigate('Edit Profile');
-  };
-
-  const handleLogOut = () => {
-    dispatch(clearUser());
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'AuthStack', params: {screen: 'LoginScreen'}}],
-    });
-  };
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
@@ -143,7 +197,7 @@ const ProfileScreen = () => {
           <View>
             <Image
               source={
-                userData?.image ? {uri: userData?.image} : IMAGES.BigProfile
+                getFullImageUri() ? {uri: getFullImageUri()} : IMAGES.BigProfile
               }
               style={{height: hp(14), width: hp(14), borderRadius: hp(20)}}
             />
@@ -193,7 +247,7 @@ const ProfileScreen = () => {
                   <TouchableOpacity
                     style={styles.listItem}
                     key={item?.gym_name}
-                    onPress={() => handleSelectGym(item?.gym_name)}>
+                    onPress={() => handleSelectGym(item)}>
                     <View
                       style={{
                         flex: 1,
@@ -220,10 +274,33 @@ const ProfileScreen = () => {
           </View>
         ))}
       </View>
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={confirmLogout}>
         <SVG.LogOutIcon />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
+
+      {showLogoutModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>
+              Are you sure you want to logout?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButtonCancel}
+                onPress={cancelLogout}>
+                <Text style={styles.modalButtonText}>No</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalButtonConfirm}
+                onPress={handleLogOut}>
+                <Text style={styles.modalButtonText}>Yes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -258,6 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'center',
+    paddingHorizontal: 10,
   },
   editProfileText: {
     color: Colors.white,
@@ -290,10 +368,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  menuSubtitle: {
-    fontSize: 12,
-    color: Colors.gray,
-  },
+  menuSubtitle: {fontSize: 12, color: Colors.gray},
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -316,13 +391,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 2,
     gap: 5,
-
     padding: 15,
   },
-  listItemText: {
-    color: Colors.white,
-    fontSize: 12,
-  },
+  listItemText: {color: Colors.white, fontSize: 12},
   statusBadge: {
     backgroundColor: Colors.green,
     paddingVertical: 5,
@@ -330,19 +401,58 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 10,
   },
-  activeBadge: {
-    backgroundColor: Colors.green,
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginRight: 10,
-    color: Colors.white,
-    fontSize: 12,
+  statusText: {color: Colors.white, fontSize: 14, fontWeight: 'bold'},
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    height: '100%',
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
-  statusText: {
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.medium,
+    color: Colors.black,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 10,
+  },
+  modalButtonConfirm: {
+    backgroundColor: Colors.red,
+    padding: 10,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: Colors.gray,
+    padding: 10,
+    borderRadius: 6,
+    flex: 1,
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  modalButtonText: {
     color: Colors.white,
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontFamily: Fonts.medium,
   },
 });
+
 export default ProfileScreen;

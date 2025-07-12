@@ -139,6 +139,10 @@ import VectorWhite from '../svg/vectorwhite.svg';
 import BigCross from '../svg/bigcross.svg';
 import DropDown from '../svg/dropdown.svg';
 import Belt from '../svg/belt.svg';
+import Belt1 from '../svg/belt1.svg';
+import Belt2 from '../svg/belt2.svg';
+import Belt11 from '../svg/belt11.svg';
+import Belt12 from '../svg/belt12.svg';
 import Money from '../svg/money.svg';
 import WhiteStar from '../svg/whitestar.svg';
 import SmallRed from '../svg/smallred.svg';
@@ -175,6 +179,8 @@ import Camera from '../svg/camera.svg';
 import ImageCam from '../svg/imagecam.svg';
 import DollarBag from '../svg/dollarbag.svg';
 import FilterTick from '../svg/filtertick.svg';
+import DeletePic from '../svg/deletepic.svg';
+import IconCross from '../svg/iconcross.svg';
 
 const SVG = {
   Google,
@@ -318,6 +324,10 @@ const SVG = {
   BigCross,
   DropDown,
   Belt,
+  Belt1,
+  Belt2,
+  Belt11,
+  Belt12,
   Money,
   WhiteStar,
   SmallRed,
@@ -354,5 +364,7 @@ const SVG = {
   ImageCam,
   DollarBag,
   FilterTick,
+  DeletePic,
+  IconCross,
 };
 export default SVG;

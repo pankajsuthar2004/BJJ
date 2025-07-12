@@ -6,9 +6,27 @@ import Colors from '../theme/color';
 const screenWidth = Dimensions.get('window').width;
 
 const CustomLineChart = ({chartData}) => {
+  const labels = chartData?.labels ?? [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
+
+  const datasets =
+    Array.isArray(chartData?.datasets) && chartData.datasets.length > 0
+      ? chartData.datasets.map(ds => ({
+          data: Array.isArray(ds?.data) ? ds.data : [0, 0, 0, 0, 0, 0, 0],
+          color: ds?.color,
+        }))
+      : [{data: [0, 0, 0, 0, 0, 0, 0]}];
+
   return (
     <LineChart
-      data={chartData}
+      data={{labels, datasets}}
       width={screenWidth - 40}
       height={200}
       chartConfig={{

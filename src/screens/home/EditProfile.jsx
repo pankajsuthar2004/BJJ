@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {showToast} from '../../utility/Toast';
-import {EndPoints} from '../../api/config';
+import {BASE_URL_FOR_IMAGE, EndPoints} from '../../api/config';
 import makeRequest from '../../api/http';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
@@ -25,6 +26,46 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
   const [phone, setPhone] = useState('');
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [belt, setBelt] = useState('');
+  const [beltDropdownVisible, setBeltDropdownVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await makeRequest({
+          endPoint: EndPoints.GetProfile,
+          method: 'GET',
+        });
+
+        console.log('User Profile Response:', response);
+        setEmail(response?.email || '');
+        setName(response?.name || '');
+        setPhone(response?.mobile || '');
+        setImage(response?.image ? response.image : null);
+        setUserData(response);
+      } catch (error) {
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const beltOptions = [
+    {label: 'Blue Belt', value: 1},
+    {label: 'White Belt', value: 2},
+    {label: 'Yellow Belt', value: 3},
+    {label: 'Red Belt', value: 4},
+    {label: 'Green Belt', value: 5},
+  ];
+  const beltIcons = {
+    1: <SVG.Belt />,
+    2: <SVG.Belt1 />,
+    3: <SVG.Belt2 />,
+    4: <SVG.Belt11 />,
+    5: <SVG.Belt12 />,
+  };
 
   const handleChangePicture = async () => {
     const options = {
@@ -79,6 +120,10 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
       showToast({message: 'Phone number must be 10 digits', type: 'error'});
       return false;
     }
+    if (!belt) {
+      showToast({message: 'Please select a belt', type: 'error'});
+      return false;
+    }
 
     return true;
   };
@@ -92,6 +137,7 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
     formData.append('name', name);
     formData.append('email', email);
     formData.append('mobile', phone);
+    formData.append('belt', belt);
 
     if (image) {
       formData.append('image', {
@@ -100,8 +146,6 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
         type: 'image/jpeg',
       });
     }
-
-    console.log('Sending Data:', formData);
 
     try {
       const response = await makeRequest({
@@ -131,14 +175,23 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         {loading && <AppLoader loading={loading} />}
         <TouchableOpacity
           onPress={handleChangePicture}
           style={styles.profileContainer}>
           <Image
-            source={image ? {uri: image} : IMAGES.BigProfile}
+            source={
+              image
+                ? {
+                    uri:
+                      image.startsWith('http') || image.startsWith('file')
+                        ? image
+                        : `${BASE_URL_FOR_IMAGE}${image}`,
+                  }
+                : IMAGES.BigProfile
+            }
             style={styles.profileImage}
           />
           <TouchableOpacity style={{position: 'absolute', right: 150, top: 80}}>
@@ -146,6 +199,7 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
           </TouchableOpacity>
           <Text style={styles.editText}>Change Picture</Text>
         </TouchableOpacity>
+
         <Text style={styles.label}>Your Information</Text>
 
         <CustomTextInput
@@ -172,6 +226,44 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
           icon={SVG.Phone}
         />
 
+        <Text style={styles.label}>Select Your Belt</Text>
+        <TouchableOpacity
+          onPress={() => setBeltDropdownVisible(!beltDropdownVisible)}
+          style={styles.dropdownContainer}>
+          <View style={styles.dropdownItemRow}>
+            <View style={{flexDirection: 'row', gap: 10}}>
+              {belt ? beltIcons[belt] : null}
+              <Text style={styles.dropdownText}>
+                {belt
+                  ? beltOptions.find(opt => opt.value === belt)?.label
+                  : 'Choose Belt'}
+              </Text>
+            </View>
+            <View>
+              {beltDropdownVisible ? <SVG.ArrowIcons /> : <SVG.ArrowIcon />}
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {beltDropdownVisible && (
+          <View style={styles.dropdownList}>
+            {beltOptions.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setBelt(item.value);
+                  setBeltDropdownVisible(false);
+                }}>
+                <View style={styles.dropdownItemRow1}>
+                  {beltIcons[item.value]}
+                  <Text style={styles.dropdownItemText}>{item.label}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <TouchableOpacity onPress={handleUpdate} style={styles.updateButton}>
           {loading ? (
             <ActivityIndicator color="white" />
@@ -180,7 +272,7 @@ const EditProfile = ({navigation, AUTH_TOKEN}) => {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -221,11 +313,50 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 8,
     marginTop: 10,
+    marginBottom: 50,
   },
   updateText: {
     color: Colors.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  dropdownContainer: {
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: Colors.darkGray,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: Colors.gray,
+    fontFamily: Fonts.normal,
+  },
+  dropdownList: {
+    backgroundColor: Colors.darkGray,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.black,
+    backgroundColor: Colors.darkGray,
+    borderRadius: 8,
+  },
+  dropdownItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  dropdownItemRow1: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: Colors.gray,
   },
 });
 

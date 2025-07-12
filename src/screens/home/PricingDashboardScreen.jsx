@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,15 @@ import {hp, wp} from '../../utility/ResponseUI';
 import {Fonts} from '../../assets/fonts';
 import {useNavigation} from '@react-navigation/native';
 import {LineChart} from 'react-native-chart-kit';
+import makeRequest from '../../api/http';
+import {EndPoints} from '../../api/config';
+import {showToast} from '../../utility/Toast';
+import {useAppDispatch, useAppSelector} from '../../store/Hooks';
+import moment from 'moment';
+import AppLoader from '../../components/AppLoader';
 
 const screenWidth = Dimensions.get('window').width;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -55,7 +62,7 @@ const styles = StyleSheet.create({
   chartContainer: {
     borderRadius: 20,
     marginBottom: 10,
-    marginRight: -8,
+    // marginRight: -8,
     backgroundColor: 'white',
   },
   header: {
@@ -85,6 +92,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 5,
     backgroundColor: 'transparent',
+    marginRight: 5,
   },
   list: {
     fontSize: 16,
@@ -95,7 +103,8 @@ const styles = StyleSheet.create({
     color: Colors.gray,
   },
   statusContainer: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   status1: {
     color: Colors.green,
@@ -107,51 +116,73 @@ const styles = StyleSheet.create({
   },
 });
 
-const subscriptions = [
-  {
-    name: 'Paul Watson',
-    subscriptionType: 'Monthly Subscription',
-    status: 'Paid',
-    statusStyle: styles.status1,
-    date: '17/12/24',
-    image: IMAGES.Paul,
-  },
-  {
-    name: 'John Manora',
-    subscriptionType: 'Yearly Subscription',
-    status: 'Pending',
-    statusStyle: styles.status2,
-    date: '17/12/24',
-    image: IMAGES.Jhon,
-  },
-  {
-    name: 'Shen Watson',
-    subscriptionType: 'Yearly Subscription',
-    status: 'Paid',
-    statusStyle: styles.status1,
-    date: '17/12/24',
-    image: IMAGES.Shen,
-  },
-  {
-    name: 'Smith Bewl',
-    subscriptionType: 'Yearly Subscription',
-    status: 'Pending',
-    statusStyle: styles.status2,
-    date: '17/12/24',
-    image: IMAGES.Smith,
-  },
-  {
-    name: 'Shen Watson',
-    subscriptionType: 'Yearly Subscription',
-    status: 'Paid',
-    statusStyle: styles.status1,
-    date: '17/12/24',
-    image: IMAGES.ShenWat,
-  },
-];
 const PricingDashboardScreen = () => {
+  const a = useAppSelector(b => b.user);
   const navigation = useNavigation();
-  const [selectedButton, setSelectedButton] = useState('Monthly');
+  const [selectedButton, setSelectedButton] = useState('monthly');
+  const [paymentData, setPaymentData] = useState([]);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
+  const [graphData, setGraphData] = useState([]);
+  useEffect(() => {
+    fetchGymPayments();
+  }, [a]);
+
+  useEffect(() => {
+    if (paymentData?.filter_by_period) {
+      setSelectedButton(paymentData.filter_by_period);
+      setGraphData(paymentData?.graph_data);
+    }
+  }, [paymentData]);
+
+  const fetchGymPayments = async filter => {
+    console.log('filter types', filter);
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams({
+        filter: filter || selectedButton, // fallback to selectedButton if filter is undefined
+      }).toString();
+
+      const response = await makeRequest({
+        endPoint: `${EndPoints.GymPayment}?${queryParams}`,
+        method: 'GET',
+      });
+
+      console.log('Gym Payment Response:', response);
+      if (response) {
+        setPaymentData(response || []);
+      } else {
+        showToast('Something went wrong');
+      }
+    } catch (error) {
+      showToast('Network error');
+      console.log('Gym Payment API Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilter = item => {
+    const lowerCaseFilter = item.toLowerCase();
+    setSelectedButton(lowerCaseFilter);
+    fetchGymPayments(lowerCaseFilter || selectedButton);
+  };
+
+  const getRevenueLabel = () => {
+    switch ((paymentData?.filter_by_period || '').toLowerCase()) {
+      case 'weekly':
+        return 'Weekly Revenue';
+      case 'monthly':
+        return 'Monthly Revenue';
+      case 'quarterly':
+        return 'Quarterly Revenue';
+      case 'yearly':
+        return 'Yearly Revenue';
+      default:
+        return 'Revenue';
+    }
+  };
 
   const chartConfig = {
     backgroundColor: Colors.white,
@@ -190,23 +221,25 @@ const PricingDashboardScreen = () => {
     ],
     datasets: [
       {
-        data: [
-          0, 34, 60, 23, 55, 20, 8, 100, 60, 40, 60, 5, 30, 49, 57, 29, 2, 32,
-          13, 43,
-        ],
+        data:
+          graphData && graphData.length === 12
+            ? graphData.map(item => item.revenue)
+            : Array(12).fill(0),
         color: () => Colors.red,
       },
     ],
   };
+  console.log('filter_types', selectedButton);
 
   return (
     <ScrollView style={styles.container}>
+      {loading && <AppLoader />}
       <View style={styles.header}>
         <TouchableOpacity>
           <Image source={IMAGES.ProfilePic2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          Welcome Josh{'\n'}
+          {`Welcome ${a?.user?.name}\n`}
           <Text style={styles.headerText}>Dashboard</Text>
         </Text>
         <View style={styles.iconStyle}>
@@ -215,6 +248,7 @@ const PricingDashboardScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
       <View style={styles.main}>
         <View style={styles.btnView}>
           {['Weekly', 'Monthly', 'Quarterly', 'Yearly'].map((item, index) => (
@@ -222,19 +256,22 @@ const PricingDashboardScreen = () => {
               key={index}
               style={[
                 styles.toggleButton,
-                selectedButton === item && styles.activeButton,
+                selectedButton.toUpperCase() === item.toUpperCase() &&
+                  styles.activeButton,
               ]}
-              onPress={() => setSelectedButton(item)}>
+              onPress={() => handleFilter(item)}>
               <Text
                 style={[
                   styles.toggleText,
-                  selectedButton === item && styles.activeText,
+                  selectedButton.toUpperCase() === item.toUpperCase() &&
+                    styles.activeText,
                 ]}>
                 {item}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+
         <TouchableOpacity>
           <SVG.VectorWhite />
         </TouchableOpacity>
@@ -254,10 +291,10 @@ const PricingDashboardScreen = () => {
               fontSize: 16,
               fontFamily: Fonts.normal,
               paddingLeft: 20,
-              // marginBottom: 10,
             }}>
-            Monthly Revenue
+            {getRevenueLabel()}
           </Text>
+
           <View>
             <Text
               style={{
@@ -265,17 +302,22 @@ const PricingDashboardScreen = () => {
                 fontSize: 24,
                 fontWeight: '700',
               }}>
-              $2,654
+              ${paymentData?.current_period_revenue}
             </Text>
             <Text
               style={{
-                color: Colors.green,
+                color:
+                  paymentData?.revenue_change_percentage > 0
+                    ? Colors.green
+                    : Colors.red,
                 fontSize: 16,
                 fontFamily: Fonts.normal,
                 textAlign: 'right',
                 marginTop: 10,
               }}>
-              +36%
+              {paymentData?.revenue_change_percentage > 0 ? '+' : '-'}
+              {Math.abs(paymentData?.revenue_change_percentage || 0).toFixed(2)}
+              %
             </Text>
           </View>
         </View>
@@ -289,6 +331,7 @@ const PricingDashboardScreen = () => {
           style={styles.chart}
         />
       </View>
+
       <View
         style={{
           flexDirection: 'row',
@@ -314,10 +357,13 @@ const PricingDashboardScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
       <View style={{gap: 10, marginBottom: 25}}>
-        {subscriptions.map((subscription, index) => (
+        {paymentData?.members_list?.map((member, index) => (
           <TouchableOpacity
-            onPress={() => navigation.navigate('Pupil')}
+            onPress={() =>
+              navigation.navigate('Pupil', {user_id: member?.user?.id})
+            }
             key={index}
             style={{
               flexDirection: 'row',
@@ -326,21 +372,30 @@ const PricingDashboardScreen = () => {
               padding: 15,
               borderRadius: 8,
             }}>
-            <View style={{flexDirection: 'row', gap: 10}}>
-              <Image source={subscription.image} />
+            <View style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
+              <Image source={IMAGES.ProfilePic} />
               <Text style={styles.list}>
-                {subscription.name}
+                {member?.user?.name || 'User'}
                 {'\n'}
                 <Text style={styles.listMsg}>
-                  {subscription.subscriptionType}
+                  {member?.membership_status || 'N/A'}
                 </Text>
               </Text>
             </View>
             <View style={styles.statusContainer}>
-              <Text style={subscription.statusStyle}>
-                {subscription.status}
+              <Text
+                style={
+                  member?.membership_status?.toLowerCase() === 'paid'
+                    ? styles.status1
+                    : styles.status2
+                }>
+                {member?.membership_status || 'Pending'}
               </Text>
-              <Text style={styles.listMsg}>{subscription.date}</Text>
+              <Text style={styles.listMsg}>
+                {member?.valid_till
+                  ? moment(member?.valid_till).format('MMM DD, YYYY')
+                  : 'No Date'}
+              </Text>
             </View>
           </TouchableOpacity>
         ))}

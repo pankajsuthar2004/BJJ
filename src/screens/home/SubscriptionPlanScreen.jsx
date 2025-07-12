@@ -14,6 +14,7 @@ import Colors from '../../theme/color';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {useAppSelector} from '../../store/Hooks';
 
 const SubscriptionPlanScreen = () => {
   const [plans, setPlans] = useState([]);
@@ -22,22 +23,33 @@ const SubscriptionPlanScreen = () => {
   const [editPlanData, setEditPlanData] = useState(null);
   const [duration, setDuration] = useState('');
 
-  const gymId = 123;
+  const user = useAppSelector(state => state.user?.user);
+  const gymId = user?.gym?.id;
 
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         const response = await makeRequest({
-          endPoint: `${EndPoints.GymPlans}?id=${gymId}`,
+          endPoint: `${EndPoints.GymPlans}`,
           method: 'POST',
           body: {
             gym_id: gymId,
           },
         });
-        setPlans(response);
+
+        if (Array.isArray(response)) {
+          setPlans(response);
+        } else {
+          setPlans([]);
+        }
       } catch (error) {
-        console.error(error);
-        showToast({message: 'Failed to fetch plans', type: 'error'});
+        const errorMessage = error?.message?.toLowerCase() || '';
+        if (errorMessage.includes('no plans found')) {
+          setPlans([]);
+        } else {
+          showToast({message: 'Failed to fetch plans', type: 'error'});
+          console.error(error);
+        }
       }
     };
 
@@ -67,14 +79,16 @@ const SubscriptionPlanScreen = () => {
       });
 
       showToast({message: 'Plan created successfully!', type: 'success'});
-      const newArray = [...plans, response];
-      setPlans(newArray);
+      setPlans(prev => [...prev, response]);
       setNewPlan({name: '', price: ''});
       setDuration('');
       setModalVisible(false);
     } catch (error) {
       console.error(error);
-      showToast({message: 'Failed to create plan', type: 'error'});
+      showToast({
+        message: 'Plan name should not exceed 25 words.',
+        type: 'error',
+      });
     }
   };
 
@@ -92,7 +106,7 @@ const SubscriptionPlanScreen = () => {
     }
 
     try {
-      const response = await makeRequest({
+      await makeRequest({
         endPoint: `${EndPoints.UpdatePlan}?id=${editPlanData?.id}&name=${editPlanData?.name}&price=${editPlanData.price}&duration=${editPlanData.duration}`,
         method: 'PATCH',
       });
@@ -148,30 +162,34 @@ const SubscriptionPlanScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {plans.map(plan => (
-          <View key={plan.id} style={styles.planCard}>
-            <View style={styles.planInfo}>
-              <Text style={styles.priceText}>${plan.price}</Text>
-              <Text style={styles.planDetail}>{plan.name}</Text>
-              <Text style={styles.durationDetail}>
-                {plan.duration} {Number(plan.duration) === 1 ? 'day' : 'days'}
-              </Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {plans.length === 0 ? (
+          <Text style={styles.noPlansText}>No Membership Plans Available</Text>
+        ) : (
+          plans.map(plan => (
+            <View key={plan.id} style={styles.planCard}>
+              <View style={styles.planInfo}>
+                <Text style={styles.priceText}>${plan.price}</Text>
+                <Text style={styles.planDetail} numberOfLines={1}>
+                  {plan.name} ({plan.duration}{' '}
+                  {Number(plan.duration) === 1 ? 'day' : 'days'})
+                </Text>
+              </View>
+              <View style={styles.buttonGroup}>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => deletePlan(plan?.id)}>
+                  <Text style={styles.buttonText}>Delete</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openEditModal(plan)}>
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => deletePlan(plan?.id)}>
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => openEditModal(plan)}>
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+          ))
+        )}
 
         <TouchableOpacity
           style={styles.addButton}
@@ -210,7 +228,7 @@ const SubscriptionPlanScreen = () => {
                     : setNewPlan(prev => ({...prev, price: text}))
                 }
               />
-              <Text style={styles.modalTitle}>Duration</Text>
+              <Text style={styles.modalTitle}>Duration (Days)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Duration"
@@ -257,17 +275,25 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.black,
     padding: 20,
   },
+  noPlansText: {
+    color: Colors.white,
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 40,
+    fontFamily: Fonts.normal,
+  },
   planCard: {
     backgroundColor: Colors.darkGray,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
     borderRadius: 10,
     marginBottom: 15,
   },
   planInfo: {
-    flexDirection: 'column',
+    flex: 1,
+    marginRight: 10,
   },
   priceText: {
     fontSize: 22,
@@ -277,10 +303,8 @@ const styles = StyleSheet.create({
   planDetail: {
     fontSize: 16,
     color: Colors.white,
-  },
-  durationDetail: {
-    fontSize: 13,
-    color: Colors.white,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
   addButton: {
     backgroundColor: Colors.red,
@@ -296,6 +320,8 @@ const styles = StyleSheet.create({
   },
   buttonGroup: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
+    flexShrink: 0,
   },
   deleteButton: {
     paddingHorizontal: 20,

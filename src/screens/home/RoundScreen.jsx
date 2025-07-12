@@ -9,7 +9,6 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
 import Colors from '../../theme/color';
 import {Fonts} from '../../assets/fonts';
@@ -20,15 +19,12 @@ import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
 import {launchImageLibrary} from 'react-native-image-picker';
 
-const RoundScreen = () => {
+const RoundScreen = ({onClose}) => {
   const [notes, setNotes] = useState('');
   const [value, setValue] = useState(0);
-  const navigation = useNavigation();
   const [listVisible, setListVisible] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [itemCounts, setItemCounts] = useState({});
-  const [isAddingArea, setIsAddingArea] = useState(false);
-  const [newItem, setNewItem] = useState('');
   const [showSparringInput, setShowSparringInput] = useState(false);
   const [sparringPartner, setSparringPartner] = useState('');
   const [sparringPartnersList, setSparringPartnersList] = useState([]);
@@ -40,57 +36,18 @@ const RoundScreen = () => {
     'Positions Conceded': [],
   });
 
-  const optionss = {
-    'Submissions Achieved': [
-      'Guillotine',
-      'Americana',
-      'RNC',
-      'Kimura',
-      'Armbar',
-      'Straight Foot Lock',
-    ],
-    'Submissions Conceded': [
-      'Guillotine',
-      'Americana',
-      'RNC',
-      'Kimura',
-      'Armbar',
-    ],
-    'Positions Achieved': [
-      'Back',
-      'Mount',
-      'Side',
-      'Control',
-      'Butterfly Control',
-    ],
-    'Positions Conceded': [
-      'Back',
-      'Mount',
-      'Side',
-      'Control',
-      'Butterfly Control',
-    ],
-  };
-
   useEffect(() => {
     fetchTrainingOptions();
   }, []);
 
   const openImagePicker = () => {
     launchImageLibrary({mediaType: 'photo', quality: 1}, response => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorCode) {
-        console.log('ImagePicker Error: ', response.errorMessage);
-      } else {
-        console.log('Image Picker Response:', response);
-
+      if (response.assets) {
         const selectedFiles = response.assets.map(asset => ({
           uri: asset.uri,
           name: asset.fileName,
           type: asset.type,
         }));
-
         setSelectedImages(prevImages => [...prevImages, ...selectedFiles]);
       }
     });
@@ -104,10 +61,8 @@ const RoundScreen = () => {
         )}`,
         method: 'GET',
       });
-      console.log('Training Options:', data);
       return data;
     } catch (error) {
-      console.error('Error fetching training options:', error);
       showToast({
         message: 'Failed to load training options. Please try again.',
       });
@@ -115,21 +70,21 @@ const RoundScreen = () => {
   };
 
   const incrementCount = item => {
-    setItemCounts(prevCounts => ({
-      ...prevCounts,
-      [item]: (prevCounts[item] || 0) + 1,
+    setItemCounts(prev => ({
+      ...prev,
+      [item]: (prev[item] || 0) + 1,
     }));
   };
 
   const decrementCount = item => {
-    setItemCounts(prevCounts => ({
-      ...prevCounts,
-      [item]: Math.max((prevCounts[item] || 0) - 1, 0),
+    setItemCounts(prev => ({
+      ...prev,
+      [item]: Math.max((prev[item] || 0) - 1, 0),
     }));
   };
 
   const toggleDropdown = async type => {
-    setListVisible(prevType => (prevType === type ? '' : type));
+    setListVisible(prev => (prev === type ? '' : type));
     setSelectedType(type);
 
     if (listVisible !== type) {
@@ -145,22 +100,26 @@ const RoundScreen = () => {
 
   const handleAddSparringPartner = () => {
     if (sparringPartner.trim()) {
-      setSparringPartnersList(prevList => [...prevList, sparringPartner]);
+      setSparringPartnersList(prev => [...prev, sparringPartner]);
       setSparringPartner('');
       setShowSparringInput(false);
     }
   };
 
   const removeSparringPartner = index => {
-    setSparringPartnersList(prevList => prevList.filter((_, i) => i !== index));
+    setSparringPartnersList(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteImage = index => {
+    const newImages = [...selectedImages];
+    newImages.splice(index, 1);
+    setSelectedImages(newImages);
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.crossIcon}
-        onPress={() => navigation.goBack()}>
-        <SVG.CrossIcon />
+      <TouchableOpacity style={styles.crossIcon} onPress={onClose}>
+        <SVG.IconCross />
       </TouchableOpacity>
 
       <ScrollView
@@ -174,38 +133,25 @@ const RoundScreen = () => {
             <View
               style={[
                 styles.valueContainer,
-                {
-                  left: wp(((value - 0) / (58 - 0)) * 70),
-                },
+                {left: wp(((value - 0) / (60 - 0)) * 70)},
               ]}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  alignSelf: 'center',
-                  backgroundColor: Colors.black,
-                  borderRadius: 4,
-                }}>
+              <View style={styles.valueBox}>
                 <Text style={styles.valueText}>{value}</Text>
               </View>
             </View>
-            <View style={{marginTop: 20}}>
-              <Slider
-                minimumValue={0}
-                maximumValue={60}
-                step={1}
-                minimumTrackTintColor={Colors.red}
-                maximumTrackTintColor={Colors.pink}
-                thumbTintColor={Colors.red}
-                onValueChange={setValue}
-              />
-            </View>
+            <Slider
+              minimumValue={0}
+              maximumValue={60}
+              step={1}
+              minimumTrackTintColor={Colors.red}
+              maximumTrackTintColor={Colors.pink}
+              thumbTintColor={Colors.red}
+              onValueChange={setValue}
+            />
           </View>
         </View>
 
-        <Text style={{fontSize: 20, fontFamily: Fonts.normal}}>
-          Sparring Partner
-        </Text>
+        <Text style={styles.label}>Sparring Partner</Text>
         {!showSparringInput ? (
           <TouchableOpacity
             style={styles.sparringButton}
@@ -237,30 +183,23 @@ const RoundScreen = () => {
         )}
 
         {sparringPartnersList.length > 0 && (
-          <View style={styles.sparringPartnersList}>
-            <FlatList
-              data={sparringPartnersList}
-              keyExtractor={index => index.toString()}
-              horizontal
-              renderItem={({item, index}) => (
-                <View style={styles.sparringPartnerItem}>
-                  <View style={styles.listView}>
-                    <Text style={styles.sparringPartnerText}>{item}</Text>
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => removeSparringPartner(index)}>
-                      <SVG.WhiteCross />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            />
-          </View>
+          <FlatList
+            data={sparringPartnersList}
+            horizontal
+            keyExtractor={(_, i) => i.toString()}
+            renderItem={({item, index}) => (
+              <View style={styles.sparringPartnerItem}>
+                <Text style={styles.sparringPartnerText}>{item}</Text>
+                <TouchableOpacity onPress={() => removeSparringPartner(index)}>
+                  <SVG.WhiteCross />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
         )}
 
         {Object.keys(options).map(type => (
           <View key={type}>
-            <Text style={styles.selectLabel}>{type}</Text>
             <TouchableOpacity
               style={styles.selectionButton}
               onPress={() => toggleDropdown(type)}>
@@ -273,29 +212,25 @@ const RoundScreen = () => {
 
             {listVisible === type && (
               <View>
-                <FlatList
-                  data={options[type]}
-                  keyExtractor={item => item.id?.toString() || item.name}
-                  renderItem={({item}) => (
-                    <View style={styles.listOption}>
-                      <SVG.ArrowRight />
-                      <Text style={styles.listOptionText}>{item.name}</Text>
-                      <View style={styles.counterContainer}>
-                        <TouchableOpacity
-                          onPress={() => decrementCount(item.name)}>
-                          <SVG.Delete1 />
-                        </TouchableOpacity>
-                        <Text style={styles.counterValue}>
-                          {itemCounts[item.name] || 0}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => incrementCount(item.name)}>
-                          <SVG.PlusIcon style={styles.counterText} />
-                        </TouchableOpacity>
-                      </View>
+                {options[type].map(item => (
+                  <View key={item.id || item.name} style={styles.listOption}>
+                    <SVG.ArrowRight />
+                    <Text style={styles.listOptionText}>{item.name}</Text>
+                    <View style={styles.counterContainer}>
+                      <TouchableOpacity
+                        onPress={() => decrementCount(item.name)}>
+                        <SVG.Delete1 />
+                      </TouchableOpacity>
+                      <Text style={styles.counterValue}>
+                        {itemCounts[item.name] || 0}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => incrementCount(item.name)}>
+                        <SVG.PlusIcon />
+                      </TouchableOpacity>
                     </View>
-                  )}
-                />
+                  </View>
+                ))}
               </View>
             )}
           </View>
@@ -303,10 +238,7 @@ const RoundScreen = () => {
 
         <Text style={styles.label}>Notes</Text>
         <TextInput
-          style={[
-            styles.notesInput,
-            {textAlignVertical: 'top', paddingTop: 15},
-          ]}
+          style={styles.notesInput}
           placeholder="notes here...."
           placeholderTextColor={Colors.gray}
           multiline
@@ -317,27 +249,28 @@ const RoundScreen = () => {
         <View style={styles.section}>
           <Text style={styles.label}>Attach Files</Text>
           <View style={{flexDirection: 'row', gap: 8}}>
-            {selectedImages.length > 0 && (
-              <ScrollView horizontal>
-                {selectedImages.map((image, index) => (
-                  <TouchableOpacity key={index} style={{marginRight: 10}}>
-                    <Image
-                      source={{uri: image.uri}}
-                      style={{width: 68, height: 68, borderRadius: 8}}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
             <TouchableOpacity onPress={openImagePicker}>
               <SVG.AttachFiles />
             </TouchableOpacity>
+            <ScrollView horizontal>
+              {selectedImages.map((image, index) => (
+                <View key={index} style={{marginRight: 10}}>
+                  <Image
+                    source={{uri: image.uri}}
+                    style={{width: 68, height: 68, borderRadius: 8}}
+                  />
+                  <TouchableOpacity
+                    onPress={() => handleDeleteImage(index)}
+                    style={{position: 'absolute', right: 25, top: 25}}>
+                    <SVG.DeletePic />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={() => navigation.navigate('DashBoardScreen')}>
+        <TouchableOpacity style={styles.submitButton} onPress={onClose}>
           <Text style={styles.submitButtonText}>Submit Now</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -353,7 +286,7 @@ const styles = StyleSheet.create({
   },
   crossIcon: {
     position: 'absolute',
-    top: 20,
+    top: 32,
     right: 20,
     zIndex: 1,
   },
@@ -462,7 +395,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   section: {
-    marginBottom: 8,
+    marginVertical: 22,
   },
   notesInput: {
     height: 120,
