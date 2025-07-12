@@ -682,7 +682,7 @@ const LogScreen = () => {
                     {item?.duration} Minutes
                   </Text>
                   <Text style={styles.roundLabel}>
-                    {item?.sparring_Partners}
+                    {item?.sparringPartners?.map(sub => sub?.name).join(', ')}
                   </Text>
                   <Text style={styles.roundLabel}>
                     {item?.submissionsAchieved.map(sub => sub?.name).join(', ')}
@@ -889,10 +889,18 @@ const RoundScreen = ({visible, onClose, onSubmitRound}) => {
     setSelectedImages(newImages);
   };
 
-  const togglePartnerSelection = id => {
-    setSelectedPartnerIds(prev =>
-      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id],
-    );
+  const togglePartnerSelection = (id, name) => {
+    setSelectedPartnerIds(prev => {
+      const exists = prev.some(p => p.id === id);
+
+      if (exists) {
+        // Remove the selected partner
+        return prev.filter(p => p.id !== id);
+      } else {
+        // Add the selected partner
+        return [...prev, {id, name}];
+      }
+    });
   };
 
   return (
@@ -948,15 +956,21 @@ const RoundScreen = ({visible, onClose, onSubmitRound}) => {
                 data={partnerList}
                 keyExtractor={item => item.id.toString()}
                 renderItem={({item}) => {
-                  const selected = selectedPartnerIds.includes(item.id);
+                  // Check if the current item is selected
+                  const isSelected = selectedPartnerIds.some(
+                    p => p.id === item.id,
+                  );
+
                   return (
                     <TouchableOpacity
-                      onPress={() => togglePartnerSelection(item.id)}
+                      onPress={() =>
+                        togglePartnerSelection(item?.id, item?.name)
+                      }
                       style={[
                         styles.partnerItem,
-                        selected && {backgroundColor: Colors.red},
+                        isSelected && {backgroundColor: Colors.red},
                       ]}>
-                      <Text style={{color: selected ? 'white' : 'black'}}>
+                      <Text style={{color: isSelected ? 'white' : 'black'}}>
                         {item.name}
                       </Text>
                     </TouchableOpacity>

@@ -36,6 +36,7 @@ const HomeScreen = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
+  const [gymStatus, setGymStatus] = useState(0);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -54,9 +55,13 @@ const HomeScreen = () => {
       }
     };
     fetchData();
-    fetchData2();
+
     fetchUserDash();
-  }, []);
+  }, [a?.user]);
+
+  useEffect(() => {
+    fetchData2();
+  }, [isDrawerVisible]);
 
   const fetchData2 = async () => {
     try {
@@ -64,9 +69,11 @@ const HomeScreen = () => {
         endPoint: EndPoints.GetGym,
         method: 'GET',
       });
-      dispatch(setUser({...user?.user, gym: response[0]}));
+
+      setGymStatus(response?.status);
+      dispatch(setUser({...a?.user, gym: response}));
     } catch (error) {
-    } finally {
+      console.log(error);
     }
   };
 
@@ -173,12 +180,21 @@ const HomeScreen = () => {
   };
 
   const onPressHandler = async () => {
-    if (a?.user?.gym?.status == 0) {
-      showToast({message: 'Gym not approved by admin', type: 'error'});
-    } else if (a?.user?.gym) {
-      navigateToScreen('DashBoardScreen');
-    } else {
-      navigateToScreen('Gym Profile');
+    try {
+      await fetchData2();
+      // console.log()
+      // setGymStatus(gymData?.status);
+
+      if (gymStatus == 0) {
+        showToast({message: 'Gym not approved by admin', type: 'error'});
+      } else if (gymStatus == 1) {
+        navigateToScreen('DashBoardScreen');
+      } else {
+        navigateToScreen('Gym Profile');
+      }
+    } catch (error) {
+      console.error('Error checking gym status:', error);
+      showToast({message: 'Something went wrong', type: 'error'});
     }
   };
 
@@ -189,6 +205,7 @@ const HomeScreen = () => {
       : `https://bjj.beepr.us/${userData.image}`;
   };
 
+  console.log('gymStatus', gymStatus);
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -312,7 +329,9 @@ const HomeScreen = () => {
               onPress={onPressHandler}>
               <SVG.IconProfile />
               <Text style={styles.drawerText}>
-                {a?.user?.gym ? 'Switch to Gym Profile' : 'Become Gym Owner'}
+                {a?.user?.gym?.status
+                  ? 'Switch to Gym Profile'
+                  : 'Become Gym Owner'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity

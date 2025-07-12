@@ -26,19 +26,28 @@ const TrainingScreen = () => {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [calendarEndVisible, setCalendarEndVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [gymList, setGymList] = useState([]);
+  const [gymModalVisible, setGymModalVisible] = useState(false);
+  const [selectedGym, setSelectedGym] = useState(null);
 
   useEffect(() => {
     fetchTrainingLogs();
-  }, [selectedDate, selectedEndDate, searchText]);
+  }, [selectedDate, selectedEndDate, searchText, selectedGym]);
 
   const fetchTrainingLogs = async () => {
     try {
       const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
       const formatedEndDate = moment(selectedEndDate).format('YYYY-MM-DD');
+
       const response = await makeRequest({
-        endPoint: `${EndPoints.UserTrainingLogs}?start_date=${formattedDate}&end_date=${formatedEndDate}`,
+        endPoint: `${
+          EndPoints.UserTrainingLogs
+        }?start_date=${formattedDate}&end_date=${formatedEndDate}${
+          selectedGym ? `&gym_id=${selectedGym.gym_id}` : ''
+        }`,
         method: 'GET',
       });
+
       console.log('Training logs response:', response);
 
       setSessions(response);
@@ -48,6 +57,31 @@ const TrainingScreen = () => {
     }
   };
 
+  const handleGymHistory = async () => {
+    try {
+      const response = await makeRequest({
+        endPoint: EndPoints.GymHistory,
+        method: 'POST',
+        body: {},
+      });
+
+      if (response) {
+        setGymList(response);
+        setGymModalVisible(true);
+      } else {
+        showToast('No gyms found');
+      }
+    } catch (error) {
+      console.error('Gym history fetch error:', error);
+      showToast('Error fetching gym history');
+    }
+  };
+
+  const handleGymSelect = gym => {
+    console.log('Selected Gym:', gym);
+    setSelectedGym(gym);
+    setGymModalVisible(false);
+  };
   const handleDateSelect = (day, isEndDate = false) => {
     if (isEndDate) {
       setSelectedEndDate(day.dateString);
@@ -143,12 +177,31 @@ const TrainingScreen = () => {
         </View>
 
         <View style={styles.filterItem}>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>Gym</Text>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={handleGymHistory}>
+            <Text style={styles.filterText} numberOfLines={1}>
+              {selectedGym?.gym_name || 'Gym'}
+            </Text>
             <SVG.ArrowIcon />
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal visible={gymModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay1}>
+          <View style={styles.calendarContainer1}>
+            {gymList.map(gym => (
+              <TouchableOpacity
+                key={gym.gym_id}
+                style={{padding: 10, borderBottomWidth: 1}}
+                onPress={() => handleGymSelect(gym)}>
+                <Text style={{color: Colors.black}}>{gym.gym_name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
 
       <View>
         <TextInput

@@ -50,6 +50,24 @@ const DashBoardScreen = () => {
     }, [filters]),
   );
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        await fetchDashboardData();
+      } catch (error) {
+        console.log('Dashboard load error:', error);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [a]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -130,6 +148,14 @@ const DashBoardScreen = () => {
     },
   };
 
+  const fullmonthlyRevenu = Array(12).fill(0);
+
+  if (Array.isArray(dashboardData?.monthly_revenue)) {
+    (dashboardData.monthly_revenue || []).forEach((item, index) => {
+      fullmonthlyRevenu[index] = isFinite(item.revenue) ? item.revenue : 0;
+    });
+  }
+
   const lineData = {
     labels: [
       'Jan',
@@ -147,9 +173,7 @@ const DashBoardScreen = () => {
     ],
     datasets: [
       {
-        data: Array.isArray(dashboardData?.monthly_revenue)
-          ? dashboardData?.monthly_revenue.map(item => item.revenue ?? 0)
-          : Array(12).fill(0),
+        data: fullmonthlyRevenu,
         color: () => Colors.red,
       },
     ],
@@ -187,7 +211,7 @@ const DashBoardScreen = () => {
   const fullUsersArray = Array(12).fill(0);
 
   if (Array.isArray(dashboardData?.gym_members_month)) {
-    dashboardData.gym_members_month.forEach(item => {
+    (dashboardData.gym_members_month || []).forEach(item => {
       const index = monthIndexMap[item.month];
       if (index !== undefined) {
         fullUsersArray[index] = item.users ?? 0;
@@ -238,7 +262,7 @@ const DashBoardScreen = () => {
   const unpaidArray = Array(12).fill(0);
 
   if (Array.isArray(dashboardData?.gym_paid_unpaid_monthly)) {
-    dashboardData.gym_paid_unpaid_monthly.forEach(item => {
+    (dashboardData.gym_paid_unpaid_monthly || []).forEach(item => {
       const index = monthMap[item.month];
       if (index !== undefined) {
         paidArray[index] = parseInt(item.paid ?? 0);
@@ -267,7 +291,7 @@ const DashBoardScreen = () => {
     datasets: [{data: [80, 50, 75, 100]}],
   };
   const classLabels = Array.isArray(dashboardData?.students_per_class)
-    ? dashboardData.students_per_class.map(item =>
+    ? (dashboardData.students_per_class || []).map(item =>
         item.training_type.length > 8
           ? item.training_type.substring(0, 8) + '...'
           : item.training_type,
@@ -275,7 +299,7 @@ const DashBoardScreen = () => {
     : [];
 
   const classData = Array.isArray(dashboardData?.students_per_class)
-    ? dashboardData.students_per_class.map(item => item.students ?? 0)
+    ? (dashboardData.students_per_class || []).map(item => item.students ?? 0)
     : [];
 
   const formattedBarChartData = {

@@ -237,11 +237,13 @@ const InvitationAndApprovalScreen = () => {
       />
 
       <Text style={styles.label}>Approval Workflow:</Text>
-      <FlatList
-        data={appliedTrainings}
-        renderItem={renderApprovalItem}
-        keyExtractor={(item, index) => index.toString()}
-      />
+      <View style={{marginBottom: 25}}>
+        <FlatList
+          data={appliedTrainings}
+          renderItem={renderApprovalItem}
+          keyExtractor={(item, index) => index.toString()}
+        />
+      </View>
     </ScrollView>
   );
 };
