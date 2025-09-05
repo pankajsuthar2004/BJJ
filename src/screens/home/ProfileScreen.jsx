@@ -226,11 +226,11 @@ const ProfileScreen = () => {
                 <item.icon />
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuTitle}>{item.title}</Text>
-                  {item.title !== selectedGym && (
+                  {/* {item.title !== selectedGym && (
                     <Text style={styles.menuSubtitle}>
                       Lorem Ipsum, giving information on its
                     </Text>
-                  )}
+                  )} */}
                 </View>
                 {item.isPending && (
                   <View style={styles.statusBadge}>

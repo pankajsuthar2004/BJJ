@@ -124,6 +124,11 @@ const DashBoardScreen = () => {
     }
   };
 
+  const chartWidth =
+    formattedBarChartData?.labels?.length > 0
+      ? formattedBarChartData.labels.length * 60
+      : screenWidth;
+
   const chartConfig = {
     backgroundColor: Colors.white,
     backgroundGradientFrom: Colors.white,
@@ -463,7 +468,6 @@ const DashBoardScreen = () => {
                     case 'Switch to User':
                       navigation.navigate('HomeScreen');
                       break;
-
                     default:
                       navigation.navigate(item.name);
                       break;
@@ -615,7 +619,6 @@ const DashBoardScreen = () => {
             style={styles.chart}
           />
         </View>
-
         <View>
           <Text style={styles.sectionTitle}>Paid and Unpaid Over time</Text>
 
@@ -648,7 +651,7 @@ const DashBoardScreen = () => {
           Students per class Over Time
         </Text>
 
-        <BarChart
+        {/* <BarChart
           data={formattedBarChartData}
           width={screenWidth - 18}
           height={300}
@@ -664,7 +667,27 @@ const DashBoardScreen = () => {
           verticalLabelRotation={45}
           showValuesOnTopOfBars={true}
           style={styles.chart}
-        />
+        /> */}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <BarChart
+            data={formattedBarChartData}
+            width={chartWidth}
+            height={300}
+            fromZero
+            chartConfig={{
+              ...chartConfig,
+              propsForVerticalLabels: {
+                ...chartConfig.propsForVerticalLabels,
+                rotation: -45,
+                fontSize: 10,
+              },
+            }}
+            verticalLabelRotation={45}
+            showValuesOnTopOfBars={true}
+            style={styles.chart}
+          />
+        </ScrollView>
 
         <Text style={styles.sectionTitle}>Students over time</Text>
         <View style={styles.statsContainer}>

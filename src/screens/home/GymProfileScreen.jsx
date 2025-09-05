@@ -145,6 +145,7 @@ const GymProfileScreen = () => {
             errors[field] && {borderColor: Colors.red, borderWidth: 1},
           ]}
           placeholder={placeholder}
+          placeholderTextColor="#999"
           multiline={isMultiline}
           value={value}
           onChangeText={handleTextChange}

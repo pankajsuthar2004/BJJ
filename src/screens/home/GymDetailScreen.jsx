@@ -80,7 +80,11 @@ const GymDetailScreen = () => {
               style={{height: hp(14), width: hp(14), borderRadius: hp(20)}}
             />
           </View>
-          <View style={{justifyContent: 'center'}}>
+          <View
+            style={{
+              justifyContent: 'center',
+              flex: 1,
+            }}>
             <Text style={styles.profileName}>{user?.user?.gym?.name}</Text>
             <TouchableOpacity
               style={styles.editProfileButton}
@@ -134,11 +138,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileName: {
-    fontSize: 24,
-    fontWeight: 'bold',
     color: Colors.white,
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flexWrap: 'wrap',
   },
+
   editProfileButton: {
     alignItems: 'center',
     paddingVertical: 8,
@@ -146,6 +152,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'center',
+    width: 140,
+    alignSelf: 'center',
+    marginTop: 8,
   },
   editProfileText: {
     color: Colors.white,

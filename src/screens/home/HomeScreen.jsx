@@ -25,18 +25,25 @@ import AppLoader from '../../components/AppLoader';
 import {showToast} from '../../utility/Toast';
 import {useAppDispatch, useAppSelector} from '../../store/Hooks';
 import {setUser} from '../../Slices/UserSlice';
+import {Calendar} from 'react-native-calendars';
+import messaging from '@react-native-firebase/messaging';
 
 const screenWidth = Dimensions.get('window').width;
 
 const HomeScreen = () => {
   const a = useAppSelector(b => b.user);
   const navigation = useNavigation();
-  const [selectedToggle, setSelectedToggle] = useState('');
+  const [selectedToggle, setSelectedToggle] = useState('Monthly');
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [gymStatus, setGymStatus] = useState(0);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+  const [calendarMode, setCalendarMode] = useState(null);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -47,21 +54,48 @@ const HomeScreen = () => {
           endPoint: EndPoints.GetProfile,
           method: 'GET',
         });
-        console.log(response);
         setUserData(response);
       } catch (error) {
+        console.log('Profile Fetch Error:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
 
+    fetchData();
     fetchUserDash();
-  }, [a?.user]);
+  }, [selectedToggle, fromDate, toDate]);
 
   useEffect(() => {
     fetchData2();
   }, [isDrawerVisible]);
+
+  useEffect(() => {
+    sendDeviceToken();
+  }, []);
+
+  const sendDeviceToken = async () => {
+    try {
+      const fcmToken = await messaging().getToken();
+      console.log('🔑 FCM Token:', fcmToken);
+
+      const body = {
+        token: fcmToken,
+      };
+
+      console.log('📤 Sending Device Token Body:', body);
+
+      await makeRequest({
+        endPoint: EndPoints.DeviceToken,
+        method: 'POST',
+        body,
+      });
+
+      console.log('✅ Device token sent successfully');
+    } catch (error) {
+      console.error('❌ Error sending device token:', error);
+    }
+  };
 
   const fetchData2 = async () => {
     try {
@@ -82,11 +116,28 @@ const HomeScreen = () => {
       const response = await makeRequest({
         endPoint: EndPoints.UserDash,
         method: 'GET',
+        params: {
+          filter_type: selectedToggle.toLowerCase() || '',
+          from_date: fromDate || '',
+          to_date: toDate || '',
+        },
       });
+      console.log('response ==== ++++++', response);
       setDashboardData(response);
     } catch (error) {
       console.log('UserDash API Error:', error);
     }
+  };
+
+  const handleDateSelect = date => {
+    if (calendarMode === 'from') {
+      setFromDate(date.dateString);
+    } else if (calendarMode === 'to') {
+      setToDate(date.dateString);
+    }
+    setCalendarVisible(false);
+    setCalendarMode(null);
+    setSelectedToggle('');
   };
 
   const chartConfig = {
@@ -109,47 +160,111 @@ const HomeScreen = () => {
     },
   };
 
+  const dailyData = dashboardData?.graphs?.daily_training_time?.data;
+  const isValidDailyData =
+    Array.isArray(dailyData) &&
+    dailyData.length > 0 &&
+    dailyData.some(item => item.total_training_time_minutes > 0);
+
   const lineData = {
-    labels: [
-      '7/12/24',
-      '8/12/24',
-      '9/12/24',
-      '10/12/24',
-      '11/12/24',
-      '12/12/24',
-      '13/12/24',
-    ],
+    labels: isValidDailyData
+      ? dailyData.map(item => {
+          const date = new Date(item.date);
+          return date.toLocaleDateString('en-GB');
+        })
+      : [],
     datasets: [
       {
-        data: [0, 60, 55, 20, 8, 100, 60, 5, 30, 49, 57, 29, 2, 32, 13, 43],
+        data: isValidDailyData
+          ? dailyData.map(item => item.total_training_time_minutes)
+          : [],
         color: () => Colors.red,
       },
     ],
   };
 
+  const rawData =
+    dashboardData?.graphs?.training_duration_by_type_detailed?.data;
+  const isValidRawData = Array.isArray(rawData) && rawData.length > 0;
+
+  const formattedData = isValidRawData
+    ? rawData.map(item => ({
+        ...item,
+        formattedDate: new Date(item.date).toLocaleDateString('en-GB'),
+      }))
+    : [];
+
+  // Step 2: Get all unique dates and sort them
+  const uniqueDates = Array.from(
+    new Set(formattedData.map(item => item.formattedDate)),
+  ).sort((a, b) => {
+    const [dayA, monthA, yearA] = a.split('/');
+    const [dayB, monthB, yearB] = b.split('/');
+    return (
+      new Date(`${yearA}-${monthA}-${dayA}`) -
+      new Date(`${yearB}-${monthB}-${dayB}`)
+    );
+  });
+
+  // Step 3: Get all unique training types
+  const uniqueTypes = Array.from(
+    new Set(formattedData.map(item => item.training_type_name)),
+  );
+
+  // Step 4: Group data by training_type_name and fill 0s for missing dates
+  const colorPalette = [
+    '#FF6384',
+    '#36A2EB',
+    '#FFCE56',
+    '#4BC0C0',
+    '#9966FF',
+    '#FF9F40',
+  ];
+  const datasets = uniqueTypes.map((typeName, index) => {
+    const dataByDate = {};
+    formattedData
+      .filter(item => item.training_type_name === typeName)
+      .forEach(item => {
+        dataByDate[item.formattedDate] = item.duration_minutes;
+      });
+
+    return {
+      data: uniqueDates.map(date => dataByDate[date] || 0),
+      color: () => colorPalette[index % colorPalette.length],
+      strokeWidth: 2,
+      legend: typeName,
+    };
+  });
+
+  // Step 5: Build TimeData object
   const TimeData = {
-    labels: [
-      '7/12/24',
-      '8/12/24',
-      '9/12/24',
-      '10/12/24',
-      '11/12/24',
-      '12/12/24',
-      '13/12/24',
-    ],
-    datasets: [
-      {
-        data: [0, 25, 10, 38, 5, 33, 60, 3, 35, 29, 8, 29, 8, 5, 32, 2],
-        color: () => Colors.red,
-      },
-      {
-        data: [0, 6, 8, 1, 7, 14, 10, 4, 2, 9, 1, 9, 4, 6, 9, 0],
-        color: () => `rgb(14, 14, 16)`,
-        strokeWidth: 2,
-      },
-    ],
-    // legend: ['Gi', 'No Gi'],
+    labels: uniqueDates,
+    datasets,
   };
+
+  // const TimeData = {
+  //   labels: [
+  //     '7/12/24',
+  //     '8/12/24',
+  //     '9/12/24',
+  //     '10/12/24',
+  //     '11/12/24',
+  //     '12/12/24',
+  //     '13/12/24',
+  //   ],
+  //   datasets: [
+  //     {
+  //       data: [0, 25, 10, 38, 5, 33, 60, 3, 35, 29, 8, 29, 8, 5, 32, 2],
+  //       color: () => Colors.red,
+  //     },
+  //     {
+  //       data: [0, 6, 8, 1, 7, 14, 10, 4, 2, 9, 1, 9, 4, 6, 9, 0],
+  //       color: () => 'rgb(14, 14, 16)',
+  //       strokeWidth: 2,
+  //     },
+  //   ],
+  //   // legend: ['Gi', 'No Gi'],
+  // };
 
   const barData = {
     datasets: [
@@ -160,14 +275,31 @@ const HomeScreen = () => {
   };
 
   const sessionStats = [
-    {svg: SVG.Count1, value: 20, label: 'Sessions Count'},
-    {svg: SVG.Count2, value: 10, label: 'Gi Count'},
-    {svg: SVG.Count3, value: 8, label: 'No Gi Count'},
-    {svg: SVG.Count4, value: 19, label: 'Tech Learned'},
-    {svg: SVG.Count5, value: 3, label: 'Sub Achieved'},
-    {svg: SVG.Count6, value: 6, label: 'Sub Conceded'},
-    {svg: SVG.Count6, value: 7, label: 'Pos Achieved'},
-    {svg: SVG.Count5, value: 12, label: 'Pos Conceded'},
+    {
+      svg: SVG.Count1,
+      value: dashboardData?.analytics?.total_training_logs ?? 0,
+      label: 'Sessions Count',
+    },
+    {
+      svg: SVG.Count5,
+      value: dashboardData?.analytics?.submissions?.achieved ?? 0,
+      label: 'Sub Achieved',
+    },
+    {
+      svg: SVG.Count6,
+      value: dashboardData?.analytics?.submissions?.conceded ?? 0,
+      label: 'Sub Conceded',
+    },
+    {
+      svg: SVG.Count6,
+      value: dashboardData?.analytics?.positions?.achieved ?? 0,
+      label: 'Pos Achieved',
+    },
+    {
+      svg: SVG.Count5,
+      value: dashboardData?.analytics?.positions?.conceded ?? 0,
+      label: 'Pos Conceded',
+    },
   ];
 
   const toggleDrawer = () => {
@@ -182,8 +314,6 @@ const HomeScreen = () => {
   const onPressHandler = async () => {
     try {
       await fetchData2();
-      // console.log()
-      // setGymStatus(gymData?.status);
 
       if (gymStatus == 0) {
         showToast({message: 'Gym not approved by admin', type: 'error'});
@@ -205,11 +335,9 @@ const HomeScreen = () => {
       : `https://bjj.beepr.us/${userData.image}`;
   };
 
-  console.log('gymStatus', gymStatus);
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {loading && <AppLoader loading={loading} />}
         <View style={styles.header}>
           <TouchableOpacity>
             <Image
@@ -345,23 +473,50 @@ const HomeScreen = () => {
 
         <View style={styles.toggle1}>
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              backgroundColor: Colors.white,
-              borderRadius: 4,
-            }}>
-            <Text style={styles.toggleText1}>from</Text>
-            <SVG.SmallCal style={{alignSelf: 'center', right: 6}} />
+            onPress={() => {
+              setCalendarMode('from');
+              setCalendarVisible(true);
+            }}
+            style={styles.dateButton}>
+            <Text style={styles.toggleText1}>{fromDate || 'From'}</Text>
+            <SVG.SmallCal />
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={{
-              flexDirection: 'row',
-              backgroundColor: Colors.white,
-              borderRadius: 4,
-            }}>
-            <Text style={styles.toggleText1}>to</Text>
-            <SVG.SmallCal style={{alignSelf: 'center', right: 6}} />
+            onPress={() => {
+              setCalendarMode('to');
+              setCalendarVisible(true);
+            }}
+            style={styles.dateButton}>
+            <Text style={styles.toggleText1}>{toDate || 'To'}</Text>
+            <SVG.SmallCal />
           </TouchableOpacity>
+
+          <Modal
+            visible={calendarVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setCalendarVisible(false)}>
+            <TouchableWithoutFeedback onPress={() => setCalendarVisible(false)}>
+              <View style={styles.calendarOverlay} />
+            </TouchableWithoutFeedback>
+            <View style={styles.calendarContainer}>
+              <Calendar
+                onDayPress={handleDateSelect}
+                markedDates={
+                  calendarMode === 'from' && fromDate
+                    ? {[fromDate]: {selected: true, selectedColor: Colors.red}}
+                    : calendarMode === 'to' && toDate
+                    ? {[toDate]: {selected: true, selectedColor: Colors.red}}
+                    : {}
+                }
+                theme={{
+                  selectedDayBackgroundColor: Colors.red,
+                  todayTextColor: Colors.red,
+                }}
+              />
+            </View>
+          </Modal>
           <TouchableOpacity
             style={{
               backgroundColor: Colors.white,
@@ -397,41 +552,58 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <View>
-          <Text style={styles.sectionTitle}>Training Frequency</Text>
-          <LineChart
-            data={lineData}
-            width={screenWidth - 24}
-            height={hp((298.79 / 919) * 100)}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-            verticalLabelRotation={30}
-          />
-        </View>
+        <Text style={styles.sectionTitle}>Training Frequency</Text>
 
-        <Text style={styles.sectionTitle}>Time Distribution (Gi vs No Gi)</Text>
-        <View>
-          <LineChart
-            data={TimeData}
-            width={screenWidth - 24}
-            height={hp((298.79 / 919) * 100)}
-            chartConfig={chartConfig}
-            style={styles.chart}
-            bezier
-            verticalLabelRotation={30}
-          />
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <SVG.Maskgroup />
-              <Text style={{color: Colors.red}}>Gi</Text>
+        {isValidDailyData ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <LineChart
+              data={lineData}
+              width={screenWidth * 1.5}
+              height={hp((298.79 / 919) * 100)}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+              verticalLabelRotation={30}
+            />
+          </ScrollView>
+        ) : (
+          <Text style={{color: 'white'}}>No training data available yet</Text>
+        )}
+
+        <Text style={styles.sectionTitle}>Time Distribution</Text>
+        {isValidRawData ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View>
+              <LineChart
+                data={TimeData}
+                width={screenWidth - 24}
+                height={hp((298.79 / 919) * 100)}
+                chartConfig={chartConfig}
+                style={styles.chart}
+                bezier
+                verticalLabelRotation={30}
+              />
+              <View style={styles.legendContainer}>
+                {uniqueTypes.map((type, index) => (
+                  <View key={index} style={styles.legendItem}>
+                    <View
+                      style={[
+                        styles.colorDot,
+                        {
+                          backgroundColor:
+                            colorPalette[index % colorPalette.length],
+                        },
+                      ]}
+                    />
+                    <Text style={{color: Colors.black}}>{type}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-            <View style={styles.legendItem}>
-              <SVG.Nogi />
-              <Text style={{color: Colors.darkGray}}>No Gi</Text>
-            </View>
-          </View>
-        </View>
+          </ScrollView>
+        ) : (
+          <Text style={{color: 'white'}}>No training data available yet</Text>
+        )}
 
         <Text
           style={{
@@ -493,6 +665,32 @@ const HomeScreen = () => {
               />
             </TouchableOpacity>
           ))}
+
+          {dashboardData?.analytics?.training_types &&
+            dashboardData?.analytics?.training_types?.map((stat, index) => (
+              <TouchableOpacity key={index} style={styles.statCard}>
+                <View
+                  style={{
+                    backgroundColor: Colors.red,
+                    height: 36,
+                    width: 36,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 4,
+                  }}>
+                  <SVG.Count1 />
+                </View>
+                <Text style={styles.statValue}>
+                  {stat.count}
+                  {'\n'}
+                  <Text style={styles.statLabel}>{stat.name}</Text>
+                </Text>
+                <SVG.RoundVector
+                  style={{position: 'absolute', right: 6, top: 10}}
+                />
+              </TouchableOpacity>
+            ))}
+          {/* </View> */}
         </View>
       </ScrollView>
 
@@ -512,7 +710,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   scrollContent: {
-    padding: 10,
+    paddingHorizontal: 10,
   },
   header: {
     marginBottom: 20,
@@ -558,7 +756,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   toggle1: {
-    gap: 5,
+    gap: 2.5,
     flexDirection: 'row',
     alignSelf: 'center',
   },
@@ -628,6 +826,27 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 5,
   },
+  dateButton: {
+    flexDirection: 'row',
+    backgroundColor: Colors.white,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+  },
+  calendarContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    alignSelf: 'center',
+    padding: 16,
+    marginTop: '50%',
+  },
+
   chart1: {
     marginTop: 20,
     borderRadius: 8,
@@ -647,7 +866,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 20,
     width: wp((250 / 430) * 100),
-    height: hp((465 / 919) * 100),
+    height: hp((500 / 919) * 100),
     padding: 20,
     margin: 15,
   },
@@ -671,16 +890,27 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     position: 'absolute',
     right: 10,
     top: 10,
+    paddingHorizontal: 10,
   },
+
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
+    marginRight: 12,
+    marginBottom: 6,
     gap: 5,
+  },
+
+  colorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'red',
   },
 });
 

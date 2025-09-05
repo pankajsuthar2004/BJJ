@@ -209,6 +209,7 @@ const SubscriptionPlanScreen = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Enter plan name"
+                placeholderTextColor="#999"
                 value={editPlanData ? editPlanData.name : newPlan.name}
                 onChangeText={text =>
                   editPlanData
@@ -220,6 +221,7 @@ const SubscriptionPlanScreen = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Amount here..."
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={editPlanData ? editPlanData.price : newPlan.price}
                 onChangeText={text =>
@@ -232,6 +234,7 @@ const SubscriptionPlanScreen = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Duration"
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={
                   editPlanData

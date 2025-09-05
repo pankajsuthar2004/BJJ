@@ -364,25 +364,13 @@ const TimeTableScreen = () => {
 
         <FlatList
           data={classes}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item.id?.toString()}
           renderItem={({item}) => (
             <TouchableOpacity
               style={[styles.classItem, {backgroundColor: item.color}]}
               onPress={() => handleEditClass(item)}>
-              <Text
-                style={[
-                  styles.classText,
-                  {color: item.id === '4' ? Colors.black : Colors.white},
-                ]}>
-                {item.name}
-              </Text>
-              <Text
-                style={[
-                  styles.classText1,
-                  {color: item.id === '4' ? Colors.black : Colors.white},
-                ]}>
-                {item.time}
-              </Text>
+              <Text style={styles.classText}>{item.name}</Text>
+              <Text style={styles.classText1}>{item.time}</Text>
             </TouchableOpacity>
           )}
         />
@@ -390,7 +378,7 @@ const TimeTableScreen = () => {
         <TouchableOpacity
           style={styles.addClass}
           onPress={() => {
-            resetForm(); // ✅ Clear any previous values
+            resetForm();
             setModalVisible(true);
           }}>
           <Text style={styles.addClassText}>Add New Class</Text>
@@ -649,11 +637,11 @@ const styles = StyleSheet.create({
   classText: {
     fontSize: 24,
     fontFamily: Fonts.normal,
-    color: Colors.black,
+    color: Colors.white,
   },
   classText1: {
     fontSize: 12,
-    color: Colors.black,
+    color: Colors.white,
     fontFamily: Fonts.normal,
   },
   addClass: {

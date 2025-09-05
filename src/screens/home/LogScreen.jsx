@@ -28,6 +28,7 @@ import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useAppDispatch, useAppSelector} from '../../store/Hooks';
+import {setUser} from '../../Slices/UserSlice';
 import AppLoader from '../../components/AppLoader';
 
 const trainingTypes = [
@@ -37,8 +38,9 @@ const trainingTypes = [
   {id: 4, name: 'Advanced gi Class 9am'},
 ];
 
-const LogScreen = () => {
+const LogScreen = ({route}) => {
   const a = useAppSelector(b => b.user);
+  const item = route?.params?.item;
   const navigation = useNavigation();
   const [date, setDate] = useState(new Date());
   const [isDropdownOpen, setDropdownOpen] = useState(false);
@@ -55,9 +57,10 @@ const LogScreen = () => {
   const [isRoundModalVisible, setRoundModalVisible] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.user?.user);
-  const gymId = user?.gym?.id;
+  const gymId = user?.selected_gym || user?.gym?.id;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,6 +71,10 @@ const LogScreen = () => {
           method: 'GET',
         });
         setUserData(response);
+        // Update Redux store with the latest profile data including selected_gym
+        if (response) {
+          dispatch(setUser({...user, ...response}));
+        }
       } catch (error) {
         showToast({message: error.message, type: 'error'});
       } finally {
@@ -84,8 +91,13 @@ const LogScreen = () => {
         endPoint: EndPoints.GetGym,
         method: 'GET',
       });
-      dispatch(setUser({...user?.user, gym: response[0]}));
+      console.log('Gym response:', response);
+      if (response && response[0]) {
+        dispatch(setUser({...user, gym: response[0]}));
+        console.log('Updated user with gym:', {...user, gym: response[0]});
+      }
     } catch (error) {
+      console.log('Error fetching gym:', error);
     } finally {
     }
   };
@@ -95,6 +107,12 @@ const LogScreen = () => {
 
   useEffect(() => {
     fetchGymAreas();
+
+    if (item && item?.id) {
+      fetchData3();
+    } else {
+      console.warn('No item ID found in route params');
+    }
   }, []);
 
   const openImagePicker = () => {
@@ -117,6 +135,78 @@ const LogScreen = () => {
     });
   };
 
+  const fetchData3 = async () => {
+    if (!item?.id) {
+      console.warn('Missing training_log_id');
+      return;
+    }
+    try {
+      const response = await makeRequest({
+        endPoint: `${EndPoints.TrainingLogDetails}?training_log_id=${item.id}`,
+        method: 'GET',
+      });
+      console.log(response?.rounds?.[0]);
+      // setDate(response?.date);
+      setValue(response?.duration);
+      setLearnings(response?.learnings);
+      setSelectedAreas(response?.gym_area?.id);
+      setSelectedType({
+        id: response?.training_type?.id,
+        name: response?.training_type?.type,
+      });
+
+      // Load training log files (main images)
+      if (response?.files && response.files.length > 0) {
+        const trainingFiles = response.files.map(file => ({
+          uri: `https://bjj.beepr.us/${file.file_path}`, // Convert server path to full URL
+          name: file.file_path.split('/').pop() || 'training_file.jpg', // Extract filename
+          type: 'image/jpeg',
+          id: file.id, // Keep the server ID for updates
+        }));
+        setSelectedImages(trainingFiles);
+      }
+      setRounds(
+        response?.rounds?.map(i => {
+          return {
+            duration: i?.duration,
+            sparringPartners:
+              i?.sparring_partners?.map(p => ({
+                name: p?.name,
+                id: p?.id,
+              })) || [],
+            submissionsAchieved:
+              i?.submissions_achieved?.map(s => ({
+                name: s?.training_option?.name,
+                id: s?.training_option?.id,
+                // quantity: s?.training_option?.quantity,
+              })) || [],
+            submissionsConceded:
+              i?.submissions_conceded?.map(s => ({
+                name: s?.training_option?.name,
+                id: s?.training_option?.id,
+                // quantity: s?.training_option?.quantity,
+              })) || [],
+            positionsAchieved:
+              i?.positions_achieved?.map(p => ({
+                name: p?.training_option?.name,
+                id: p?.training_option?.id,
+                // quantity: p?.training_option?.quantity,
+              })) || [],
+            positionsConceded:
+              i?.positions_conceded?.map(p => ({
+                name: p?.training_option?.name,
+                id: p?.training_option?.id,
+                // quantity: p?.training_option?.quantity,
+              })) || [],
+            notes: i?.notes,
+            files: i?.files || [],
+          };
+        }) || [],
+      );
+    } catch (error) {
+      console.error('Error fetching log details:', error);
+    }
+  };
   const onSubmit = async () => {
     if (!value || value <= 0) {
       showToast({
@@ -126,120 +216,216 @@ const LogScreen = () => {
       return;
     }
 
+    console.log('=== SUBMIT DEBUG ===');
+    console.log('gymId in submit:', gymId);
+    console.log('gymId type:', typeof gymId);
+    console.log('gymId truthy:', !!gymId);
+    console.log('==================');
+
+    if (!gymId) {
+      showToast({
+        message: 'Gym ID not found. Please try again.',
+        type: 'error',
+      });
+      return;
+    }
+
     const formData = new FormData();
-    formData.append('gym_id', gymId);
-    formData.append('date', date.toISOString().split('T')[0]);
+
+    console.log('=== BUILDING FORM DATA ===');
+    console.log('gymId:', gymId);
+    console.log('date:', date?.toISOString().split('T')[0]);
+    console.log('selectedType:', selectedType);
+    console.log('value:', value);
+    console.log('selectedAreas:', selectedAreas);
+    console.log('learnings:', learnings);
+    console.log('rounds:', rounds);
+    console.log('selectedImages:', selectedImages);
+
+    formData.append('gym_id', parseInt(gymId) || gymId);
+    console.log('Added gym_id:', parseInt(gymId) || gymId);
+
+    formData.append('date', date?.toISOString().split('T')[0]);
+    console.log('Added date:', date?.toISOString().split('T')[0]);
 
     if (selectedType) {
       formData.append('training_type_id', parseInt(selectedType.id));
+      console.log('Added training_type_id:', parseInt(selectedType.id));
     }
 
     formData.append('duration', value.toString());
+    console.log('Added duration:', value.toString());
 
     if (selectedAreas !== undefined && selectedAreas !== null) {
       formData.append('gym_area_id', selectedAreas);
+      console.log('Added gym_area_id:', selectedAreas);
     }
 
     formData.append('learnings', learnings || '');
+    console.log('Added learnings:', learnings || '');
 
     rounds.forEach((round, roundIndex) => {
+      console.log(`Processing round ${roundIndex}:`, round);
+
       formData.append(
         `rounds[${roundIndex}][duration]`,
         String(round.duration),
       );
-      formData.append(`rounds[${roundIndex}][notes]`, round.notes);
+      formData.append(`rounds[${roundIndex}][notes]`, round.notes || '');
 
-      // round.sparringPartners.forEach((partnerId, partnerIndex) => {
-      //   formData.append(
-      //     `rounds[${roundIndex}][sparring_partners][${partnerIndex}]`,
-      //     String(partnerId),
-      //   );
-      // });
+      // Process sparring partners
+      if (round.sparringPartners && round.sparringPartners.length > 0) {
+        round.sparringPartners.forEach((partner, partnerIndex) => {
+          formData.append(
+            `rounds[${roundIndex}][sparring_partners][${partnerIndex}]`,
+            String(partner.id),
+          );
+        });
+      }
 
       let submissionIndex = 0;
-      round.submissionsAchieved
-        .filter(item => item.count > 0)
-        .forEach(item => {
-          formData.append(
-            `rounds[${roundIndex}][submissions][${submissionIndex}][training_option_id]`,
-            String(item.id),
-          );
-          formData.append(
-            `rounds[${roundIndex}][submissions][${submissionIndex}][type]`,
-            'achieved',
-          );
-          formData.append(
-            `rounds[${roundIndex}][submissions][${submissionIndex}][quantity]`,
-            String(item.count),
-          );
-          submissionIndex++;
-        });
-      round.submissionsConceded
-        .filter(item => item.count > 0)
-        .forEach(item => {
-          formData.append(
-            `rounds[${roundIndex}][submissions][${submissionIndex}][training_option_id]`,
-            String(item.id),
-          );
-          formData.append(
-            `rounds[${roundIndex}][submissions][${submissionIndex}][type]`,
-            'conceded',
-          );
-          formData.append(
-            `rounds[${roundIndex}][submissions][${submissionIndex}][quantity]`,
-            String(item.count),
-          );
-          submissionIndex++;
-        });
+      // Process submissions achieved
+      if (round.submissionsAchieved && round.submissionsAchieved.length > 0) {
+        round.submissionsAchieved
+          .filter(
+            item => (item.count && item.count > 0) || (!item.count && item.id),
+          ) // Handle both create and update modes
+          .forEach(item => {
+            formData.append(
+              `rounds[${roundIndex}][submissions][${submissionIndex}][training_option_id]`,
+              String(item.id),
+            );
+            formData.append(
+              `rounds[${roundIndex}][submissions][${submissionIndex}][type]`,
+              'achieved',
+            );
+            formData.append(
+              `rounds[${roundIndex}][submissions][${submissionIndex}][quantity]`,
+              String(item.count || 1), // Default to 1 if no count (update mode)
+            );
+            submissionIndex++;
+          });
+      }
+
+      // Process submissions conceded
+      if (round.submissionsConceded && round.submissionsConceded.length > 0) {
+        round.submissionsConceded
+          .filter(
+            item => (item.count && item.count > 0) || (!item.count && item.id),
+          ) // Handle both create and update modes
+          .forEach(item => {
+            formData.append(
+              `rounds[${roundIndex}][submissions][${submissionIndex}][training_option_id]`,
+              String(item.id),
+            );
+            formData.append(
+              `rounds[${roundIndex}][submissions][${submissionIndex}][type]`,
+              'conceded',
+            );
+            formData.append(
+              `rounds[${roundIndex}][submissions][${submissionIndex}][quantity]`,
+              String(item.count || 1), // Default to 1 if no count (update mode)
+            );
+            submissionIndex++;
+          });
+      }
 
       let positionIndex = 0;
-      round.positionsAchieved
-        .filter(item => item.count > 0)
-        .forEach(item => {
-          formData.append(
-            `rounds[${roundIndex}][positions][${positionIndex}][training_option_id]`,
-            String(item.id),
-          );
-          formData.append(
-            `rounds[${roundIndex}][positions][${positionIndex}][type]`,
-            'achieved',
-          );
-          formData.append(
-            `rounds[${roundIndex}][positions][${positionIndex}][quantity]`,
-            String(item.count),
-          );
-          positionIndex++;
-        });
-      round.positionsConceded
-        .filter(item => item.count > 0)
-        .forEach(item => {
-          formData.append(
-            `rounds[${roundIndex}][positions][${positionIndex}][training_option_id]`,
-            String(item.id),
-          );
-          formData.append(
-            `rounds[${roundIndex}][positions][${positionIndex}][type]`,
-            'conceded',
-          );
-          formData.append(
-            `rounds[${roundIndex}][positions][${positionIndex}][quantity]`,
-            String(item.count),
-          );
-          positionIndex++;
-        });
+      // Process positions achieved
+      if (round.positionsAchieved && round.positionsAchieved.length > 0) {
+        round.positionsAchieved
+          .filter(
+            item => (item.count && item.count > 0) || (!item.count && item.id),
+          ) // Handle both create and update modes
+          .forEach(item => {
+            formData.append(
+              `rounds[${roundIndex}][positions][${positionIndex}][training_option_id]`,
+              String(item.id),
+            );
+            formData.append(
+              `rounds[${roundIndex}][positions][${positionIndex}][type]`,
+              'achieved',
+            );
+            formData.append(
+              `rounds[${roundIndex}][positions][${positionIndex}][quantity]`,
+              String(item.count || 1), // Default to 1 if no count (update mode)
+            );
+            positionIndex++;
+          });
+      }
 
-      round.files?.forEach((file, fileIndex) => {
-        formData.append(`rounds[${roundIndex}][files][${fileIndex}]`, {
-          uri: file.uri,
-          name: file.name,
-          type: file.type,
+      // Process positions conceded
+      if (round.positionsConceded && round.positionsConceded.length > 0) {
+        round.positionsConceded
+          .filter(
+            item => (item.count && item.count > 0) || (!item.count && item.id),
+          ) // Handle both create and update modes
+          .forEach(item => {
+            formData.append(
+              `rounds[${roundIndex}][positions][${positionIndex}][training_option_id]`,
+              String(item.id),
+            );
+            formData.append(
+              `rounds[${roundIndex}][positions][${positionIndex}][type]`,
+              'conceded',
+            );
+            formData.append(
+              `rounds[${roundIndex}][positions][${positionIndex}][quantity]`,
+              String(item.count || 1), // Default to 1 if no count (update mode)
+            );
+            positionIndex++;
+          });
+      }
+
+      // Process round files
+      if (round.files && round.files.length > 0) {
+        round.files.forEach((file, fileIndex) => {
+          // Handle existing files (from server) vs new files (from image picker)
+          if (file.uri) {
+            // New file from image picker
+            const fileObj = {
+              uri: file.uri,
+              name: file.name || `round_file_${fileIndex}.jpg`,
+              type: file.type || 'image/jpeg',
+            };
+            console.log(`Adding new round file ${fileIndex}:`, fileObj);
+            formData.append(
+              `rounds[${roundIndex}][files][${fileIndex}]`,
+              fileObj,
+            );
+          } else if (file.id) {
+            // Existing file from server - just send the ID
+            console.log(`Adding existing round file ${fileIndex}:`, file.id);
+            formData.append(
+              `rounds[${roundIndex}][existing_files][${fileIndex}]`,
+              String(file.id),
+            );
+          }
         });
-      });
+      }
     });
 
     selectedImages.forEach((file, index) => {
-      formData.append(`training_files[]`, file);
+      // Handle existing training files vs new training files
+      if (file.uri && !file.id) {
+        // New file from image picker
+        const fileObj = {
+          uri: file.uri,
+          name: file.name || `training_file_${index}.jpg`,
+          type: file.type || 'image/jpeg',
+        };
+        console.log(`Adding new training file ${index}:`, fileObj);
+        formData.append(`training_files[]`, fileObj);
+      } else if (file.id) {
+        // Existing file from server - just send the ID
+        console.log(`Adding existing training file ${index}:`, file.id);
+        formData.append(`existing_training_files[]`, String(file.id));
+      }
     });
+
+    console.log('=== SUBMITTING TRAINING LOG ===');
+    console.log('FormData created successfully');
+    console.log('Making API request...');
 
     try {
       const response = await makeRequest({
@@ -250,8 +436,11 @@ const LogScreen = () => {
       });
 
       if (response) {
+        const isUpdate = item && item?.id; // Check if we're updating an existing log
         showToast({
-          message: 'Training log created successfully!',
+          message: isUpdate
+            ? 'Training log updated successfully!'
+            : 'Training log created successfully!',
           type: 'success',
         });
         navigation.goBack();
@@ -259,13 +448,15 @@ const LogScreen = () => {
         throw new Error('Failed to upload training log');
       }
     } catch (error) {
-      console.error('Error:', error);
-      // showToast('Error', error.message);
+      console.error('Submit Error:', error);
+      showToast({
+        message: error.message || 'Failed to submit training log',
+        type: 'error',
+      });
     }
   };
 
   const handleSubmitRound = async data => {
-    console.log('data', data);
     setRounds([data, ...rounds]);
     setRoundModalVisible(false);
     return;
@@ -459,7 +650,7 @@ const LogScreen = () => {
             style={styles.datePicker}>
             <SVG.VectorCal />
             <Text style={styles.dateText}>
-              {date.toISOString().split('T')[0]}{' '}
+              {date?.toISOString().split('T')[0]}
             </Text>
 
             <View style={{justifyContent: 'center'}}>
@@ -494,7 +685,7 @@ const LogScreen = () => {
                         todayTextColor: Colors.black,
                       }}
                       renderArrow={direction => (
-                        <Text
+                        <View
                           style={{
                             position: 'absolute',
                             right: direction === 'left' ? -250 : 1,
@@ -504,7 +695,7 @@ const LogScreen = () => {
                           ) : (
                             <SVG.RightFill />
                           )}
-                        </Text>
+                        </View>
                       )}
                       onDayPress={onDayPress}
                     />
@@ -537,7 +728,7 @@ const LogScreen = () => {
             onPress={() => setDropdownOpen(!isDropdownOpen)}>
             <Text style={styles.dropdownText}>
               {selectedType?.name || 'Select Training Type'}
-            </Text>{' '}
+            </Text>
             {isDropdownOpen ? <SVG.SmallArrow /> : <SVG.SmallRight />}
           </TouchableOpacity>
           {isDropdownOpen && (
@@ -585,6 +776,7 @@ const LogScreen = () => {
                 minimumValue={0}
                 maximumValue={60}
                 step={1}
+                value={value}
                 minimumTrackTintColor={Colors.red}
                 maximumTrackTintColor={Colors.pink}
                 thumbTintColor={Colors.red}
@@ -663,6 +855,7 @@ const LogScreen = () => {
                   ROUND {index + 1}
                 </Text>
               </View>
+
               <View
                 style={{
                   flexDirection: 'row',
@@ -717,23 +910,34 @@ const LogScreen = () => {
           onPress={() => setRoundModalVisible(true)}
           style={{marginTop: 10}}
         />
+
         <View style={styles.section}>
           <Text style={styles.label}>Learnings</Text>
           <TextInput
             style={[
               styles.textArea,
               {
+                height: isFocused
+                  ? hp((198 / 919) * 100)
+                  : hp((50 / 919) * 100),
                 textAlignVertical: 'top',
-                paddingTop: 15,
+                paddingTop: 10,
               },
             ]}
             multiline
             placeholder="Share Learnings....."
             value={learnings}
-            placeholderTextColor={placeholderColor}
+            placeholderTextColor="#999"
             onChangeText={text => setLearnings(text)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => {
+              if (learnings.trim() === '') {
+                setIsFocused(false);
+              }
+            }}
           />
         </View>
+
         <View style={styles.section}>
           <Text style={styles.label}>Attach Files</Text>
           <View style={{flexDirection: 'row', gap: 8}}>
@@ -967,12 +1171,21 @@ const RoundScreen = ({visible, onClose, onSubmitRound}) => {
                         togglePartnerSelection(item?.id, item?.name)
                       }
                       style={[
-                        styles.partnerItem,
-                        isSelected && {backgroundColor: Colors.red},
+                        styles.partner,
+                        isSelected && {
+                          backgroundColor: Colors.black,
+                          borderRadius: 4,
+                          marginBottom: 2,
+                        },
                       ]}>
-                      <Text style={{color: isSelected ? 'white' : 'black'}}>
-                        {item.name}
-                      </Text>
+                      <View style={styles.partnerItem}>
+                        <Text style={{color: isSelected ? 'white' : 'black'}}>
+                          {item.id}.
+                        </Text>
+                        <Text style={{color: isSelected ? 'white' : 'black'}}>
+                          {item.name}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 }}
@@ -1056,7 +1269,7 @@ const RoundScreen = ({visible, onClose, onSubmitRound}) => {
           <TextInput
             style={[styles.notesInput, styles.textAreas]}
             placeholder="notes here...."
-            placeholderTextColor={Colors.gray}
+            placeholderTextColor="#999"
             multiline
             value={notes}
             onChangeText={setNotes}
@@ -1314,7 +1527,7 @@ const styles = StyleSheet.create({
     width: wp((399 / 430) * 100),
     height: hp((198 / 919) * 100),
     alignSelf: 'center',
-    padding: 20,
+    padding: 18,
     fontSize: 16,
   },
   sliderView: {
@@ -1557,7 +1770,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   section: {
-    marginVertical: 22,
+    marginVertical: 15,
   },
   notesInput: {
     height: 120,
@@ -1657,6 +1870,12 @@ const styles = StyleSheet.create({
   valueBox: {},
   textAreas: {
     textAlignVertical: 'top',
+  },
+  partnerItem: {
+    flexDirection: 'row',
+    gap: 10,
+    margin: 5,
+    left: 5,
   },
 });
 

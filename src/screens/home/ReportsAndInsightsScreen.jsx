@@ -112,15 +112,23 @@ const ReportsAndInsightsScreen = () => {
             padding: 20,
             flexDirection: 'row',
             justifyContent: 'space-between',
+            alignItems: 'center',
           }}>
           <View>
             <Text style={styles.subHeader}>Monthly Revenue</Text>
           </View>
-          <View>
-            <Text style={styles.revenue}>$2,654</Text>
+          <View style={{alignItems: 'flex-end'}}>
+            <Text style={styles.revenue}>
+              ₹
+              {Object.values(response?.monthly_revenue || {}).reduce(
+                (acc, val) => acc + val,
+                0,
+              )}
+            </Text>
             <Text style={styles.percentage}>+36%</Text>
           </View>
         </View>
+
         <CustomLineChart
           chartData={{
             labels: [

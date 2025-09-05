@@ -229,7 +229,6 @@ const PricingDashboardScreen = () => {
       },
     ],
   };
-  console.log('filter_types', selectedButton);
 
   return (
     <ScrollView style={styles.container}>

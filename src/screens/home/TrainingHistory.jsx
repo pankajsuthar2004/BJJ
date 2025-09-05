@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import SVG from '../../assets/svg';
 import Colors from '../../theme/color';
@@ -17,8 +18,10 @@ import moment from 'moment';
 import makeRequest from '../../api/http';
 import {EndPoints} from '../../api/config';
 import {showToast} from '../../utility/Toast';
+import {useNavigation} from '@react-navigation/native';
 
 const TrainingScreen = () => {
+  const navigation = useNavigation();
   const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedDate, setSelectedDate] = useState('2025-01-01');
@@ -54,26 +57,6 @@ const TrainingScreen = () => {
     } catch (error) {
       console.error('Training logs fetch error:', error);
       showToast('Error fetching training logs');
-    }
-  };
-
-  const handleGymHistory = async () => {
-    try {
-      const response = await makeRequest({
-        endPoint: EndPoints.GymHistory,
-        method: 'POST',
-        body: {},
-      });
-
-      if (response) {
-        setGymList(response);
-        setGymModalVisible(true);
-      } else {
-        showToast('No gyms found');
-      }
-    } catch (error) {
-      console.error('Gym history fetch error:', error);
-      showToast('Error fetching gym history');
     }
   };
 
@@ -175,32 +158,26 @@ const TrainingScreen = () => {
             <SVG.MiniCalendar />
           </TouchableOpacity>
         </View>
-
-        <View style={styles.filterItem}>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={handleGymHistory}>
-            <Text style={styles.filterText} numberOfLines={1}>
-              {selectedGym?.gym_name || 'Gym'}
-            </Text>
-            <SVG.ArrowIcon />
-          </TouchableOpacity>
-        </View>
       </View>
 
       <Modal visible={gymModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay1}>
-          <View style={styles.calendarContainer1}>
-            {gymList.map(gym => (
-              <TouchableOpacity
-                key={gym.gym_id}
-                style={{padding: 10, borderBottomWidth: 1}}
-                onPress={() => handleGymSelect(gym)}>
-                <Text style={{color: Colors.black}}>{gym.gym_name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.modalOverlay1}
+          activeOpacity={1}
+          onPressOut={() => setGymModalVisible(false)}>
+          <TouchableWithoutFeedback>
+            <View style={styles.calendarContainer1}>
+              {gymList.map(gym => (
+                <TouchableOpacity
+                  key={gym.gym_id}
+                  style={{padding: 10, borderBottomWidth: 1}}
+                  onPress={() => handleGymSelect(gym)}>
+                  <Text style={{color: Colors.black}}>{gym.gym_name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableWithoutFeedback>
+        </TouchableOpacity>
       </Modal>
 
       <View>
@@ -215,26 +192,37 @@ const TrainingScreen = () => {
         <SVG.SearchIcon style={{position: 'absolute', right: 10, top: 11}} />
       </View>
       <Modal visible={calendarVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay1}>
-          <View style={styles.calendarContainer1}>
-            <Calendar
-              onDayPress={day => handleDateSelect(day)}
-              markedDates={{[selectedDate]: {selected: true}}}
-              theme={{selectedDayBackgroundColor: Colors.black}}
-            />
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.modalOverlay1}
+          activeOpacity={1}
+          onPressOut={() => setCalendarVisible(false)}>
+          <TouchableWithoutFeedback>
+            <View style={styles.calendarContainer1}>
+              <Calendar
+                onDayPress={day => handleDateSelect(day)}
+                markedDates={{[selectedDate]: {selected: true}}}
+                theme={{selectedDayBackgroundColor: Colors.black}}
+              />
+            </View>
+          </TouchableWithoutFeedback>
+        </TouchableOpacity>
       </Modal>
+
       <Modal visible={calendarEndVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay1}>
-          <View style={styles.calendarContainer1}>
-            <Calendar
-              onDayPress={day => handleDateSelect(day, true)}
-              markedDates={{[selectedEndDate]: {selected: true}}}
-              theme={{selectedDayBackgroundColor: Colors.black}}
-            />
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.modalOverlay1}
+          activeOpacity={1}
+          onPressOut={() => setCalendarEndVisible(false)}>
+          <TouchableWithoutFeedback>
+            <View style={styles.calendarContainer1}>
+              <Calendar
+                onDayPress={day => handleDateSelect(day, true)}
+                markedDates={{[selectedEndDate]: {selected: true}}}
+                theme={{selectedDayBackgroundColor: Colors.black}}
+              />
+            </View>
+          </TouchableWithoutFeedback>
+        </TouchableOpacity>
       </Modal>
 
       <FlatList
@@ -264,89 +252,96 @@ const TrainingScreen = () => {
           animationType="slide"
           transparent={true}
           onRequestClose={closeModal}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <TouchableOpacity
-                style={styles.closeIconContainer}
-                onPress={closeModal}>
-                <SVG.CrossIcon />
-              </TouchableOpacity>
-
-              <View style={styles.main}>
-                <View style={styles.main1}>
-                  <SVG.Count2 />
-                </View>
-                <Text style={styles.modalTitle}>
-                  {selectedSession.training_type?.type || 'Training'}
-                </Text>
-              </View>
-
-              <View style={styles.sessionList}>
-                <View style={styles.sessionList1}>
-                  <SVG.UilCalender />
-                  <Text style={styles.modalText}>
-                    {selectedSession.date || 'N/A'}
-                  </Text>
-                </View>
-                <View style={styles.sessionList1}>
-                  <SVG.Time />
-                  <Text style={styles.modalText}>
-                    {selectedSession.duration
-                      ? `${selectedSession.duration} mins`
-                      : 'N/A'}
-                  </Text>
-                </View>
-                <View style={styles.sessionList1}>
-                  <SVG.Rounds />
-                  <Text style={styles.modalText}>
-                    Rounds {selectedSession.rounds?.length || 0}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.sessionList1}>
-                <SVG.Exchange />
-                <Text style={styles.modalText}>
-                  Partners:{' '}
-                  {selectedSession.rounds
-                    ?.flatMap(round => round.sparring_partners || [])
-                    .map(partner => partner?.name)
-                    .filter(
-                      (name, index, arr) =>
-                        !!name && arr.indexOf(name) === index,
-                    )
-                    .join(', ') || 'N/A'}
-                </Text>
-              </View>
-
-              <View style={styles.sessionList1}>
-                <SVG.SolarNotes />
-                <Text style={styles.modalText}>
-                  {selectedSession.learnings || 'No notes'}
-                </Text>
-              </View>
-              <View style={styles.sessionList1}>
-                <SVG.Gym1 />
-                <Text style={styles.modalText}>
-                  {selectedSession.gym?.name || 'N/A'}
-                </Text>
-              </View>
-
-              <View style={styles.btnView}>
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPressOut={closeModal}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
                 <TouchableOpacity
-                  style={styles.closeButton}
+                  style={styles.closeIconContainer}
                   onPress={closeModal}>
-                  <Text style={styles.closeButtonText}>Close</Text>
+                  <SVG.CrossIcon />
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={closeModal}>
-                  <Text style={styles.editButtonText}>Edit</Text>
-                  <SVG.IconEdit1 />
-                </TouchableOpacity>
+
+                <View style={styles.main}>
+                  <View style={styles.main1}>
+                    <SVG.Count2 />
+                  </View>
+                  <Text style={styles.modalTitle}>
+                    {selectedSession.training_type?.type || 'Training'}
+                  </Text>
+                </View>
+
+                <View style={styles.sessionList}>
+                  <View style={styles.sessionList1}>
+                    <SVG.UilCalender />
+                    <Text style={styles.modalText}>
+                      {selectedSession.date || 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.sessionList1}>
+                    <SVG.Time />
+                    <Text style={styles.modalText}>
+                      {selectedSession.duration
+                        ? `${selectedSession.duration} mins`
+                        : 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.sessionList1}>
+                    <SVG.Rounds />
+                    <Text style={styles.modalText}>
+                      Rounds {selectedSession.rounds?.length || 0}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.sessionList1}>
+                  <SVG.Exchange />
+                  <Text style={styles.modalText}>
+                    Partners:{' '}
+                    {selectedSession.rounds
+                      ?.flatMap(round => round.sparring_partners || [])
+                      .map(partner => partner?.name)
+                      .filter(
+                        (name, index, arr) =>
+                          !!name && arr.indexOf(name) === index,
+                      )
+                      .join(', ') || 'N/A'}
+                  </Text>
+                </View>
+
+                <View style={styles.sessionList1}>
+                  <SVG.SolarNotes />
+                  <Text style={styles.modalText}>
+                    {selectedSession.learnings || 'No notes'}
+                  </Text>
+                </View>
+                <View style={styles.sessionList1}>
+                  <SVG.Gym1 />
+                  <Text style={styles.modalText}>
+                    {selectedSession.gym?.name || 'N/A'}
+                  </Text>
+                </View>
+
+                <View style={styles.btnView}>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={closeModal}>
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() =>
+                      navigation.navigate('LogScreen', {item: selectedSession})
+                    }>
+                    <Text style={styles.editButtonText}>Edit</Text>
+                    <SVG.IconEdit1 />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </View>
+            </TouchableWithoutFeedback>
+          </TouchableOpacity>
         </Modal>
       )}
     </View>

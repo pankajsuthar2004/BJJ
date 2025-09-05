@@ -4,7 +4,6 @@ import {store} from '../store/Store';
 
 const defaultHeaders = {
   'Content-Type': 'application/json',
-  // 'Content-Type': 'multipart/form-data',
 };
 
 type APIResponse<T> = {
@@ -15,9 +14,10 @@ type APIResponse<T> = {
 
 type Params = {
   endPoint: string;
-  method?: 'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH'; // custom
-  body?: Record<string, any>; // object
+  method?: 'GET' | 'POST' | 'DELETE' | 'PUT' | 'PATCH';
+  body?: Record<string, any>; // ✅ use 'body' consistently
   headers?: Record<string, string>;
+  params?: Record<string, string>;
 };
 
 const isFormData = (data: object | undefined): data is FormData => {
@@ -25,18 +25,32 @@ const isFormData = (data: object | undefined): data is FormData => {
 };
 
 const makeRequest = async <T>(params: Params) => {
-  const {endPoint, method = 'GET', body = {}, headers = {}} = params;
-  const url = BASE_URL + endPoint;
+  const {
+    endPoint,
+    method = 'GET',
+    body = {},
+    headers = {},
+    params: queryParams = {},
+  } = params;
+
+  let url = BASE_URL + endPoint;
+
+  // Append query params if any (for GET)
+  if (method === 'GET' && Object.keys(queryParams).length > 0) {
+    const queryString = new URLSearchParams(queryParams).toString();
+    url += `?${queryString}`;
+  }
+
   try {
     const reqHeaders: Record<string, any> = {...defaultHeaders, ...headers};
-    // const user = await getValue('user');
+
     const user = store.getState().user?.user;
-    if (!user || !user.token) {
+    if (user?.token) {
+      reqHeaders['authorization'] = 'Bearer ' + user.token;
+    } else {
       console.warn(
         'No valid token found. Authorization header will not be set.',
       );
-    } else {
-      reqHeaders['authorization'] = 'Bearer ' + user.token;
     }
 
     const fetchOptions: RequestInit = {
@@ -44,29 +58,33 @@ const makeRequest = async <T>(params: Params) => {
       headers: reqHeaders,
     };
 
-    if (method !== 'GET') {
+    if (method !== 'GET' && body && Object.keys(body).length > 0) {
       fetchOptions.body = isFormData(body) ? body : JSON.stringify(body);
     }
+
     const response = await fetch(url, fetchOptions);
     if (!response.ok) {
       console.log('Status Code: ', response.status);
       throw new Error(`Network error: ${response.statusText}`);
     }
+
     const result = (await response.json()) as APIResponse<T>;
 
-    console.log('URL: ', url);
-    console.log('Body: ', body);
-    console.log('header: ', reqHeaders);
-    console.log('response: ', result);
+    console.log('URL:', url);
+    console.log('Body:', body);
+    console.log('Header:', reqHeaders);
+    console.log('Response:', result);
     console.log('--------------------------------------------');
+
     if (!result.success) {
-      throw new Error(result.message || 'Api Error');
+      throw new Error(result.message || 'API Error');
     }
+
     return result.data;
   } catch (error) {
-    console.log('URL: ', url);
-    console.log('Body: ', body);
-    console.log('Error: ', error);
+    console.log('URL:', url);
+    console.log('Body:', body);
+    console.log('Error:', error);
     console.log('--------------------------------------------');
     showToast({message: (error as Error).message});
     throw error;

@@ -108,6 +108,7 @@ const PricingManagementScreen = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Enter amount"
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={amount}
                 onChangeText={text => {
@@ -147,6 +148,7 @@ const PricingManagementScreen = () => {
               <Text style={styles.label}>Description</Text>
               <TextInput
                 style={[styles.input, {height: 40}]}
+                placeholderTextColor="#999"
                 placeholder="Optional..."
                 value={description}
                 onChangeText={setDescription}

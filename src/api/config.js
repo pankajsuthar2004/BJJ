@@ -60,10 +60,11 @@ export const EndPoints = {
   Users: 'users',
   GymDashboard: 'gym-dashboard',
   GymUserDetail: 'gym-user-detail',
-  DeviceToken: 'device-token',
   LogType: 'log-type',
   GymUserSummery: 'gym-user-summery',
   ShowAttendance: 'show-attendance',
   UserDash: 'user-dash',
   GetPartners: 'get-partners',
+  TrainingLogDetails: 'training-log-details',
+  DeviceToken: 'device-token',
 };
